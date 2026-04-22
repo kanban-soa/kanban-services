@@ -19,7 +19,7 @@ jobs:
           -X POST \
           -d '{
             "embeds": [{
-              "title": "🔀 New Pull Request to dev",
+              "title": "🔀 New Pull Request to '"${{ github.event.pull_request.base.ref }}"'",
               "description": "'"${{ github.event.pull_request.title }}"'",
               "color": 5814783,
               "fields": [
