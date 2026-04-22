@@ -3,11 +3,14 @@
   "version": "1.0.0",
   "description": "",
   "workspaces": [
-    "root/services/auth-service"
+    "root/services/auth-service",
+    "root/services/noti-service"
   ],
   "scripts": {
     "auth:dev": "npm run dev --workspace=root/services/auth-service",
-    "auth:migrate": "npm run db:push --workspace=root/services/auth-service"
+    "noti:dev": "npm run dev --workspace=root/services/noti-service",
+    "auth:migrate": "npm run db:push --workspace=root/services/auth-service",
+    "noti:migrate": "npm run db:push --workspace=root/services/noti-service"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",
@@ -20,6 +23,8 @@
     "esbuild": "^0.25.0"
   },
   "dependencies": {
+    "@grpc/grpc-js": "^1.14.3",
+    "@grpc/proto-loader": "^0.8.0",
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
     "express": "^5.2.1",

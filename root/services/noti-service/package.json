@@ -1,0 +1,11 @@
+{
+  "name": "noti-service",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "dev": "npx nodemon --exec \"npx tsx index.ts\"",
+    "db:push": "npx drizzle-kit push"
+
+  },
+  "dependencies": {}
+}

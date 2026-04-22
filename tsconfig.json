@@ -13,6 +13,8 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["root/*"],
+      "@/auth-service/*": ["root/services/auth-service/*"],
+      "@/noti-service/*": ["root/services/noti-service/*"],
     },
     "sourceMap": true,
     "declaration": true,

@@ -5,5 +5,7 @@
   "scripts": {
     "dev": "npx nodemon --exec \"npx tsx server.ts\"",
     "db:push": "npx drizzle-kit push"
-  }
+  },
+  "dependencies": {
+    "bcrypt": "^6.0.0"  }
 }
