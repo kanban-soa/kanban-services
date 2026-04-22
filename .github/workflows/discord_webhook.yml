@@ -30,7 +30,7 @@ jobs:
                 },
                 {
                   "name": "🌿 Branch",
-                  "value": "'"${{ github.event.pull_request.head.ref }}"' → dev",
+                  "value": "'"${{ github.event.pull_request.head.ref }}"' → '"${{ github.event.pull_request.base.ref }}"' ",
                   "inline": true
                 },
                 {
