@@ -1,16 +1,16 @@
 import pg from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import * as schema from '@/auth-service/schema';
+import * as schema from '@/noti-service/schema';
 import  dotenv  from 'dotenv';
 dotenv.config();
 const { Pool } = pg;
 
-if (!process.env.AUTH_URL) {
-  throw new Error('AUTH_URL environment variable is not set');
+if (!process.env.NOTI_URL) {
+  throw new Error('NOTI_URL environment variable is not set');
 }
 
 export const pool = new Pool({
-  connectionString: process.env.AUTH_URL,
+  connectionString: process.env.NOTI_URL,
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,
