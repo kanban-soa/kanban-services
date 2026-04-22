@@ -1,0 +1,10 @@
+{
+  "name": "workspace-service",
+  "version": "1.0.0",
+  "description": "Workspace microservice handling workspace, board, and member management",
+  "scripts": {
+    "dev": "npx nodemon --exec \"npx tsx server.ts\"",
+    "db:push": "npx drizzle-kit push",
+    "start": "npx tsx server.ts"
+  }
+}
