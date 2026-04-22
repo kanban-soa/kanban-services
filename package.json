@@ -3,11 +3,14 @@
   "version": "1.0.0",
   "description": "",
   "workspaces": [
-    "root/services/auth-service"
+    "root/services/auth-service",
+    "root/services/noti-service"
   ],
   "scripts": {
     "auth:dev": "npm run dev --workspace=root/services/auth-service",
-    "auth:migrate": "npm run db:push --workspace=root/services/auth-service"
+    "noti:dev": "npm run dev --workspace=root/services/noti-service",
+    "auth:migrate": "npm run db:push --workspace=root/services/auth-service",
+    "noti:migrate": "npm run db:push --workspace=root/services/noti-service"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",
