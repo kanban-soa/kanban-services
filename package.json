@@ -3,11 +3,15 @@
   "version": "1.0.0",
   "description": "",
   "workspaces": [
-    "root/services/auth-service"
+    "root/services/auth-service",
+    "root/services/workspace-service"
   ],
   "scripts": {
     "auth:dev": "npm run dev --workspace=root/services/auth-service",
-    "auth:migrate": "npm run db:push --workspace=root/services/auth-service"
+    "auth:migrate": "npm run db:push --workspace=root/services/auth-service",
+    "workspace:dev": "npm run dev --workspace=root/services/workspace-service",
+    "workspace:migrate": "npm run db:push --workspace=root/services/workspace-service",
+    "dev": "npm run auth:dev & npm run workspace:dev"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",
