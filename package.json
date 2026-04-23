@@ -11,7 +11,12 @@
     "auth:migrate": "npm run db:push --workspace=root/services/auth-service",
     "workspace:dev": "npm run dev --workspace=root/services/workspace-service",
     "workspace:migrate": "npm run db:push --workspace=root/services/workspace-service",
-    "dev": "npm run auth:dev & npm run workspace:dev"
+    "noti:dev": "npm run dev --workspace=root/services/noti-service",
+    "noti:migrate": "npm run db:push --workspace=root/services/noti-service",
+    "stat:dev": "npm run dev --workspace=root/services/statistic-service",
+    "stat:migrate": "npm run db:push --workspace=root/services/statistic-service",
+    "board:dev": "npm run dev --workspace=root/services/board-service",
+    "board:migrate": "npm run db:push --workspace=root/services/board-service"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",
@@ -24,6 +29,8 @@
     "esbuild": "^0.25.0"
   },
   "dependencies": {
+    "@grpc/grpc-js": "^1.14.3",
+    "@grpc/proto-loader": "^0.8.0",
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
     "express": "^5.2.1",
