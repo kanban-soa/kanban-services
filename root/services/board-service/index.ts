@@ -1,0 +1,32 @@
+import express, { Request, Response } from 'express';
+import dotenv from 'dotenv';
+import { pool } from '@/noti-service/config';
+
+dotenv.config({
+  debug: true
+});
+
+const app = express();
+
+app.use(express.json());
+
+// Routes
+// app.use('/v1/notifications', notificationRouter);
+
+// app.get('/', (req: Request, res: Response) => {
+//     res.json({ message: 'Notification service is running' });
+// });
+
+const port = process.env.BOARD_PORT;
+
+if (!port) {
+    throw new Error('BOARD_PORT is not defined');
+}
+
+app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
+});
+
+pool.on('connect', () => {
+    console.log('Database connected');
+});
