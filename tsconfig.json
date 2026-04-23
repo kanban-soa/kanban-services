@@ -13,6 +13,7 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["root/*"],
+      "@workspace-service/*": ["root/services/workspace-service/*"],
     },
     "sourceMap": true,
     "declaration": true,
