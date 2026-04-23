@@ -3,12 +3,16 @@
   "version": "1.0.0",
   "description": "",
   "workspaces": [
-    "root/services/**"
+    "root/services/**",
+    "root/services/auth-service",
+    "root/services/workspace-service"
   ],
   "scripts": {
     "auth:dev": "npm run dev --workspace=root/services/auth-service",
-    "noti:dev": "npm run dev --workspace=root/services/noti-service",
     "auth:migrate": "npm run db:push --workspace=root/services/auth-service",
+    "workspace:dev": "npm run dev --workspace=root/services/workspace-service",
+    "workspace:migrate": "npm run db:push --workspace=root/services/workspace-service",
+    "noti:dev": "npm run dev --workspace=root/services/noti-service",
     "noti:migrate": "npm run db:push --workspace=root/services/noti-service",
     "stat:dev": "npm run dev --workspace=root/services/statistic-service",
     "stat:migrate": "npm run db:push --workspace=root/services/statistic-service",
@@ -31,6 +35,8 @@
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
     "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "nanoid": "^5.1.9",
     "pg": "^8.20.0"
   }
 }

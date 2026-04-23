@@ -1,0 +1,288 @@
+openapi: 3.0.3
+info:
+  title: Workspace Service API
+  description: Quản lý metadata workspace, thành viên và phân quyền.
+  version: 1.0.0
+servers:
+  - url: http://localhost:9005/v1
+    description: Local development
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Workspace:
+      type: object
+      properties:
+        id: { type: integer }
+        publicId: { type: string }
+        name: { type: string }
+        slug: { type: string }
+        plan: { type: string, enum: [free, pro, enterprise] }
+
+paths:
+  /workspaces:
+    get:
+      summary: Get list of workspaces for the authenticated user
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Workspace' }
+    post:
+      summary: Create a new workspace
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, slug]
+              properties:
+                name: { type: string }
+                slug: { type: string }
+      responses:
+        '201':
+          description: Created
+    get:
+      summary: Get detail of workspace by ID
+      security: [{ BearerAuth: [user] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Workspace' }
+    patch:
+      summary: Update workspace details
+      security: [{ BearerAuth: [admin] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                slug: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Workspace' }
+
+    delete:
+      summary: Delete a workspace
+      security: [{ BearerAuth: [admin] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204':
+          description: No Content
+
+  /workspaces/{id}/members:
+    get:
+      summary: Get list of members in a workspace
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    userId: { type: integer }
+                    role: { type: string, enum: [admin, member] }
+    post:
+      summary: Add a member to a workspace
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId, role]
+              properties:
+                userId: { type: integer }
+                role: { type: string, enum: [admin, member] }
+      responses:
+        '201':
+          description: Created
+
+    patch:
+      summary: Update a member's role in a workspace
+      security: [{ BearerAuth: [admin] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: userId
+          in: query
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role]
+              properties:
+                role: { type: string, enum: [admin, member] }
+      responses:
+        '200':
+          description: OK
+
+    delete:
+      summary: Remove a member from a workspace
+      security: [{ BearerAuth: [admin] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: userId
+          in: query
+          required: true
+          schema: { type: integer }
+      responses:
+        '204':
+          description: No Content
+
+  /workspaces/{id}/permissions:
+    get:
+      summary: Get permissions for a workspace
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  canEdit: { type: boolean }
+                  canDelete: { type: boolean }
+                  canManageMembers: { type: boolean }
+
+    post:
+      summary: Update permissions for a workspace
+      security: [{ BearerAuth: [admin] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                canEdit: { type: boolean }
+                canDelete: { type: boolean }
+                canManageMembers: { type: boolean }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  canEdit: { type: boolean }
+                  canDelete: { type: boolean }
+                  canManageMembers: { type: boolean }
+
+    put:
+      summary: Set permissions for a workspace
+      security: [{ BearerAuth: [admin] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [canEdit, canDelete, canManageMembers]
+              properties:
+                canEdit: { type: boolean }
+                canDelete: { type: boolean }
+                canManageMembers: { type: boolean }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  canEdit: { type: boolean }
+                  canDelete: { type: boolean }
+                  canManageMembers: { type: boolean }
+
+    get:
+      summary: Check if user has specific permission in a workspace
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: permission
+          in: query
+          required: true
+          schema: { type: string, enum: [canEdit, canDelete, canManageMembers] }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  hasPermission: { type: boolean }  
+      
+

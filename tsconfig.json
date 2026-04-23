@@ -13,6 +13,7 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["root/*"],
+      "@workspace-service/*": ["root/services/workspace-service/*"],
       "@/auth-service/*": ["root/services/auth-service/*"],
       "@/noti-service/*": ["root/services/noti-service/*"],
       "@/board-service/*": ["root/services/board-service/*"],
