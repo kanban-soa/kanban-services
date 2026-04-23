@@ -15,6 +15,7 @@
       "@/*": ["root/*"],
       "@/auth-service/*": ["root/services/auth-service/*"],
       "@/noti-service/*": ["root/services/noti-service/*"],
+      "@/board-service/*": ["root/services/board-service/*"],
     },
     "sourceMap": true,
     "declaration": true,
