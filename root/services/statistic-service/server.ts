@@ -42,8 +42,3 @@ app.post("/api/statistics/refresh", (req, res) => {
     statistics,
   });
 });
-
-
-app.listen(9001, () => {
-  console.log("Statistic service listening on port 9001");
-});

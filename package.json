@@ -9,7 +9,7 @@
     "auth:dev": "npm run dev --workspace=root/services/auth-service",
     "noti:dev": "npm run dev --workspace=root/services/noti-service",
     "auth:migrate": "npm run db:push --workspace=root/services/auth-service",
-    "noti:migrate": "npm run db:push --workspace=root/services/noti-service"
+    "noti:migrate": "npm run db:push --workspace=root/services/noti-service",
     "stat:dev": "npm run dev --workspace=root/services/statistic-service",
     "stat:migrate": "npm run db:push --workspace=root/services/statistic-service"
   },
