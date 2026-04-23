@@ -93,9 +93,10 @@ export class WorkspaceController {
    */
   async getAll(req: Request, res: Response) {
     try {
+      console.log("req.user", req.user);
       const userId = req.user?.id;
       if (!userId) {
-        return sendUnauthorized(res);
+        return sendUnauthorized(res, "Unauthorized in get all workspaces");
       }
 
       const workspaces = await workspaceService.getWorkspacesByUser(userId);

@@ -12,13 +12,13 @@ import {
   sendUnauthorized,
   calculatePagination,
   sendPaginated,
-} from "../../utils/response.util";
-import { logger } from "../../utils/logger";
+} from "@workspace-service/utils/response.util";
+import { logger } from "@workspace-service/utils/logger";
 import {
   ERROR_MESSAGES,
   HTTP_STATUS,
   PAGINATION,
-} from "../../config/constants";
+} from "@workspace-service/config/constants";
 
 /**
  * Member Controller
