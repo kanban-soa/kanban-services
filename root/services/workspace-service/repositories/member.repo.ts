@@ -1,8 +1,8 @@
-import { db } from "../lib/db";
-import { workspaceMembers } from "../schema/members";
-import { workspaceRoles } from "../schema/permissions";
+import { db } from "@workspace-service/lib/db";
+import { workspaceMembers } from "@workspace-service/schema/members";
+import { workspaceRoles } from "@workspace-service/schema/permissions";
 import { eq, and, isNull, desc } from "drizzle-orm";
-import { logger } from "../utils/logger";
+import { logger } from "@workspace-service/utils/logger";
 
 export interface CreateMemberInput {
   publicId: string;

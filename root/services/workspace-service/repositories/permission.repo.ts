@@ -1,7 +1,7 @@
-import { db } from "../lib/db";
-import { workspaceRoles, workspaceRolePermissions, workspaceMemberPermissions } from "../schema/permissions";
+import { db } from "@workspace-service/lib/db";
+import { workspaceRoles, workspaceRolePermissions, workspaceMemberPermissions } from "@workspace-service/schema/permissions";
 import { eq, and, isNull } from "drizzle-orm";
-import { logger } from "../utils/logger";
+import { logger } from "@workspace-service/utils/logger";
 
 export interface CreateRoleInput {
   publicId: string;

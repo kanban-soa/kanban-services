@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import { permissionService } from "../services/permission.service";
-import { workspaceService } from "../services/workspace.service";
-import { memberRepository } from "../repositories/member.repo";
+import { permissionService } from "../../services/permission.service";
+import { workspaceService } from "../../services/workspace.service";
+import { memberRepository } from "../../repositories/member.repo";
 import {
   sendSuccess,
   sendCreated,
@@ -9,12 +9,13 @@ import {
   sendBadRequest,
   sendNotFound,
   sendForbidden,
-} from "../utils/response.util";
-import { logger } from "../utils/logger";
+  sendUnauthorized,
+} from "../../utils/response.util";
+import { logger } from "../../utils/logger";
 import {
   ERROR_MESSAGES,
   HTTP_STATUS,
-} from "../config/constants";
+} from "../../config/constants";
 
 /**
  * Permission Controller
@@ -277,19 +278,6 @@ export class PermissionController {
       return sendError(res, message);
     }
   }
-}
-
-/**
- * Helper function - should be in utils but included here for context
- */
-function sendUnauthorized(res: Response) {
-  return res.status(HTTP_STATUS.UNAUTHORIZED).json({
-    success: false,
-    statusCode: HTTP_STATUS.UNAUTHORIZED,
-    message: "Unauthorized",
-    error: "Authentication required",
-    timestamp: new Date().toISOString(),
-  });
 }
 
 export const permissionController = new PermissionController();

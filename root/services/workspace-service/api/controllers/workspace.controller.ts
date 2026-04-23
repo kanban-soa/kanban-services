@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { workspaceService } from "../services/workspace.service";
+import { workspaceService } from "@workspace-service/services/workspace.service";
 import {
   sendSuccess,
   sendCreated,
@@ -8,9 +8,9 @@ import {
   sendNotFound,
   sendForbidden,
   sendUnauthorized,
-} from "../utils/response.util";
-import { logger } from "../utils/logger";
-import { ERROR_MESSAGES, HTTP_STATUS } from "../config/constants";
+} from "@workspace-service/utils/response.util";
+import { logger } from "@workspace-service/utils/logger";
+import { ERROR_MESSAGES, HTTP_STATUS } from "@workspace-service/config/constants";
 
 /**
  * Workspace Controller

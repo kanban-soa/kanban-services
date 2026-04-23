@@ -1,7 +1,7 @@
-import { db } from "../lib/db";
-import { workspaces } from "../schema/workspaces";
+import { db } from "@workspace-service/lib/db";
+import { workspaces } from "@workspace-service/schema/workspaces";
 import { eq, ne, and, isNull, desc } from "drizzle-orm";
-import { logger } from "../utils/logger";
+import { logger } from "@workspace-service/utils/logger";
 
 export interface CreateWorkspaceInput {
   publicId: string;

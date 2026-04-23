@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { memberService } from "../services/member.service";
-import { workspaceService } from "../services/workspace.service";
+import { memberService } from "@workspace-service/services/member.service";
+import { workspaceService } from "@workspace-service/services/workspace.service";
 import {
   sendSuccess,
   sendCreated,
@@ -12,13 +12,13 @@ import {
   sendUnauthorized,
   calculatePagination,
   sendPaginated,
-} from "../utils/response.util";
-import { logger } from "../utils/logger";
+} from "../../utils/response.util";
+import { logger } from "../../utils/logger";
 import {
   ERROR_MESSAGES,
   HTTP_STATUS,
   PAGINATION,
-} from "../config/constants";
+} from "../../config/constants";
 
 /**
  * Member Controller

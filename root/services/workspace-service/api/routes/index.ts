@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { workspaceController } from "../controllers/workspace.controller";
-import { memberController } from "../controllers/member.controller";
-import { permissionController } from "../controllers/permission.controller";
+import { workspaceController } from "@workspace-service/api/controllers/workspace.controller";
+import { memberController } from "@workspace-service/api/controllers/member.controller";
+import { permissionController } from "@workspace-service/api/controllers/permission.controller";
 
 const router = Router();
 
