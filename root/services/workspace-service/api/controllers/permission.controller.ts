@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import { permissionService } from "../../services/permission.service";
-import { workspaceService } from "../../services/workspace.service";
-import { memberRepository } from "../../repositories/member.repo";
+import { permissionService } from "@workspace-service/services/permission.service";
+import { workspaceService } from "@workspace-service/services/workspace.service";
+import { memberRepository } from "@workspace-service/repositories/member.repo";
 import {
   sendSuccess,
   sendCreated,
@@ -10,12 +10,12 @@ import {
   sendNotFound,
   sendForbidden,
   sendUnauthorized,
-} from "../../utils/response.util";
-import { logger } from "../../utils/logger";
+} from "@workspace-service/utils/response.util";
+import { logger } from "@workspace-service/utils/logger";
 import {
   ERROR_MESSAGES,
   HTTP_STATUS,
-} from "../../config/constants";
+} from "@workspace-service/config/constants";
 
 /**
  * Permission Controller

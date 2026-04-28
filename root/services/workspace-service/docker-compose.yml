@@ -9,6 +9,7 @@ services:
       POSTGRES_PASSWORD: admin
       POSTGRES_DB: workspace_db
     ports:
+      # Test with port: 5437
       - "5437:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data

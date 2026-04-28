@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { workspaceService } from "@workspace-service/services/workspace.service";
+import { permissionService } from "@workspace-service/services/permission.service";
 import {
   sendSuccess,
   sendCreated,
@@ -39,6 +40,15 @@ export class WorkspaceController {
         slug,
         description,
         createdBy: userId,
+      });
+
+      // Create role for workspace
+      const role = await permissionService.createRole({
+        workspaceId: workspace.id,
+        name: "Admin",
+        description: "Admin role",
+        hierarchyLevel: 1,
+        isSystem: true,
       });
 
       logger.info(`Workspace created by user ${userId}: ${workspace.publicId}`);
