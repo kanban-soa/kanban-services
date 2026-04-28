@@ -1,11 +1,11 @@
 import express from "express";
-import v1Router from "./routes/v1";
+import v1Router from "@/auth-service/routes/";
 
 const app = express();
 
 app.use(express.json());
 
-app.use("/v1", v1Router);
+app.use("/api", v1Router);
 
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });
