@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import { permissionService } from "../../services/permission.service";
-import { workspaceService } from "../../services/workspace.service";
-import { memberRepository } from "../../repositories/member.repo";
+import { permissionService } from "@workspace-service/services/permission.service";
+import { workspaceService } from "@workspace-service/services/workspace.service";
+import { memberRepository } from "@workspace-service/repositories/member.repo";
 import {
   sendSuccess,
   sendCreated,
@@ -10,12 +10,12 @@ import {
   sendNotFound,
   sendForbidden,
   sendUnauthorized,
-} from "../../utils/response.util";
-import { logger } from "../../utils/logger";
+} from "@workspace-service/utils/response.util";
+import { logger } from "@workspace-service/utils/logger";
 import {
   ERROR_MESSAGES,
   HTTP_STATUS,
-} from "../../config/constants";
+} from "@workspace-service/config/constants";
 
 /**
  * Permission Controller
@@ -23,7 +23,7 @@ import {
  */
 export class PermissionController {
   /**
-   * GET /workspaces/:id/permissions
+   * GET /api/workspaces/:id/permissions
    * Get user's permissions in workspace
    */
   async getPermissions(req: Request, res: Response) {
@@ -76,7 +76,7 @@ export class PermissionController {
   }
 
   /**
-   * POST /workspaces/:id/permissions
+   * POST /api/workspaces/:id/permissions
    * Check specific permission
    */
   async checkPermission(req: Request, res: Response) {
@@ -118,7 +118,7 @@ export class PermissionController {
   }
 
   /**
-   * GET /workspaces/:id/roles
+   * GET /api/workspaces/:id/roles
    * Get all roles in workspace
    */
   async getRoles(req: Request, res: Response) {
@@ -199,7 +199,7 @@ export class PermissionController {
   }
 
   /**
-   * GET /workspaces/:id/roles/:roleId/permissions
+   * GET /api/workspaces/:id/roles/:roleId/permissions
    * Get role permissions
    */
   async getRolePermissions(req: Request, res: Response) {

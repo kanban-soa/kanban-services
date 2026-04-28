@@ -77,7 +77,7 @@ export class MemberController {
   }
 
   /**
-   * GET /workspaces/:id/members
+   * GET /api/workspaces/:id/members
    * Get all members in workspace
    */
   async getMembers(req: Request, res: Response) {
@@ -175,7 +175,7 @@ export class MemberController {
   }
 
   /**
-   * DELETE /workspaces/:id/members/:memberId
+   * DELETE /api/workspaces/:id/members/:memberId
    * Remove member from workspace
    */
   async removeMember(req: Request, res: Response) {
@@ -215,7 +215,7 @@ export class MemberController {
   }
 
   /**
-   * GET /workspaces/:id/members/:memberId
+   * GET /api/workspaces/:id/members/:memberId
    * Get member details
    */
   async getMember(req: Request, res: Response) {
