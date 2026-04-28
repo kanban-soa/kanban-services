@@ -19,7 +19,7 @@ import { ERROR_MESSAGES, HTTP_STATUS } from "@workspace-service/config/constants
  */
 export class WorkspaceController {
   /**
-   * POST /workspaces
+   * POST /api/workspaces
    * Create a new workspace
    */
   async create(req: Request, res: Response) {
@@ -60,7 +60,7 @@ export class WorkspaceController {
   }
 
   /**
-   * GET /workspaces/:id
+   * GET /api/workspaces/:id
    * Get workspace by ID
    */
   async getById(req: Request, res: Response) {
@@ -118,7 +118,7 @@ export class WorkspaceController {
   }
 
   /**
-   * PATCH /workspaces/:id
+   * PATCH /api/workspaces/:id
    * Update workspace
    */
   async update(req: Request, res: Response) {
@@ -164,7 +164,7 @@ export class WorkspaceController {
   }
 
   /**
-   * DELETE /workspaces/:id
+   * DELETE /api/workspaces/:id
    * Delete workspace (soft delete)
    */
   async delete(req: Request, res: Response) {

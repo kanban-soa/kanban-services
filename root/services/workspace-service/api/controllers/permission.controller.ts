@@ -23,7 +23,7 @@ import {
  */
 export class PermissionController {
   /**
-   * GET /workspaces/:id/permissions
+   * GET /api/workspaces/:id/permissions
    * Get user's permissions in workspace
    */
   async getPermissions(req: Request, res: Response) {
@@ -76,7 +76,7 @@ export class PermissionController {
   }
 
   /**
-   * POST /workspaces/:id/permissions
+   * POST /api/workspaces/:id/permissions
    * Check specific permission
    */
   async checkPermission(req: Request, res: Response) {
@@ -118,7 +118,7 @@ export class PermissionController {
   }
 
   /**
-   * GET /workspaces/:id/roles
+   * GET /api/workspaces/:id/roles
    * Get all roles in workspace
    */
   async getRoles(req: Request, res: Response) {
@@ -199,7 +199,7 @@ export class PermissionController {
   }
 
   /**
-   * GET /workspaces/:id/roles/:roleId/permissions
+   * GET /api/workspaces/:id/roles/:roleId/permissions
    * Get role permissions
    */
   async getRolePermissions(req: Request, res: Response) {

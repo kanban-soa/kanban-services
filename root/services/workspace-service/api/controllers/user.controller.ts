@@ -10,7 +10,7 @@ import { ERROR_MESSAGES, HTTP_STATUS } from "@workspace-service/config/constants
  */
 export class UserController {
     /**
-     * GET /workspaces/:id/users
+     * GET /api/workspaces/:id/users
      * Get all users in workspace
      */
     async getUsers(req: Request, res: Response) {
