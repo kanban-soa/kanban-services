@@ -1,8 +1,12 @@
 import pg from 'pg';
+import * as dotenv from 'dotenv';
+import path from 'path';
+
+// Load .env explicitly from the board-service root
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+
 import { drizzle } from 'drizzle-orm/node-postgres';
-import * as schema from '@/noti-service/schema';
-import  dotenv  from 'dotenv';
-dotenv.config();
+import * as schema from '../schema';
 const { Pool } = pg;
 
 if (!process.env.BOARD_URL) {
@@ -10,7 +14,7 @@ if (!process.env.BOARD_URL) {
 }
 
 export const pool = new Pool({
-  connectionString: process.env.NOTI_URL,
+  connectionString: process.env.BOARD_URL,
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,

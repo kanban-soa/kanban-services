@@ -3,9 +3,18 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "dev": "npx nodemon --exec \"npx tsx index.ts\"",
+    "dev": "npx nodemon --ext ts,js,json --exec \"npx tsx index.ts\"",
+    "db:seed": "npx tsx seeds/board.seed.ts",
     "db:push": "npx drizzle-kit push"
-
   },
-  "dependencies": {}
+  "dependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^20",
+    "@types/pg": "^8.20.0",
+    "dotenv": "^17.4.2",
+    "drizzle-kit": "^0.31.10",
+    "express-validator": "^7.3.2",
+    "typescript": "^5",
+    "zod": "^4.3.6"
+  }
 }

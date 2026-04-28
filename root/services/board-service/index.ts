@@ -1,21 +1,13 @@
-import express, { Request, Response } from 'express';
 import dotenv from 'dotenv';
-import { pool } from '@/noti-service/config';
-
 dotenv.config({
   debug: true
 });
+import express from 'express';
+import { pool } from '@/board-service/config/database';
 
 const app = express();
 
 app.use(express.json());
-
-// Routes
-// app.use('/v1/notifications', notificationRouter);
-
-// app.get('/', (req: Request, res: Response) => {
-//     res.json({ message: 'Notification service is running' });
-// });
 
 const port = process.env.BOARD_PORT;
 
@@ -27,6 +19,11 @@ app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
 });
 
+//Kiểm tra kết nối DB ngay khi khởi động
+pool.query('SELECT 1')
+    .then(() => console.log('Database connected successfully'))
+    .catch((err) => console.error('Database connection failed:', err));
+
 pool.on('connect', () => {
-    console.log('Database connected');
+    console.log('A new database client connected');
 });
