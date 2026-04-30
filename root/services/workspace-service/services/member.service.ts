@@ -229,6 +229,18 @@ export class MemberService {
       throw error;
     }
   }
+
+  /**
+   * Get a subset of members by id for internal summaries
+   */
+  async getMemberSummaries(workspaceId: number, memberIds: number[]) {
+    const members = await memberRepository.findMembersByIds(workspaceId, memberIds);
+    return members.map((member) => ({
+      id: member.id,
+      email: member.email,
+      userId: member.userId ?? null,
+    }));
+  }
 }
 
 export const memberService = new MemberService();

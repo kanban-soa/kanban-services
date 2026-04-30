@@ -1,7 +1,6 @@
 import { db } from "@workspace-service/lib/db";
 import { workspaceMembers } from "@workspace-service/schema/members";
-import { workspaceRoles } from "@workspace-service/schema/permissions";
-import { eq, and, isNull, desc } from "drizzle-orm";
+import { eq, and, isNull, desc, inArray } from "drizzle-orm";
 import { logger } from "@workspace-service/utils/logger";
 
 export interface CreateMemberInput {
@@ -257,6 +256,31 @@ export class MemberRepository {
       return result;
     } catch (error) {
       logger.error("Error finding admin members", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Find members by ids within a workspace
+   */
+  async findMembersByIds(workspaceId: number, memberIds: number[]) {
+    try {
+      if (memberIds.length === 0) {
+        return [];
+      }
+      const result = await db
+        .select()
+        .from(workspaceMembers)
+        .where(
+          and(
+            eq(workspaceMembers.workspaceId, workspaceId),
+            inArray(workspaceMembers.id, memberIds),
+            isNull(workspaceMembers.deletedAt)
+          )
+        );
+      return result;
+    } catch (error) {
+      logger.error("Error finding members by ids", error);
       throw error;
     }
   }
