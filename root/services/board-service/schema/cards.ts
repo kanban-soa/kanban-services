@@ -12,7 +12,7 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 
-import { boards, labels, lists } from "@/board-service/schema/";
+import { boards, labels, lists } from "./index.js";
 
 export const activityTypes = [
   "card.created",

@@ -1,14 +1,15 @@
-const express = require('express');
+import express from 'express';
+import { boardRoutes } from './api/routes/board.route';
 
 const app = express();
 
 app.use(express.json());
 
-app.get('/', (req: Request, res: Response) => {
-});
+app.use('/api', boardRoutes);
 
-const port = process.env.BOARD_PORT|| 9003;
+const port = process.env.BOARD_PORT || 9003;
 
 app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
+  console.log(`Server is running on port ${port}`);
 });
+

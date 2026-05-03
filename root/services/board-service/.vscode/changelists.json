@@ -1,0 +1,28 @@
+{
+  "changelists": [
+    {
+      "name": "Default",
+      "files": [
+        "root/services/board-service/api/controllers/board.controller.ts",
+        "root/services/board-service/api/dto/board.dto.ts",
+        "root/services/board-service/api/routes/board.route.ts",
+        "root/services/board-service/app.ts",
+        "root/services/board-service/config/database.ts",
+        "root/services/board-service/index.ts",
+        "root/services/board-service/repositories/board.repository.ts",
+        "root/services/board-service/schema/cards.ts",
+        "root/services/board-service/services/board.service.ts",
+        "root/services/board-service/services/index.ts",
+        "root/services/board-service/README.md",
+        "root/services/board-service/docs/API_DOCUMENTATION.md",
+        "root/services/board-service/docs/board-service-workflow.md",
+        "root/services/board-service/middlewares/validate.ts",
+        "root/services/board-service/shared/utils/public-id.ts",
+        "root/services/board-service/shared/utils/slugify.ts",
+        "root/services/board-service/.vscode/changelists.json",
+        "root/services/board-service/package.json"
+      ]
+    }
+  ],
+  "active": "Default"
+}
