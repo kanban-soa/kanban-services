@@ -1,0 +1,5 @@
+CREATE DATABASE auth_db;
+CREATE DATABASE noti_db;
+CREATE DATABASE board_db;
+CREATE DATABASE workspace_db;
+CREATE DATABASE statistic_db;
