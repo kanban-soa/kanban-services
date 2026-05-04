@@ -20,16 +20,15 @@ app.use((req: Request, res: Response, next) => {
 app.use('/api/boards', boardRoutes);
 console.log('Board service is starting...');
 
-const port = process.env.BOARD_PORT;
-
-if (!port) {
-    throw new Error('BOARD_PORT is not defined');
-}
-
-app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
+app.listen(Number(port), () => {
+  console.log(`Server is running on port ${port}`);
 });
 
-pool.on('connect', () => {
-    console.log('Database connected');
+pool.on("connect", () => {
+  console.log("Database connected");
+});
+
+pool.on("error", (err) => {
+  console.error("Unexpected error on idle client", err);
+  process.exit(-1);
 });

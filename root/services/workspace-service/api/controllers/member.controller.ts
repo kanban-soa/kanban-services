@@ -77,7 +77,7 @@ export class MemberController {
   }
 
   /**
-   * GET /workspaces/:id/members
+   * GET /api/workspaces/:id/members
    * Get all members in workspace
    */
   async getMembers(req: Request, res: Response) {
@@ -175,7 +175,7 @@ export class MemberController {
   }
 
   /**
-   * DELETE /workspaces/:id/members/:memberId
+   * DELETE /api/workspaces/:id/members/:memberId
    * Remove member from workspace
    */
   async removeMember(req: Request, res: Response) {
@@ -215,7 +215,7 @@ export class MemberController {
   }
 
   /**
-   * GET /workspaces/:id/members/:memberId
+   * GET /api/workspaces/:id/members/:memberId
    * Get member details
    */
   async getMember(req: Request, res: Response) {
@@ -249,6 +249,47 @@ export class MemberController {
       }
       logger.error("Error getting member", error);
       return sendError(res, message);
+    }
+  }
+
+  /**
+   * POST /api/workspaces/:id/members/summary
+   * Return a compact list of member ids and emails for internal lookups
+   */
+  async getMemberSummaries(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const userId = req.user?.id;
+
+      if (!userId) {
+        return sendUnauthorized(res);
+      }
+
+      const workspaceId = parseInt(id, 10);
+      if (isNaN(workspaceId)) {
+        return sendBadRequest(res, "Invalid workspace ID");
+      }
+
+      const isMember = await workspaceService.isMember(workspaceId, userId);
+      if (!isMember) {
+        return sendForbidden(res, ERROR_MESSAGES.PERMISSION_DENIED);
+      }
+
+      const ids = Array.isArray(req.body?.ids) ? req.body.ids : [];
+      const memberIds = ids
+        .map((value: unknown) => Number(value))
+        .filter((value: number) => Number.isFinite(value));
+
+      if (memberIds.length === 0) {
+        return sendSuccess(res, { members: [] }, "Member summaries");
+      }
+
+      const members = await memberService.getMemberSummaries(workspaceId, memberIds);
+
+      return sendSuccess(res, { members }, "Member summaries");
+    } catch (error) {
+      logger.error("Error getting member summaries", error);
+      return sendError(res, (error as Error).message);
     }
   }
 }
