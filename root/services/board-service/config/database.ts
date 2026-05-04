@@ -1,6 +1,6 @@
 import pg from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import * as schema from '@/noti-service/schema';
+import * as schema from '../schema';
 import  dotenv  from 'dotenv';
 dotenv.config();
 const { Pool } = pg;
@@ -10,7 +10,7 @@ if (!process.env.BOARD_URL) {
 }
 
 export const pool = new Pool({
-  connectionString: process.env.NOTI_URL,
+  connectionString: process.env.BOARD_URL,
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,

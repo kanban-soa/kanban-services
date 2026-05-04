@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import dotenv from 'dotenv';
-import { pool } from '@/noti-service/config';
+import { pool } from '../board-service/config';
+import { boardRoutes } from './api/routes/board.route';
 
 dotenv.config({
   debug: true
@@ -10,12 +11,14 @@ const app = express();
 
 app.use(express.json());
 
-// Routes
-// app.use('/v1/notifications', notificationRouter);
+// Middleware to log requests
+app.use((req: Request, res: Response, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
 
-// app.get('/', (req: Request, res: Response) => {
-//     res.json({ message: 'Notification service is running' });
-// });
+app.use('/api/boards', boardRoutes);
+console.log('Board service is starting...');
 
 const port = process.env.BOARD_PORT;
 
