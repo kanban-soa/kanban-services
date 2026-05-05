@@ -17,7 +17,8 @@
     "stat:dev": "npm run dev --workspace=root/services/statistic-service",
     "stat:migrate": "npm run db:push --workspace=root/services/statistic-service",
     "board:dev": "npm run dev --workspace=root/services/board-service",
-    "board:migrate": "npm run db:push --workspace=root/services/board-service"
+    "board:migrate": "npm run db:push --workspace=root/services/board-service",
+    "db:push:all": "npm run auth:migrate && npm run workspace:migrate && npm run noti:migrate && npm run board:migrate"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",
