@@ -1,15 +1,24 @@
-import express from "express";
-import "dotenv/config";
-import { pool } from "@/board-service/config";
-import statisticsRouter from "./api/routes/statistics.route";
+import express, { Request, Response } from 'express';
+import dotenv from 'dotenv';
+import { pool } from '../board-service/config';
+import { boardRoutes } from './api/routes/board.route';
+
+dotenv.config({
+  debug: true
+});
 
 const app = express();
 
 app.use(express.json());
 
-app.use("/api/internal/statistics", statisticsRouter);
+// Middleware to log requests
+app.use((req: Request, res: Response, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
 
-const port = process.env.BOARD_PORT || "9003";
+app.use('/api/boards', boardRoutes);
+console.log('Board service is starting...');
 
 app.listen(Number(port), () => {
   console.log(`Server is running on port ${port}`);
