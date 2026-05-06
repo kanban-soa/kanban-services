@@ -40,8 +40,10 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-
+*.vscode
 package-lock.json
 
 DOCUMENTATION_SUMMARY.md
 WORKSPACE_SERVICE_SETUP.md
+
+.claude 

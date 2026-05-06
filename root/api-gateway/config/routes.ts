@@ -9,14 +9,21 @@ export const routes: RouteConfig[] = [
     target: config.services.auth,
     auth: false,
     methods: ['POST'],
-    rewrite: (p) => p.replace('/api/v1/auth', ''),
+    rewrite: (p) => p.replace('/api/v1/auth/login', '/api/users/login'),
   },
   {
     prefix: '/api/v1/auth/register',
     target: config.services.auth,
     auth: false,
     methods: ['POST'],
-    rewrite: (p) => p.replace('/api/v1/auth', ''),
+    rewrite: (p) => p.replace('/api/v1/auth/register', '/api/users'),
+  },
+  {
+    prefix: '/api/v1/auth/verify-jwt',
+    target: config.services.auth,
+    auth: false,
+    methods: ['POST'],
+    rewrite: (p) => p.replace('/api/v1/auth/verify-jwt', '/api/sessions/verify-jwt'),
   },
 
   // ── Workspace Service ─────────────────────────────────────────────

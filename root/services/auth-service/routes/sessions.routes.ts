@@ -16,4 +16,6 @@ router.get('/accounts/:userId', AuthController.getUserAccounts);
 router.post('/verifications', AuthController.createVerification);
 router.post('/verifications/verify', AuthController.verifyCode);
 
+router.post('/verify-jwt', AuthController.verifyJwt);
+
 export default router;

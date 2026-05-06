@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import jwt, { TokenExpiredError } from 'jsonwebtoken';
 import { AuthService } from '@/auth-service/services/auth.service';
 
 export const AuthController = {
@@ -13,7 +14,7 @@ export const AuthController = {
 
   getSession: async (req: Request, res: Response) => {
     try {
-      const session = await AuthService.getSession(req.params.token);
+      const session = await AuthService.getSession(req.params.token as string);
       if (!session) {
         return res.status(404).json({ error: 'Session not found' });
       }
@@ -25,7 +26,7 @@ export const AuthController = {
 
   getSessionWithUser: async (req: Request, res: Response) => {
     try {
-      const result = await AuthService.getSessionWithUser(req.params.token);
+      const result = await AuthService.getSessionWithUser(req.params.token as string);
       if (!result) {
         return res.status(404).json({ error: 'Session not found' });
       }
@@ -37,7 +38,7 @@ export const AuthController = {
 
   deleteSession: async (req: Request, res: Response) => {
     try {
-      await AuthService.deleteSession(parseInt(req.params.id));
+      await AuthService.deleteSession(parseInt(req.params.id as string));
       res.json({ success: true });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -46,7 +47,7 @@ export const AuthController = {
 
   deleteUserSessions: async (req: Request, res: Response) => {
     try {
-      await AuthService.deleteUserSessions(req.params.userId);
+      await AuthService.deleteUserSessions(req.params.userId as string);
       res.json({ success: true });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -65,7 +66,7 @@ export const AuthController = {
   unlinkAccount: async (req: Request, res: Response) => {
     try {
       const { userId, providerId } = req.params;
-      await AuthService.unlinkAccount(userId, providerId);
+      await AuthService.unlinkAccount(userId as string, providerId as string);
       res.json({ success: true });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -74,7 +75,7 @@ export const AuthController = {
 
   getUserAccounts: async (req: Request, res: Response) => {
     try {
-      const accounts = await AuthService.getUserAccounts(req.params.userId);
+      const accounts = await AuthService.getUserAccounts(req.params.userId as string);
       res.json(accounts);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -97,6 +98,49 @@ export const AuthController = {
       res.json({ success: true });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
+    }
+  },
+
+  verifyJwt: async (req: Request, res: Response) => {
+    try {
+      const authHeader = req.headers.authorization;
+      const token = authHeader?.startsWith('Bearer ') ? authHeader.slice('Bearer '.length) : null;
+
+      if (!token) {
+        return res.status(401).json({ error: 'Authorization token is required' });
+      }
+
+      const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+
+      const payload = jwt.verify(token, JWT_SECRET) as jwt.JwtPayload;
+
+      const userId = payload.id ?? payload.sub;
+      if (!userId) {
+        return res.status(401).json({ error: 'Token is missing subject' });
+      }
+
+      const user = await AuthService.getUserById(String(userId));
+      if (!user) {
+        return res.status(401).json({ error: 'User not found' });
+      }
+
+      const { password: _, ...userWithoutPassword } = user;
+
+      res.json({
+        user: userWithoutPassword,
+        token: {
+          sub: userId,
+          email: payload.email,
+          role: payload.role,
+          iat: payload.iat,
+          exp: payload.exp,
+        },
+      });
+    } catch (error) {
+      if (error instanceof TokenExpiredError) {
+        return res.status(401).json({ error: 'Token has expired' });
+      }
+      res.status(401).json({ error: 'Invalid token' });
     }
   },
 };

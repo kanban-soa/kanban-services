@@ -1,27 +1,31 @@
 import { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
-import config from "@workspace-service/config/env";
-import logger from "@workspace-service/utils/logger";
+
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        id: string;
+        email: string;
+        role: string;
+      };
+    }
+  }
+}
 
 export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
-  // 1. Get token from Header
-  const authHeader = req.headers.authorization;
-  const token = authHeader && authHeader.split(" ")[1];
-  
-  if (!token) {
-      return res.status(401).json({ message: "Missing Token" });
-    }
-    
-    try {
-    // 2. Use secret from config file to verify
-    const decoded = jwt.verify(token, config.jwt.secret);
-    
-    // 3. Save user information into request for controllers to use
-    (req as any).user = decoded; 
-    
-    next(); // Allow request to go to Controller
-  } catch (error) {
-    logger.error("Error verifying token", error);
-    return res.status(403).json({ message: "Invalid or Expired Token" });
+  const userId = req.headers["x-user-id"];
+  const userEmail = req.headers["x-user-email"];
+  const userRole = req.headers["x-user-role"];
+
+  if (!userId || !userEmail || !userRole) {
+    return res.status(401).json({ message: "Missing user identity headers" });
   }
+
+  req.user = {
+    id: userId as string,
+    email: userEmail as string,
+    role: userRole as string,
+  };
+
+  next();
 };

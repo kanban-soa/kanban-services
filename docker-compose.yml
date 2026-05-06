@@ -1,41 +1,19 @@
-name: "kanban"
+name: "kanban_services"
 
 services:
-  auth_db:
+  postgres_cluster:
     image: postgres:15
-    container_name: auth_postgres
+    container_name: kanban_postgres
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin
-      POSTGRES_DB: auth_db
+      POSTGRES_DB: db
     ports:
-      - "5433:5432"
+      - "5432:5432"
     volumes:
-      - auth_data:/var/lib/postgresql/data
-
-  noti_db:
-    image: postgres:15
-    container_name: noti_postgres
-    environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin
-      POSTGRES_DB: noti_db
-    ports:
-      - "5434:5432"
-    volumes:
-      - noti_data:/var/lib/postgresql/data
-
-  board_db:
-    image: postgres:15
-    container_name: board_postgres
-    environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin
-      POSTGRES_DB: board_db
-    ports:
-      - "5435:5432"
-    volumes:
-      - board_data:/var/lib/postgresql/data
+      - postgres_cluster_data:/var/lib/postgresql/data
+      - ./infrastructure/postgres/init-dbs.sql:/docker-entrypoint-initdb.d/init-dbs.sql
+    restart: always
 
   statistic_db:
     image: postgres:15
@@ -170,8 +148,4 @@ services:
       - workspace_service
 
 volumes:
-  auth_data:
-  noti_data:
-  board_data:
-  statistic_data:
-  workspace_data:
+  postgres_cluster_data:
