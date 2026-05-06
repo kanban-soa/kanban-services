@@ -57,7 +57,7 @@ export const routes: RouteConfig[] = [
     prefix: '/api/v1/statistics',
     target: config.services.statistic,
     auth: false,
-    rewrite: (p) => p.replace('/api/v1/statistics', '/api/v1/statistics'),
+    rewrite: (p) => p.replace('/api/v1/statistics', '/api/statistics'),
     rateLimit: { windowMs: 60_000, maxRequests: 60 },
   },
 ];
