@@ -44,6 +44,9 @@ function buildForwardHeaders(req: AuthenticatedRequest): Headers {
     headers.set('x-user-role', req.user.role);
   }
 
+  // Do not forward the original content-length because we are re-serializing the body
+  headers.delete('content-length');
+
   return headers;
 }
 
@@ -101,14 +104,23 @@ export async function proxyMiddleware(req: AuthenticatedRequest, res: Response):
   const clientId = req.user?.id ?? req.ip ?? 'anon';
 
   try {
-    // TODO: add circuit breaker with opossum to prevent cascading failures.
-    // TODO: add response caching for GET-heavy routes like /statistics.
-    const response = await fetch(targetUrl, {
+    let bodyBuffer: Buffer | undefined = undefined;
+    if (hasBody) {
+      const chunks: any[] = [];
+      for await (const chunk of req) {
+        chunks.push(chunk);
+      }
+      bodyBuffer = Buffer.concat(chunks);
+    }
+
+    const fetchOptions: RequestInit = {
       method: req.method,
       headers,
-      body: hasBody ? (req as unknown as Request).body : undefined,
+      body: bodyBuffer ? new Uint8Array(bodyBuffer) : undefined,
       signal: AbortSignal.timeout(config.upstreamTimeoutMs),
-    });
+    };
+
+    const response = await fetch(targetUrl, fetchOptions);
 
     const responseHeaders = stripUpstreamHeaders(response.headers);
     Object.entries(responseHeaders).forEach(([key, value]) => {

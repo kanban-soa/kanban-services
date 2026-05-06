@@ -20,6 +20,8 @@ app.use((req: Request, res: Response, next) => {
 app.use('/api/boards', boardRoutes);
 console.log('Board service is starting...');
 
+const port = process.env.BOARD_PORT || 9003;
+
 app.listen(Number(port), () => {
   console.log(`Server is running on port ${port}`);
 });
