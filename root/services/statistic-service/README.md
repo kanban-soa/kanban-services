@@ -4,8 +4,8 @@
 Statistic Service aggregates board and workspace data and exposes it via a REST API.
 
 ## Docs
-- Swagger UI: `/docs`
-- OpenAPI JSON: `/docs.json`
+- Swagger UI: `{statistic_service_url}/docs`
+- OpenAPI JSON: `{statistic_service_url}/docs.json`
 
 ## Development
 Run the service (from this folder):
@@ -19,4 +19,3 @@ pnpm dev
 ```bash
 pnpm test
 ```
-

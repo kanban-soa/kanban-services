@@ -7,7 +7,7 @@ export const openApiDocument = {
   },
   servers: [{ url: "/" }],
   paths: {
-    "/api/v1/statistics": {
+    "/api/statistics": {
       get: {
         summary: "Get statistics",
         description: "Returns metrics, activity, priorities, and workloads for the selected range.",
