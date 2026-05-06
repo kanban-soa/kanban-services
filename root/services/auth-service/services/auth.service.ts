@@ -4,6 +4,7 @@ import { session, account, verification } from '@/auth-service/schema/auth';
 import { eq, and, lt as lessThan } from 'drizzle-orm';
 import { hashPassword } from '@/auth-service/lib';
 import { randomBytes } from 'crypto';
+import { UsersService } from './users.service';
 
 function generateToken(): string {
   return randomBytes(32).toString('hex');
@@ -225,5 +226,9 @@ export class AuthService {
     const now = new Date();
     await db.delete(session)
       .where(lessThan(session.expiresAt, now));
+  }
+
+  static async getUserById(userId: string) {
+    return UsersService.getUserById(userId);
   }
 }

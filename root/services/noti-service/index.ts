@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import dotenv from 'dotenv';
 import { pool } from '@/noti-service/config';
-import { notificationRouter } from './routes/v1/notifications';
+import { notificationRouter } from '@/noti-service/routes/';
 
 dotenv.config({
   debug: true
@@ -12,7 +12,7 @@ const app = express();
 app.use(express.json());
 
 // Routes
-app.use('/v1/notifications', notificationRouter);
+app.use('/api/notifications', notificationRouter);
 
 app.get('/', (req: Request, res: Response) => {
     res.json({ message: 'Notification service is running' });

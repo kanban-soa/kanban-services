@@ -7,6 +7,8 @@ let statisticsRoutes: typeof import("../api/routes/v1/statistics").statisticsRou
 
 beforeAll(async () => {
   process.env.DATABASE_URL = process.env.DATABASE_URL ?? "postgres://user:pass@localhost:5432/test";
+  process.env.BOARD_SERVICE_URL = process.env.BOARD_SERVICE_URL ?? "http://board.local";
+  process.env.WORKSPACE_SERVICE_URL = process.env.WORKSPACE_SERVICE_URL ?? "http://workspace.local";
   ({ statisticsRoutes } = await import("../api/routes/v1/statistics"));
 });
 

@@ -22,6 +22,7 @@ router.post("/:id/members", memberController.inviteMember.bind(memberController)
 router.get("/:id/members/:memberId", memberController.getMember.bind(memberController));
 router.patch("/:id/members/:memberId", memberController.updateMemberRole.bind(memberController));
 router.delete("/:id/members/:memberId", memberController.removeMember.bind(memberController));
+router.post("/:id/members/summary", memberController.getMemberSummaries.bind(memberController));
 
 // --- Permission & Role Routes ---
 router.get("/:id/permissions", (req, res, next) => {

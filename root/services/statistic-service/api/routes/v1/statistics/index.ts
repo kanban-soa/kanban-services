@@ -2,15 +2,6 @@ import { Router, type Request, type Response } from "express";
 import { z } from "zod";
 import { getStatistics } from "../../../../services/statistics";
 
-let cachedDb: typeof import("../../../../config/database") | null = null;
-
-async function getDb() {
-  if (!cachedDb) {
-    cachedDb = await import("../../../../config/database");
-  }
-  return cachedDb.db;
-}
-
 const querySchema = z.object({
   range: z.enum(["7d", "30d", "90d"]).optional(),
   workspaceId: z.string().optional(),
@@ -33,8 +24,11 @@ statisticsRoutes.get("/", async (req: Request, res: Response) => {
   }
 
   try {
-    const db = await getDb();
-    const data = await getStatistics(db, parsed.data as StatisticsQuery);
+    const data = await getStatistics(parsed.data as StatisticsQuery, {
+      authorization: req.headers.authorization,
+      requestId: req.headers["x-request-id"] as string | undefined,
+      user: (req as { user?: { id?: string; email?: string; role?: string } }).user,
+    });
     return res.json({ data });
   } catch (error) {
     console.error("Statistics fetch failed", error);

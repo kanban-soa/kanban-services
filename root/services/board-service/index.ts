@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import dotenv from 'dotenv';
-import { pool } from '@/noti-service/config';
+import { pool } from '../board-service/config';
+import { boardRoutes } from './api/routes/board.route';
 
 dotenv.config({
   debug: true
@@ -10,23 +11,26 @@ const app = express();
 
 app.use(express.json());
 
-// Routes
-// app.use('/v1/notifications', notificationRouter);
-
-// app.get('/', (req: Request, res: Response) => {
-//     res.json({ message: 'Notification service is running' });
-// });
-
-const port = process.env.BOARD_PORT;
-
-if (!port) {
-    throw new Error('BOARD_PORT is not defined');
-}
-
-app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
+// Middleware to log requests
+app.use((req: Request, res: Response, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
 });
 
-pool.on('connect', () => {
-    console.log('Database connected');
+app.use('/api/boards', boardRoutes);
+console.log('Board service is starting...');
+
+const port = process.env.BOARD_PORT || 9003;
+
+app.listen(Number(port), () => {
+  console.log(`Server is running on port ${port}`);
+});
+
+pool.on("connect", () => {
+  console.log("Database connected");
+});
+
+pool.on("error", (err) => {
+  console.error("Unexpected error on idle client", err);
+  process.exit(-1);
 });
