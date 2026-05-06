@@ -1,10 +1,9 @@
 import type { NextFunction, Response } from 'express';
-import jwt, { TokenExpiredError } from 'jsonwebtoken';
 import type { AuthenticatedRequest } from '../types';
 import config from '../config/env';
 import { sendGatewayError } from '../utils/response';
 
-export function authMiddleware(req: AuthenticatedRequest, res: Response, next: NextFunction): void {
+export async function authMiddleware(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
   const route = req.matchedRoute;
   if (route && route.auth === false) {
     next();
@@ -20,34 +19,44 @@ export function authMiddleware(req: AuthenticatedRequest, res: Response, next: N
   }
 
   try {
-    const payload = jwt.verify(token, config.jwt.secret) as jwt.JwtPayload & {
-      id?: string | number;
-      email?: string;
-      role?: string;
-    };
+    const response = await fetch(`${config.services.auth}/api/sessions/verify-jwt`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      signal: AbortSignal.timeout(config.upstreamTimeoutMs),
+    });
 
-    const idValue = payload.id ?? payload.sub;
-    if (idValue === undefined || idValue === null) {
-      sendGatewayError(res, req, 401, 'invalid_token', 'Token is missing subject');
+    if (!response.ok) {
+      sendGatewayError(res, req, 401, 'invalid_token', 'Token is invalid or expired');
       return;
     }
 
+    const data = await response.json();
+
+    if (!data?.user || !data?.token) {
+      sendGatewayError(res, req, 401, 'invalid_token', 'Token is invalid or expired');
+      return;
+    }
+
+    const { user, token: tokenData } = data;
+
     req.user = {
-      id: String(idValue),
-      email: payload.email,
-      role: payload.role,
-      iat: payload.iat,
-      exp: payload.exp,
+      id: String(tokenData.sub),
+      email: user.email,
+      role: tokenData.role || 'user',
+      iat: tokenData.iat,
+      exp: tokenData.exp,
     };
 
     next();
   } catch (error) {
-    if (error instanceof TokenExpiredError) {
-      sendGatewayError(res, req, 401, 'token_expired', 'Token has expired');
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      sendGatewayError(res, req, 504, 'auth_timeout', 'Authentication service did not respond in time');
       return;
     }
-
-    sendGatewayError(res, req, 401, 'invalid_token', 'Token is invalid');
+    sendGatewayError(res, req, 502, 'auth_unavailable', 'Could not reach authentication service');
   }
 }
 
