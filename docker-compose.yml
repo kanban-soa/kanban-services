@@ -15,30 +15,6 @@ services:
       - ./infrastructure/postgres/init-dbs.sql:/docker-entrypoint-initdb.d/init-dbs.sql
     restart: always
 
-  statistic_db:
-    image: postgres:15
-    container_name: statistic_postgres
-    environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin
-      POSTGRES_DB: statistic_db
-    ports:
-      - "5436:5432"
-    volumes:
-      - statistic_data:/var/lib/postgresql/data
-
-  workspace_db:
-    image: postgres:15
-    container_name: workspace_postgres
-    environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin
-      POSTGRES_DB: workspace_db
-    ports:
-      - "5437:5432"
-    volumes:
-      - workspace_data:/var/lib/postgresql/data
-
   auth_service:
     image: node:20-alpine
     container_name: auth_service
