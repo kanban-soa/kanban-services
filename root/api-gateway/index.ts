@@ -5,6 +5,7 @@ import { authMiddleware } from './middleware/auth.middleware';
 import { rateLimitMiddleware } from './middleware/rate-limit.middleware';
 import { proxyMiddleware } from './middleware/proxy.middleware';
 import { matchRoute } from './config/routes';
+import { registerSwaggerDocs } from './docs/swagger';
 
 const app = express();
 
@@ -13,6 +14,9 @@ app.use(corsMiddleware);
 
 // 2. Request ID — inject before any logging or processing
 app.use(requestIdMiddleware);
+
+// 2.5 Swagger docs — public gateway docs
+registerSwaggerDocs(app);
 
 // 3. Health check — bypass auth and rate limiting entirely
 app.get('/health', (_req, res) => {
@@ -42,4 +46,3 @@ app.use((_req, res) => {
 });
 
 export default app;
-
