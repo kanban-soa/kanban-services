@@ -152,13 +152,20 @@ export const openApiDocument = {
         },
       },
     },
-    "/api/v1/statistics": {
+    "/api/v1/statistics/{workspaceId}": {
       get: {
         summary: "Get statistics",
         description: "Proxies to the statistic service.",
         tags: ["statistics"],
         parameters: [
           { $ref: "#/components/parameters/RequestIdHeader" },
+          {
+            name: "workspaceId",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+            description: "Workspace identifier.",
+          },
           {
             name: "range",
             in: "query",

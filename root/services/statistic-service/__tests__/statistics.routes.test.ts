@@ -34,7 +34,7 @@ describe("statistics routes", () => {
     const app = express();
     app.use("/statistics", statisticsRoutes);
 
-    const response = await request(app).get("/statistics?range=7d");
+    const response = await request(app).get("/statistics/workspace-1?range=7d");
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual({
@@ -61,7 +61,7 @@ describe("statistics routes", () => {
     const app = express();
     app.use("/statistics", statisticsRoutes);
 
-    const response = await request(app).get("/statistics?range=2d");
+    const response = await request(app).get("/statistics/workspace-1?range=2d");
 
     expect(response.status).toBe(400);
     expect(response.body.error?.code).toBe("VALIDATION_ERROR");
@@ -73,7 +73,7 @@ describe("statistics routes", () => {
     const app = express();
     app.use("/statistics", statisticsRoutes);
 
-    const response = await request(app).get("/statistics?range=7d");
+    const response = await request(app).get("/statistics/workspace-1?range=7d");
 
     expect(response.status).toBe(500);
     expect(response.body.error?.code).toBe("STATISTICS_ERROR");

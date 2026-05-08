@@ -7,7 +7,7 @@ export const openApiDocument = {
   },
   servers: [{ url: "/" }],
   paths: {
-    "/api/statistics": {
+    "/api/statistics/{workspaceId}": {
       get: {
         summary: "Get statistics",
         description: "Returns metrics, activity, priorities, and workloads for the selected range.",
@@ -15,18 +15,18 @@ export const openApiDocument = {
         security: [{ bearerAuth: [] }],
         parameters: [
           {
+            name: "workspaceId",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+            description: "Workspace identifier.",
+          },
+          {
             name: "range",
             in: "query",
             required: false,
             schema: { type: "string", enum: ["7d", "30d", "90d"], default: "7d" },
             description: "Time window for statistics.",
-          },
-          {
-            name: "workspaceId",
-            in: "query",
-            required: false,
-            schema: { type: "string" },
-            description: "Workspace identifier.",
           },
           {
             name: "x-request-id",
