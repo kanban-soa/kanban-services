@@ -262,6 +262,15 @@ Returns:
 }
 ```
 
+## API Docs
+
+Swagger UI is exposed at:
+
+- `GET http://localhost:8080/docs`
+- `GET http://localhost:8080/docs.json`
+
+The OpenAPI document focuses on gateway-level endpoints and proxy entrypoints.
+
 ## Local Verification
 
 Quick checks:
@@ -286,4 +295,3 @@ The following are planned but not implemented:
 - Response caching for read-heavy routes
 - Prometheus metrics
 - mTLS for service-to-service requests
-

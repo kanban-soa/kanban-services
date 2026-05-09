@@ -1,4 +1,4 @@
-import { createServiceClient } from "../../common/utils/service-client";
+import { createServiceClient } from "../../../common/utils/service-client";
 import type {
   StatisticsRange,
   StatisticsResponse,
