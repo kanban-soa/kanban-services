@@ -262,6 +262,188 @@ Returns:
 }
 ```
 
+## API Endpoints
+
+### Gateway
+
+#### Health Check
+
+```http
+GET /health
+```
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `status` | `string` | Service health status |
+| `service` | `string` | Service identifier |
+| `timestamp` | `string` | ISO timestamp |
+
+---
+
+### Auth
+
+#### Login
+
+```http
+POST /api/v1/auth/login
+Content-Type: application/json
+```
+
+Request body:
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `email` | `string(email)` | Yes | User email |
+| `password` | `string` | Yes | User password |
+
+Responses: `200` (success), `401` (invalid credentials)
+
+---
+
+#### Register
+
+```http
+POST /api/v1/auth/register
+Content-Type: application/json
+```
+
+Request body:
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `email` | `string(email)` | Yes | User email |
+| `password` | `string` | Yes | User password |
+| `name` | `string` | Yes | User display name |
+
+Responses: `201` (created), `400` (validation error)
+
+---
+
+#### Verify JWT
+
+```http
+POST /api/v1/auth/verify-jwt
+Content-Type: application/json
+```
+
+Request body:
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `token` | `string` | Yes | JWT token to verify |
+
+Responses: `200` (valid), `401` (invalid or expired)
+
+---
+
+### Workspaces
+
+#### List Workspaces
+
+```http
+GET /api/v1/workspaces
+Authorization: Bearer <token>
+```
+
+| Header | Required | Description |
+| --- | --- | --- |
+| `Authorization` | Yes | Bearer JWT token |
+| `x-request-id` | No | Request correlation ID |
+
+Responses: `200` (workspace list), `401` (missing or invalid token)
+
+---
+
+#### Create Workspace
+
+```http
+POST /api/v1/workspaces
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+| Header | Required | Description |
+| --- | --- | --- |
+| `Authorization` | Yes | Bearer JWT token |
+| `x-request-id` | No | Request correlation ID |
+
+Responses: `201` (created), `400` (validation error), `401` (missing or invalid token)
+
+---
+
+### Boards
+
+#### List Boards
+
+```http
+GET /api/v1/boards
+Authorization: Bearer <token>
+```
+
+| Header | Required | Description |
+| --- | --- | --- |
+| `Authorization` | Yes | Bearer JWT token |
+| `x-request-id` | No | Request correlation ID |
+
+Responses: `200` (board list), `401` (missing or invalid token)
+
+---
+
+#### Create Board
+
+```http
+POST /api/v1/boards
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+| Header | Required | Description |
+| --- | --- | --- |
+| `Authorization` | Yes | Bearer JWT token |
+| `x-request-id` | No | Request correlation ID |
+
+Responses: `201` (created), `400` (validation error), `401` (missing or invalid token)
+
+---
+
+### Notifications
+
+#### List Notifications
+
+```http
+GET /api/v1/notifications
+Authorization: Bearer <token>
+```
+
+| Header | Required | Description |
+| --- | --- | --- |
+| `Authorization` | Yes | Bearer JWT token |
+| `x-request-id` | No | Request correlation ID |
+
+Responses: `200` (notification list), `401` (missing or invalid token)
+
+---
+
+### Statistics
+
+#### Get Statistics
+
+```http
+GET /api/v1/statistics
+```
+
+| Header | Required | Description |
+| --- | --- | --- |
+| `x-request-id` | No | Request correlation ID |
+
+Query parameters:
+
+| Param | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `range` | `string` | No | `7d` | Time window (`7d`, `30d`, `90d`) |
+
+Responses: `200` (statistics payload), `400` (invalid query parameters)
+
 ## API Docs
 
 Swagger UI is exposed at:
