@@ -93,6 +93,96 @@ export const openApiDocument = {
         },
       },
     },
+    "/api/statistics/{workspaceId}/export": {
+      get: {
+        summary: "Export statistics",
+        description: "Exports metrics, activity, priorities, and workloads in CSV or JSON format.",
+        tags: ["statistics"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "workspaceId",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+            description: "Workspace identifier.",
+          },
+          {
+            name: "range",
+            in: "query",
+            required: false,
+            schema: { type: "string", enum: ["7d", "30d", "90d"], default: "7d" },
+            description: "Time window for statistics.",
+          },
+          {
+            name: "format",
+            in: "query",
+            required: false,
+            schema: { type: "string", enum: ["csv", "json"], default: "csv" },
+            description: "Export format.",
+          },
+          {
+            name: "x-request-id",
+            in: "header",
+            required: false,
+            schema: { type: "string" },
+            description: "Optional request correlation id.",
+          },
+          {
+            name: "x-user-id",
+            in: "header",
+            required: false,
+            schema: { type: "string" },
+            description: "Optional user id for internal gateway auth.",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "Exported statistics file",
+            content: {
+              "text/csv": {
+                schema: { type: "string", format: "binary" },
+              },
+              "application/json": {
+                schema: { $ref: "#/components/schemas/StatisticsResponse" },
+              },
+            },
+          },
+          "400": {
+            description: "Invalid query parameters",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          "401": {
+            description: "Missing token",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          "403": {
+            description: "Invalid or expired token",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          "500": {
+            description: "Unexpected error",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
   },
   components: {
     securitySchemes: {
@@ -194,4 +284,3 @@ export const openApiDocument = {
     },
   },
 } as const;
-

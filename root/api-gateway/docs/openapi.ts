@@ -180,6 +180,41 @@ export const openApiDocument = {
         },
       },
     },
+    "/api/v1/statistics/{workspaceId}/export": {
+      get: {
+        summary: "Export statistics",
+        description: "Proxies to the statistic service.",
+        tags: ["statistics"],
+        parameters: [
+          { $ref: "#/components/parameters/RequestIdHeader" },
+          {
+            name: "workspaceId",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+            description: "Workspace identifier.",
+          },
+          {
+            name: "range",
+            in: "query",
+            required: false,
+            schema: { type: "string", enum: ["7d", "30d", "90d"], default: "7d" },
+            description: "Time window for statistics.",
+          },
+          {
+            name: "format",
+            in: "query",
+            required: false,
+            schema: { type: "string", enum: ["csv", "json"], default: "csv" },
+            description: "Export format.",
+          },
+        ],
+        responses: {
+          "200": { description: "Exported statistics file" },
+          "400": { description: "Invalid query parameters" },
+        },
+      },
+    },
   },
   components: {
     securitySchemes: {
@@ -235,4 +270,3 @@ export const openApiDocument = {
     },
   },
 } as const;
-
