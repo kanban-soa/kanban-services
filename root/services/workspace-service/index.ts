@@ -6,6 +6,6 @@ const app = express();
 
 app.use(express.json());
 app.use(authMiddleware);
-app.use("/api/v1/workspaces", routes);
+app.use("/api/workspaces", routes);
 
 export default app;
