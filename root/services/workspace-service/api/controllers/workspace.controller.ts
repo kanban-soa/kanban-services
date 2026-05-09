@@ -25,6 +25,7 @@ export class WorkspaceController {
   async create(req: Request, res: Response) {
     try {
       const userId = req.user?.id;
+      console.log("req.user", req.user);
       if (!userId) {
         return sendUnauthorized(res);
       }

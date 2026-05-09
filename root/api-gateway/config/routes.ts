@@ -31,7 +31,14 @@ export const routes: RouteConfig[] = [
     prefix: '/api/v1/workspaces',
     target: config.services.workspace,
     auth: true,
-    rewrite: (p) => p.replace('/api/v1', ''),
+    rewrite: (p) => p.replace('/api/v1', '/api'),
+    rateLimit: { windowMs: 60_000, maxRequests: 120 },
+  },
+  {
+    prefix: '/api/workspaces',
+    target: config.services.workspace,
+    auth: true,
+    // rewrite: (p) => p.replace('/api/v1', '/api/'),
     rateLimit: { windowMs: 60_000, maxRequests: 120 },
   },
 

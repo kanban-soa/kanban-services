@@ -15,7 +15,7 @@ interface Config {
 }
 
 function validateEnv(): Config {
-  const requiredEnvs = ["DATABASE_URL", "JWT_SECRET"];
+  const requiredEnvs = ["WORKSPACE_URL", "JWT_SECRET"];
   
   const missing = requiredEnvs.filter((env) => !process.env[env]);
   if (missing.length > 0) {
@@ -47,7 +47,7 @@ function validateEnv(): Config {
     port,
     nodeEnv,
     database: {
-      url: process.env.DATABASE_URL!,
+      url: process.env.WORKSPACE_URL!,
     },
     jwt: {
       secret: process.env.JWT_SECRET!,
