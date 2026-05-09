@@ -1,10 +1,10 @@
 openapi: 3.0.3
 info:
   title: Workspace Service API
-  description: Quản lý metadata workspace, thành viên và phân quyền.
+  description: Workspace management — CRUD workspaces, members, roles, and permissions.
   version: 1.0.0
 servers:
-  - url: http://localhost:9005/v1
+  - url: http://localhost:9005/api
     description: Local development
 
 components:
@@ -22,12 +22,52 @@ components:
         publicId: { type: string }
         name: { type: string }
         slug: { type: string }
+        description: { type: string }
         plan: { type: string, enum: [free, pro, enterprise] }
+
+    Member:
+      type: object
+      properties:
+        id: { type: integer }
+        userId: { type: string }
+        email: { type: string }
+        role: { type: string }
+        status: { type: string }
+
+    Role:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        description: { type: string }
+        hierarchyLevel: { type: integer }
+        isSystem: { type: boolean }
+
+    Permission:
+      type: object
+      properties:
+        canEdit: { type: boolean }
+        canDelete: { type: boolean }
+        canManageMembers: { type: boolean }
+
+    Pagination:
+      type: object
+      properties:
+        page: { type: integer }
+        limit: { type: integer }
+        total: { type: integer }
+        totalPages: { type: integer }
+
+    Error:
+      type: object
+      properties:
+        success: { type: boolean, example: false }
+        message: { type: string }
 
 paths:
   /workspaces:
     get:
-      summary: Get list of workspaces for the authenticated user
+      summary: List workspaces for the authenticated user
       security: [{ BearerAuth: [] }]
       responses:
         '200':
@@ -37,24 +77,42 @@ paths:
               schema:
                 type: array
                 items: { $ref: '#/components/schemas/Workspace' }
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
     post:
       summary: Create a new workspace
       security: [{ BearerAuth: [] }]
       requestBody:
+        required: true
         content:
           application/json:
             schema:
               type: object
-              required: [name, slug]
+              required: [name]
               properties:
                 name: { type: string }
                 slug: { type: string }
+                description: { type: string }
       responses:
         '201':
           description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Workspace' }
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /workspaces/{id}:
     get:
-      summary: Get detail of workspace by ID
-      security: [{ BearerAuth: [user] }]
+      summary: Get workspace by ID
+      security: [{ BearerAuth: [] }]
       parameters:
         - name: id
           in: path
@@ -66,9 +124,16 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Workspace' }
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden — not a member
+        '404':
+          description: Workspace not found
+
     patch:
-      summary: Update workspace details
-      security: [{ BearerAuth: [admin] }]
+      summary: Update workspace
+      security: [{ BearerAuth: [] }]
       parameters:
         - name: id
           in: path
@@ -82,16 +147,23 @@ paths:
               properties:
                 name: { type: string }
                 slug: { type: string }
+                description: { type: string }
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Workspace' }
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden — not an admin
+        '404':
+          description: Workspace not found
 
     delete:
-      summary: Delete a workspace
-      security: [{ BearerAuth: [admin] }]
+      summary: Delete workspace (soft delete)
+      security: [{ BearerAuth: [] }]
       parameters:
         - name: id
           in: path
@@ -100,13 +172,311 @@ paths:
       responses:
         '204':
           description: No Content
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden — not an admin
+        '404':
+          description: Workspace not found
 
   /workspaces/{id}/members:
     get:
-      summary: Get list of members in a workspace
+      summary: List members in workspace
       security: [{ BearerAuth: [] }]
       parameters:
         - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20 }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Member' }
+                  pagination: { $ref: '#/components/schemas/Pagination' }
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden — not a member
+
+    post:
+      summary: Invite a member to workspace
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+                role: { type: string }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Member' }
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden — not an admin
+
+    post:
+      summary: Get compact member list by IDs
+      description: Returns id and email for the given member IDs. Used for internal lookups.
+      operationId: getMemberSummaries
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ids:
+                  type: array
+                  items: { type: integer }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  members:
+                    type: array
+                    items: { $ref: '#/components/schemas/Member' }
+
+  /workspaces/{id}/members/{memberId}:
+    get:
+      summary: Get member detail
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: memberId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Member' }
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden — not a member
+        '404':
+          description: Member not found
+
+    patch:
+      summary: Update member role
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: memberId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role]
+              properties:
+                role: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Member' }
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden — not an admin
+        '404':
+          description: Member not found
+
+    delete:
+      summary: Remove member from workspace
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: memberId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204':
+          description: No Content
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden — not an admin
+        '404':
+          description: Member not found
+
+  /workspaces/{id}/permissions:
+    get:
+      summary: Get current user permissions
+      description: |
+        Returns the current user's permissions (canEdit, canDelete, canManageMembers).
+        If query param `permission` is provided, checks a single permission instead.
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: permission
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Permission'
+                  - type: object
+                    properties:
+                      hasPermission: { type: boolean }
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden — not a member
+
+    post:
+      summary: Check a specific permission
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [permission]
+              properties:
+                permission: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  hasPermission: { type: boolean }
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden — not a member
+
+  /workspaces/{id}/roles:
+    get:
+      summary: List roles in workspace
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Role' }
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden — not an admin
+
+    post:
+      summary: Create a new role
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, hierarchyLevel]
+              properties:
+                name: { type: string }
+                description: { type: string }
+                hierarchyLevel: { type: integer }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Role' }
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden — not an admin
+
+  /workspaces/{id}/roles/{roleId}/permissions:
+    get:
+      summary: Get permissions for a role
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: roleId
           in: path
           required: true
           schema: { type: integer }
@@ -120,169 +490,43 @@ paths:
                 items:
                   type: object
                   properties:
-                    userId: { type: integer }
-                    role: { type: string, enum: [admin, member] }
+                    permission: { type: string }
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden — not an admin
+
     post:
-      summary: Add a member to a workspace
+      summary: Grant permission to a role
       security: [{ BearerAuth: [] }]
       parameters:
         - name: id
           in: path
           required: true
           schema: { type: integer }
+        - name: roleId
+          in: path
+          required: true
+          schema: { type: integer }
       requestBody:
+        required: true
         content:
           application/json:
             schema:
               type: object
-              required: [userId, role]
+              required: [permission]
               properties:
-                userId: { type: integer }
-                role: { type: string, enum: [admin, member] }
+                permission: { type: string }
       responses:
         '201':
           description: Created
-
-    patch:
-      summary: Update a member's role in a workspace
-      security: [{ BearerAuth: [admin] }]
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
-        - name: userId
-          in: query
-          required: true
-          schema: { type: integer }
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [role]
-              properties:
-                role: { type: string, enum: [admin, member] }
-      responses:
-        '200':
-          description: OK
-
-    delete:
-      summary: Remove a member from a workspace
-      security: [{ BearerAuth: [admin] }]
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
-        - name: userId
-          in: query
-          required: true
-          schema: { type: integer }
-      responses:
-        '204':
-          description: No Content
-
-  /workspaces/{id}/permissions:
-    get:
-      summary: Get permissions for a workspace
-      security: [{ BearerAuth: [] }]
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
-      responses:
-        '200':
-          description: OK
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  canEdit: { type: boolean }
-                  canDelete: { type: boolean }
-                  canManageMembers: { type: boolean }
-
-    post:
-      summary: Update permissions for a workspace
-      security: [{ BearerAuth: [admin] }]
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                canEdit: { type: boolean }
-                canDelete: { type: boolean }
-                canManageMembers: { type: boolean }
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  canEdit: { type: boolean }
-                  canDelete: { type: boolean }
-                  canManageMembers: { type: boolean }
-
-    put:
-      summary: Set permissions for a workspace
-      security: [{ BearerAuth: [admin] }]
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [canEdit, canDelete, canManageMembers]
-              properties:
-                canEdit: { type: boolean }
-                canDelete: { type: boolean }
-                canManageMembers: { type: boolean }
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  canEdit: { type: boolean }
-                  canDelete: { type: boolean }
-                  canManageMembers: { type: boolean }
-
-    get:
-      summary: Check if user has specific permission in a workspace
-      security: [{ BearerAuth: [] }]
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
-        - name: permission
-          in: query
-          required: true
-          schema: { type: string, enum: [canEdit, canDelete, canManageMembers] }
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  hasPermission: { type: boolean }  
-      
-
+                  permission: { type: string }
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden — not an admin

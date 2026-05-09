@@ -4,38 +4,49 @@ This directory contains comprehensive documentation for the Workspace Service mi
 
 ## Documents
 
-### 📋 [api-spec.yaml](./api-spec.yaml)
+### [api-spec.yaml](./api-spec.yaml)
 OpenAPI 3.0 specification for all Workspace Service REST APIs.
 
 **Endpoints**:
 ```
-GET    /workspaces                     List workspaces
-POST   /workspaces                     Create workspace
-GET    /workspaces/{id}                Get workspace detail
-PATCH  /workspaces/{id}                Update workspace
-DELETE /workspaces/{id}                Delete workspace
+Workspace
+  GET    /workspaces                           List workspaces
+  POST   /workspaces                           Create workspace
+  GET    /workspaces/{id}                      Get workspace detail
+  PATCH  /workspaces/{id}                      Update workspace
+  DELETE /workspaces/{id}                      Delete workspace
 
-GET    /workspaces/{id}/members        List members
-POST   /workspaces/{id}/members        Add member
-PATCH  /workspaces/{id}/members        Update member role
-DELETE /workspaces/{id}/members        Remove member
+Members
+  GET    /workspaces/{id}/members              List members (paginated)
+  POST   /workspaces/{id}/members              Invite member
+  GET    /workspaces/{id}/members/{memberId}   Get member detail
+  PATCH  /workspaces/{id}/members/{memberId}   Update member role
+  DELETE /workspaces/{id}/members/{memberId}   Remove member
+  POST   /workspaces/{id}/members/summary      Get member summaries by IDs
 
-GET    /workspaces/{id}/permissions    Get permissions
-POST   /workspaces/{id}/permissions    Update permissions
-PUT    /workspaces/{id}/permissions    Set permissions
+Permissions
+  GET    /workspaces/{id}/permissions          Get current user permissions
+  GET    /workspaces/{id}/permissions?permission=X  Check specific permission
+  POST   /workspaces/{id}/permissions          Check specific permission (body)
+
+Roles
+  GET    /workspaces/{id}/roles                List roles
+  POST   /workspaces/{id}/roles                Create role
+  GET    /workspaces/{id}/roles/{roleId}/permissions   Get role permissions
+  POST   /workspaces/{id}/roles/{roleId}/permissions   Grant permission to role
 ```
 
 **Features**:
-- ✅ Complete request/response schemas
-- ✅ Security schemes (JWT Bearer)
-- ✅ Error responses
-- ✅ Importable to Swagger/Postman
+- Complete request/response schemas
+- Security schemes (JWT Bearer)
+- Error responses
+- Importable to Swagger/Postman
 
 **Usage**: Import into Swagger UI, Postman, or any OpenAPI-compatible tool for interactive API documentation.
 
 ---
 
-### 🔌 [webhook.md](./webhook.md)
+### [webhook.md](./webhook.md)
 Complete guide to event-driven communication in the Workspace Service.
 
 **Event-Driven Communication** - Async inter-service events
@@ -76,7 +87,7 @@ permissions.updated        Permissions changed
 
 ---
 
-### 🏗️ [architecture.md](./architacture.md)
+### [architecture.md](./architacture.md)
 Deep dive into the microservice architecture and design decisions.
 
 **Sections**:
@@ -93,27 +104,11 @@ Deep dive into the microservice architecture and design decisions.
 10. **Future Enhancements** - Planned features
 
 **Key Design Decisions**:
-- ✅ Soft links (no FK to Auth Service)
-- ✅ Async event-based integration
-- ✅ Row-level security enabled
-- ✅ Stateless service (horizontally scalable)
-- ✅ RBAC with custom roles
-
----
-
-## Quick Navigation
-
-### For API Consumers
-Start with: **api-spec.yaml** → Interactive API documentation
-
-### For Backend Developers
-Start with: **architecture.md** → Understanding service design
-
-### For Integration Engineers
-Start with: **webhook.md** → Event handling and inter-service communication
-
-### For DevOps/Infrastructure
-Start with: **architecture.md** → Deployment and monitoring sections
+- Soft links (no FK to Auth Service)
+- Async event-based integration
+- Row-level security enabled
+- Stateless service (horizontally scalable)
+- RBAC with custom roles
 
 ---
 
@@ -180,10 +175,10 @@ workspaces (1) ──────┐
 - `workspace_role_permissions` - Granular permissions per role
 
 **Features**:
-- ✅ Soft deletes (deletedAt timestamp)
-- ✅ RLS enabled on all tables
-- ✅ Comprehensive indexing
-- ✅ Audit fields (createdBy, deletedBy)
+- Soft deletes (deletedAt timestamp)
+- RLS enabled on all tables
+- Comprehensive indexing
+- Audit fields (createdBy, deletedBy)
 
 ---
 
@@ -211,11 +206,11 @@ Required environment variables:
 
 ```env
 # Database
-DATABASE_URL=postgresql://user:password@localhost:5432/workspace_db
+WORKSPACE_URL=postgresql://user:password@localhost:5437/workspace_db
 
 # Server
 NODE_ENV=development
-PORT=3001
+WORKSPACE_SERVICE_PORT=9005
 
 # Auth
 JWT_SECRET=your-secret-key (if validating locally)
@@ -252,7 +247,7 @@ npm run dev
 npm run workspace:dev
 ```
 
-Server will be available at: `http://localhost:3001`
+Server will be available at: `http://localhost:9005`
 
 ---
 
@@ -275,16 +270,8 @@ npm run webhook:test
 
 ### API Documentation
 - **OpenAPI**: [api-spec.yaml](./api-spec.yaml)
-- **Swagger UI**: `http://localhost:3001/api-docs`
+- **Swagger UI**: `http://localhost:9005/api-docs`
 - **Postman Collection**: [Coming soon]
-
----
-
-## Support & Questions
-
-- 📖 Documentation: Review relevant .md file
-- 🐛 Issues: Check GitHub issues
-- 💬 Questions: Create a discussion
 
 ---
 
@@ -292,10 +279,10 @@ npm run webhook:test
 
 | Document | Last Updated | Next Review |
 |----------|--------------|-------------|
-| api-spec.yaml | 2024-01-15 | 2024-02-15 |
+| api-spec.yaml | 2025-05-09 | 2025-06-09 |
 | webhook.md | 2024-01-15 | 2024-02-15 |
 | architecture.md | 2024-01-15 | 2024-02-15 |
-| README.md (this file) | 2024-01-15 | 2024-02-15 |
+| README.md (this file) | 2025-05-09 | 2025-06-09 |
 
 Keep these documents in sync with code changes, especially when:
 - Adding new API endpoints
