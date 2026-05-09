@@ -23,7 +23,7 @@ import {
  */
 export class PermissionController {
   /**
-   * GET /api/workspaces/:id/permissions
+   * GET /api/v1/workspaces/:id/permissions
    * Get user's permissions in workspace
    */
   async getPermissions(req: Request, res: Response) {
@@ -35,7 +35,7 @@ export class PermissionController {
         return sendUnauthorized(res);
       }
 
-      const workspaceId = parseInt(id, 10);
+      const workspaceId = parseInt(id as string, 10);
       if (isNaN(workspaceId)) {
         return sendBadRequest(res, "Invalid workspace ID");
       }
@@ -76,7 +76,7 @@ export class PermissionController {
   }
 
   /**
-   * POST /api/workspaces/:id/permissions
+   * POST /api/v1/workspaces/:id/permissions
    * Check specific permission
    */
   async checkPermission(req: Request, res: Response) {
@@ -94,7 +94,7 @@ export class PermissionController {
         return sendBadRequest(res, "Permission is required");
       }
 
-      const workspaceId = parseInt(id, 10);
+      const workspaceId = parseInt(id as string, 10);
       if (isNaN(workspaceId)) {
         return sendBadRequest(res, "Invalid workspace ID");
       }
@@ -118,7 +118,7 @@ export class PermissionController {
   }
 
   /**
-   * GET /api/workspaces/:id/roles
+   * GET /api/v1/workspaces/:id/roles
    * Get all roles in workspace
    */
   async getRoles(req: Request, res: Response) {
@@ -130,7 +130,7 @@ export class PermissionController {
         return sendUnauthorized(res);
       }
 
-      const workspaceId = parseInt(id, 10);
+      const workspaceId = parseInt(id as string, 10);
       if (isNaN(workspaceId)) {
         return sendBadRequest(res, "Invalid workspace ID");
       }
@@ -162,7 +162,7 @@ export class PermissionController {
         return sendUnauthorized(res);
       }
 
-      const workspaceId = parseInt(id, 10);
+      const workspaceId = parseInt(id as string, 10);
       if (isNaN(workspaceId)) {
         return sendBadRequest(res, "Invalid workspace ID");
       }
@@ -199,7 +199,7 @@ export class PermissionController {
   }
 
   /**
-   * GET /api/workspaces/:id/roles/:roleId/permissions
+   * GET /api/v1/workspaces/:id/roles/:roleId/permissions
    * Get role permissions
    */
   async getRolePermissions(req: Request, res: Response) {
@@ -211,8 +211,8 @@ export class PermissionController {
         return sendUnauthorized(res);
       }
 
-      const workspaceId = parseInt(id, 10);
-      const roleIdNum = parseInt(roleId, 10);
+      const workspaceId = parseInt(id as string, 10);
+      const roleIdNum = parseInt(roleId as string, 10);
 
       if (isNaN(workspaceId) || isNaN(roleIdNum)) {
         return sendBadRequest(res, "Invalid workspace or role ID");
@@ -250,8 +250,8 @@ export class PermissionController {
         return sendBadRequest(res, "Permission is required");
       }
 
-      const workspaceId = parseInt(id, 10);
-      const roleIdNum = parseInt(roleId, 10);
+      const workspaceId = parseInt(id as string, 10);
+      const roleIdNum = parseInt(roleId as string, 10);
 
       if (isNaN(workspaceId) || isNaN(roleIdNum)) {
         return sendBadRequest(res, "Invalid workspace or role ID");

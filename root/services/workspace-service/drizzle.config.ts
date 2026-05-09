@@ -13,6 +13,6 @@ export default defineConfig({
   schema: "./schema/index.ts",
   dialect: "postgresql",
   dbCredentials: {
-    url: process.env.DATABASE_URL!,
+    url: process.env.WORKSPACE_URL!,
   },
 });
