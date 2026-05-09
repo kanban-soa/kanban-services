@@ -15,7 +15,7 @@ interface Config {
 }
 
 function validateEnv(): Config {
-  const requiredEnvs = ["DATABASE_URL", "JWT_SECRET"];
+  const requiredEnvs = ["WORKSPACE_URL", "JWT_SECRET"];
   
   const missing = requiredEnvs.filter((env) => !process.env[env]);
   if (missing.length > 0) {
@@ -24,9 +24,9 @@ function validateEnv(): Config {
     );
   }
 
-  const port = parseInt(process.env.PORT || "3001", 10);
+  const port = parseInt(process.env.WORKSPACE_SERVICE_PORT || "3001", 10);
   if (isNaN(port) || port < 1 || port > 65535) {
-    throw new Error(`Invalid PORT: ${process.env.PORT}. Must be between 1 and 65535`);
+    throw new Error(`Invalid PORT: ${process.env.WORKSPACE_SERVICE_PORT}. Must be between 1 and 65535`);
   }
 
   const nodeEnv = process.env.NODE_ENV || "development";

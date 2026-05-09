@@ -38,7 +38,7 @@ export class MemberController {
         return sendUnauthorized(res);
       }
 
-      const workspaceId = parseInt(id, 10);
+      const workspaceId = parseInt(id as string, 10);
       if (isNaN(workspaceId)) {
         return sendBadRequest(res, "Invalid workspace ID");
       }
@@ -77,7 +77,7 @@ export class MemberController {
   }
 
   /**
-   * GET /api/workspaces/:id/members
+   * GET /api/v1/workspaces/:id/members
    * Get all members in workspace
    */
   async getMembers(req: Request, res: Response) {
@@ -89,7 +89,7 @@ export class MemberController {
         return sendUnauthorized(res);
       }
 
-      const workspaceId = parseInt(id, 10);
+      const workspaceId = parseInt(id as string, 10);
       if (isNaN(workspaceId)) {
         return sendBadRequest(res, "Invalid workspace ID");
       }
@@ -139,8 +139,8 @@ export class MemberController {
         return sendUnauthorized(res);
       }
 
-      const workspaceId = parseInt(id, 10);
-      const memberIdNum = parseInt(memberId, 10);
+      const workspaceId = parseInt(id as string, 10);
+      const memberIdNum = parseInt(memberId as string, 10);
 
       if (isNaN(workspaceId) || isNaN(memberIdNum)) {
         return sendBadRequest(res, "Invalid workspace or member ID");
@@ -175,7 +175,7 @@ export class MemberController {
   }
 
   /**
-   * DELETE /api/workspaces/:id/members/:memberId
+   * DELETE /api/v1/workspaces/:id/members/:memberId
    * Remove member from workspace
    */
   async removeMember(req: Request, res: Response) {
@@ -187,8 +187,8 @@ export class MemberController {
         return sendUnauthorized(res);
       }
 
-      const workspaceId = parseInt(id, 10);
-      const memberIdNum = parseInt(memberId, 10);
+      const workspaceId = parseInt(id as string, 10);
+      const memberIdNum = parseInt(memberId as string, 10);
 
       if (isNaN(workspaceId) || isNaN(memberIdNum)) {
         return sendBadRequest(res, "Invalid workspace or member ID");
@@ -215,7 +215,7 @@ export class MemberController {
   }
 
   /**
-   * GET /api/workspaces/:id/members/:memberId
+   * GET /api/v1/workspaces/:id/members/:memberId
    * Get member details
    */
   async getMember(req: Request, res: Response) {
@@ -227,8 +227,8 @@ export class MemberController {
         return sendUnauthorized(res);
       }
 
-      const workspaceId = parseInt(id, 10);
-      const memberIdNum = parseInt(memberId, 10);
+      const workspaceId = parseInt(id as string, 10);
+      const memberIdNum = parseInt(memberId as string, 10);
 
       if (isNaN(workspaceId) || isNaN(memberIdNum)) {
         return sendBadRequest(res, "Invalid workspace or member ID");
@@ -253,7 +253,7 @@ export class MemberController {
   }
 
   /**
-   * POST /api/workspaces/:id/members/summary
+   * POST /api/v1/workspaces/:id/members/summary
    * Return a compact list of member ids and emails for internal lookups
    */
   async getMemberSummaries(req: Request, res: Response) {
@@ -265,7 +265,7 @@ export class MemberController {
         return sendUnauthorized(res);
       }
 
-      const workspaceId = parseInt(id, 10);
+      const workspaceId = parseInt(id as string, 10);
       if (isNaN(workspaceId)) {
         return sendBadRequest(res, "Invalid workspace ID");
       }

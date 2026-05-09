@@ -19,7 +19,7 @@ import { ERROR_MESSAGES, HTTP_STATUS } from "@workspace-service/config/constants
  */
 export class WorkspaceController {
   /**
-   * POST /api/workspaces
+   * POST /api/v1/workspaces
    * Create a new workspace
    */
   async create(req: Request, res: Response) {
@@ -60,7 +60,7 @@ export class WorkspaceController {
   }
 
   /**
-   * GET /api/workspaces/:id
+   * GET /api/v1/workspaces/:id
    * Get workspace by ID
    */
   async getById(req: Request, res: Response) {
@@ -73,7 +73,7 @@ export class WorkspaceController {
         return sendUnauthorized(res);
       }
 
-      const workspaceId = parseInt(id, 10);
+      const workspaceId = parseInt(id as string, 10);
       if (isNaN(workspaceId)) {
         return sendBadRequest(res, "Invalid workspace ID");
       }
@@ -118,7 +118,7 @@ export class WorkspaceController {
   }
 
   /**
-   * PATCH /api/workspaces/:id
+   * PATCH /api/v1/workspaces/:id
    * Update workspace
    */
   async update(req: Request, res: Response) {
@@ -130,7 +130,7 @@ export class WorkspaceController {
         return sendUnauthorized(res);
       }
 
-      const workspaceId = parseInt(id, 10);
+      const workspaceId = parseInt(id as string, 10);
       if (isNaN(workspaceId)) {
         return sendBadRequest(res, "Invalid workspace ID");
       }
@@ -164,7 +164,7 @@ export class WorkspaceController {
   }
 
   /**
-   * DELETE /api/workspaces/:id
+   * DELETE /api/v1/workspaces/:id
    * Delete workspace (soft delete)
    */
   async delete(req: Request, res: Response) {
@@ -176,7 +176,7 @@ export class WorkspaceController {
         return sendUnauthorized(res);
       }
 
-      const workspaceId = parseInt(id, 10);
+      const workspaceId = parseInt(id as string, 10);
       if (isNaN(workspaceId)) {
         return sendBadRequest(res, "Invalid workspace ID");
       }

@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
-import { userService } from "@workspace-service/services/user.service";
+// import { userService } from "@workspace-service/services/user.service";
+import { memberRepository } from "@workspace-service/repositories/member.repo";
+import { permissionService } from "@workspace-service/services/permission.service";
 import { sendSuccess, sendError, sendBadRequest, sendNotFound, sendForbidden, sendUnauthorized } from "@workspace-service/utils/response.util";
 import { logger } from "@workspace-service/utils/logger";
 import { ERROR_MESSAGES, HTTP_STATUS } from "@workspace-service/config/constants";
@@ -10,7 +12,7 @@ import { ERROR_MESSAGES, HTTP_STATUS } from "@workspace-service/config/constants
  */
 export class UserController {
     /**
-     * GET /api/workspaces/:id/users
+     * GET /api/v1/workspaces/:id/users
      * Get all users in workspace
      */
     async getUsers(req: Request, res: Response) {
@@ -22,7 +24,7 @@ export class UserController {
                 return sendUnauthorized(res);
             }
 
-            const workspaceId = parseInt(id, 10);
+            const workspaceId = parseInt(id as string, 10);
             if (isNaN(workspaceId)) {
                 return sendBadRequest(res, "Invalid workspace ID");
             }
