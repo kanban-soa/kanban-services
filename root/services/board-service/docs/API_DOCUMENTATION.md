@@ -2,7 +2,7 @@
 
 This document provides a detailed specification for the Kanban Board Service API.
 
-**Base URL:** `http://localhost:9003/api/v1`
+**Base URL:** `http://localhost:9003/boards`
 
 ## Authentication
 
