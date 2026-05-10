@@ -12,6 +12,7 @@ import {
 } from "@workspace-service/utils/response.util";
 import { logger } from "@workspace-service/utils/logger";
 import { ERROR_MESSAGES, HTTP_STATUS } from "@workspace-service/config/constants";
+import { boardClient } from "@workspace-service/infrastructure/clients";
 
 /**
  * Workspace Controller
@@ -189,6 +190,8 @@ export class WorkspaceController {
       }
 
       await workspaceService.deleteWorkspace(workspaceId, userId);
+
+      await boardClient.deleteBoardsByWorkspace(id as string, userId);
 
       logger.info(`Workspace deleted by user ${userId}: ${workspaceId}`);
       return res.status(HTTP_STATUS.NO_CONTENT).send();
