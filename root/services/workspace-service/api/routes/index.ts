@@ -8,6 +8,7 @@ const router = Router();
 // Middleware to mock authentication for testing if needed
 // In a real scenario, there would be an auth middleware applied to these routes
 // router.use(authMiddleware);
+// endpoint: /api/workspaces
 
 // --- Workspace Routes ---
 router.post("/", workspaceController.create.bind(workspaceController));

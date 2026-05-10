@@ -1,10 +1,10 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { getStatistics } from "../services/statistics";
-import { createServiceClient } from "../../common/utils/service-client";
+import { createServiceClient } from "../../../common/utils/service-client";
 
 const requestJsonMock = vi.fn();
 
-vi.mock("../../common/utils/service-client", () => ({
+vi.mock("../../../common/utils/service-client", () => ({
   createServiceClient: vi.fn(() => ({ requestJson: requestJsonMock })),
 }));
 
