@@ -34,3 +34,15 @@
 ├── Dockerfile              <-- Service-specific containerization
 └── package.json            <-- Service-specific dependencies
 ```
+
+## Statistics sample data
+
+Populate workspace and board sample data for statistics testing:
+
+```bash
+DATABASE_URL="postgresql://user:password@localhost:5432/workspace_db" \
+BOARD_URL="postgresql://user:password@localhost:5432/board_db" \
+npm run seed:stats
+```
+
+The script reuses the `stats-acme` and `stats-orbit` workspaces and refreshes their members/boards on each run.

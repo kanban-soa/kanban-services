@@ -149,7 +149,7 @@ async function fetchBoardMetrics(
 ): Promise<BoardMetrics> {
   const response = await getBoardClient().requestJson<{ data: BoardMetrics }>({
     method: "GET",
-    path: "/api/internal/statistics/metrics",
+    path: "/api/boards/statistics/metrics",
     query: {
       from: filter.from.toISOString(),
       to: filter.to.toISOString(),
@@ -168,7 +168,7 @@ async function fetchBoardActivities(
 ): Promise<BoardActivity[]> {
   const response = await getBoardClient().requestJson<{ data: BoardActivity[] }>({
     method: "GET",
-    path: "/api/internal/statistics/activities",
+    path: "/api/boards/statistics/activities",
     query: {
       from: filter.from.toISOString(),
       to: filter.to.toISOString(),
@@ -188,7 +188,7 @@ async function fetchBoardPriorities(
 ): Promise<BoardPriorityRow[]> {
   const response = await getBoardClient().requestJson<{ data: BoardPriorityRow[] }>({
     method: "GET",
-    path: "/api/internal/statistics/priorities",
+    path: "/api/boards/statistics/priorities",
     query: {
       from: filter.from.toISOString(),
       to: filter.to.toISOString(),
@@ -208,7 +208,7 @@ async function fetchBoardWorkloads(
 ): Promise<BoardWorkloadRow[]> {
   const response = await getBoardClient().requestJson<{ data: BoardWorkloadRow[] }>({
     method: "GET",
-    path: "/api/internal/statistics/workloads",
+    path: "/api/boards/statistics/workloads",
     query: {
       from: filter.from.toISOString(),
       to: filter.to.toISOString(),
