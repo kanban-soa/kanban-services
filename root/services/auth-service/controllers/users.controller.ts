@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { UsersService } from '@/auth-service/services/users.service';
 import { AuthService } from '@/auth-service/services/auth.service';
-import { generateToken } from '@/auth-service/lib';
+import { generateToken, sendPasswordResetEmail } from '@/auth-service/lib';
 
 export const UsersController = {
   createUser: async (req: Request, res: Response) => {
@@ -37,17 +37,19 @@ export const UsersController = {
       }
 
       const user = await UsersService.getUserByEmail(email);
-      if (!user) {
+      if (!user || !user.email) {
         return res.json({ success: true, message: 'If the email is registered, a password reset code has been sent.' });
       }
 
       const verification = await AuthService.createVerification({ identifier: user.email });
-      // In a real application, you would send this code via email.
-      // For development/testing, we return it in the response.
+      
+      // Send verification code via email
+      await sendPasswordResetEmail(user.email, verification.value);
+
       res.json({ 
         success: true, 
         message: 'If the email is registered, a password reset code has been sent.',
-        _devCode: verification.value 
+        // _devCode: verification.value // Removed dev code for security
       });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
