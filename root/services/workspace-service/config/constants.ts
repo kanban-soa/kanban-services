@@ -127,6 +127,8 @@ export const ERROR_MESSAGES = {
   INVALID_ROLE: "Invalid role",
   INVALID_PERMISSION: "Invalid permission",
   DATABASE_ERROR: "Database error",
+  USER_NOT_FOUND: "User not found",
+  SERVICE_UNAVAILABLE: "External service unavailable",
 } as const;
 
 /**

@@ -12,6 +12,11 @@ interface Config {
     secret: string;
   };
   logLevel: string;
+  services: {
+    authUrl: string;
+    boardUrl: string;
+    notificationUrl: string;
+  };
 }
 
 function validateEnv(): Config {
@@ -53,6 +58,11 @@ function validateEnv(): Config {
       secret: process.env.JWT_SECRET!,
     },
     logLevel,
+    services: {
+      authUrl: process.env.AUTH_SERVICE_URL || "http://localhost:9001",
+      boardUrl: process.env.BOARD_SERVICE_URL || "http://localhost:9003",
+      notificationUrl: process.env.NOTIFICATION_SERVICE_URL || "http://localhost:9004",
+    },
   };
 }
 
