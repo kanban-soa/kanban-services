@@ -1,16 +1,14 @@
 import express from 'express';
-import { boardRoutes } from './api/routes/board.route';
-import statisticsRoutes from "./api/routes/statistics.route";
+import routes from './api/routes';
+// import { errorMiddleware } from './middlewares/error.middleware';
 
 const app = express();
 
 app.use(express.json());
 
-app.use('/api', boardRoutes);
-app.use("/api/boards/statistics", statisticsRoutes);
+app.use('/api/v1', routes);
 
-const port = process.env.BOARD_PORT || 9003;
+// app.use(errorMiddleware);
 
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
-});
+export default app;
+
