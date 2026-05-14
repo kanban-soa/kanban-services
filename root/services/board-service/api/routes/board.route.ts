@@ -1,17 +1,20 @@
 import { Router } from 'express';
 import {
+  getBoards,
   createBoard,
   getBoardById,
   updateBoard,
+  deleteBoard,
+  getBoardDetail
 } from '../controllers/board.controller';
-import { validate } from '../../middlewares/validate';
-import { createBoardSchema, updateBoardSchema } from '../dto/board.dto';
 
 const router = Router();
 
-router.post('/', validate(createBoardSchema), createBoard);
+router.get('/', getBoards);
+router.post('/', createBoard);
 router.get('/:boardId', getBoardById);
-router.patch('/:boardId', validate(updateBoardSchema), updateBoard);
+router.patch('/:boardId', updateBoard);
+router.delete('/:boardId', deleteBoard);
+router.get('/:boardId/detail', getBoardDetail);
 
 export const boardRoutes = router;
-

@@ -2,7 +2,6 @@ import express, { Request, Response } from 'express';
 import dotenv from 'dotenv';
 import { pool } from '../board-service/config';
 import { boardRoutes } from './api/routes/board.route';
-import statisticsRoutes from "./api/routes/statistics.route";
 
 dotenv.config({
   debug: true
@@ -18,8 +17,7 @@ app.use((req: Request, res: Response, next) => {
   next();
 });
 
-app.use('/api/boards', boardRoutes);
-app.use("/api/boards/statistics", statisticsRoutes);
+app.use('/boards', boardRoutes);
 console.log('Board service is starting...');
 
 const port = process.env.BOARD_PORT || 9003;
