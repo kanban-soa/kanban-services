@@ -34,7 +34,9 @@ export const getBoardsByWorkspaceId = async (req: Request, res: Response) => {
   try {
     const workspaceId = req.query.workspaceId;
     if (typeof workspaceId !== 'string' || Number.isNaN(Number(workspaceId))) {
-      return res.status(400).json({ message: 'Invalid workspace ID' });
+      return res
+        .status(400)
+        .json({ message: 'Missing or invalid workspaceId query parameter' });
     }
 
     const boards = await boardService.getBoardsByWorkspaceId(workspaceId);
@@ -77,18 +79,25 @@ export const deleteBoardsByWorkspaceId = async (
     const deletedBy = req.header('x-user-id');
 
     if (typeof workspaceId !== 'string' || Number.isNaN(Number(workspaceId))) {
-      return res.status(400).json({ message: 'Invalid workspace ID' });
+      return res
+        .status(400)
+        .json({ message: 'Missing or invalid workspaceId query parameter' });
     }
 
     if (!deletedBy) {
       return res.status(400).json({ message: 'Missing x-user-id header' });
     }
 
-    await boardService.deleteBoardsByWorkspaceId(workspaceId, deletedBy);
+    const deletedBoards = await boardService.deleteBoardsByWorkspaceId(
+      workspaceId,
+      deletedBy,
+    );
 
     return res.status(200).json({
       success: true,
-      data: null,
+      data: {
+        deletedCount: deletedBoards.length,
+      },
     });
   } catch (error) {
     console.error('Error deleting boards by workspace:', error);
