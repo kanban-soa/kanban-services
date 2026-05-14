@@ -26,6 +26,15 @@ export class BoardRepository {
     });
   }
 
+  async findByWorkspaceId(workspaceId: string) {
+    return db.query.boards.findMany({
+      where: and(
+        eq(boards.workspaceId, Number(workspaceId)),
+        isNull(boards.deletedAt),
+      ),
+    });
+  }
+
   async update(
     boardId: string,
     data: { name?: string; description?: string },
@@ -36,5 +45,18 @@ export class BoardRepository {
       .where(eq(boards.publicId, boardId))
       .returning();
     return updatedBoard;
+  }
+
+  async softDeleteByWorkspaceId(workspaceId: string, deletedBy: string) {
+    return db
+      .update(boards)
+      .set({
+        deletedAt: new Date(),
+        deletedBy,
+      })
+      .where(
+        and(eq(boards.workspaceId, Number(workspaceId)), isNull(boards.deletedAt)),
+      )
+      .returning();
   }
 }

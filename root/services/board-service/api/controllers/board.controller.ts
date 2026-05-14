@@ -30,6 +30,24 @@ export const getBoardById = async (req: Request, res: Response) => {
   }
 };
 
+export const getBoardsByWorkspaceId = async (req: Request, res: Response) => {
+  try {
+    const workspaceId = req.query.workspaceId;
+    if (typeof workspaceId !== 'string' || Number.isNaN(Number(workspaceId))) {
+      return res.status(400).json({ message: 'Invalid workspace ID' });
+    }
+
+    const boards = await boardService.getBoardsByWorkspaceId(workspaceId);
+    return res.status(200).json({
+      success: true,
+      data: boards,
+    });
+  } catch (error) {
+    console.error('Error fetching boards by workspace:', error);
+    return res.status(500).json({ message: 'Failed to get boards' });
+  }
+};
+
 export const updateBoard = async (req: Request, res: Response) => {
   try {
     const { boardId } = req.params;
@@ -50,3 +68,30 @@ export const updateBoard = async (req: Request, res: Response) => {
   }
 };
 
+export const deleteBoardsByWorkspaceId = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const workspaceId = req.query.workspaceId;
+    const deletedBy = req.header('x-user-id');
+
+    if (typeof workspaceId !== 'string' || Number.isNaN(Number(workspaceId))) {
+      return res.status(400).json({ message: 'Invalid workspace ID' });
+    }
+
+    if (!deletedBy) {
+      return res.status(400).json({ message: 'Missing x-user-id header' });
+    }
+
+    await boardService.deleteBoardsByWorkspaceId(workspaceId, deletedBy);
+
+    return res.status(200).json({
+      success: true,
+      data: null,
+    });
+  } catch (error) {
+    console.error('Error deleting boards by workspace:', error);
+    return res.status(500).json({ message: 'Failed to delete boards' });
+  }
+};

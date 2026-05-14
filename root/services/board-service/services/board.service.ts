@@ -11,10 +11,18 @@ export class BoardService {
     return this.boardRepository.findById(boardId);
   }
 
+  async getBoardsByWorkspaceId(workspaceId: string) {
+    return this.boardRepository.findByWorkspaceId(workspaceId);
+  }
+
   async updateBoard(
     boardId: string,
     data: { name?: string; description?: string },
   ) {
     return this.boardRepository.update(boardId, data);
+  }
+
+  async deleteBoardsByWorkspaceId(workspaceId: string, deletedBy: string) {
+    return this.boardRepository.softDeleteByWorkspaceId(workspaceId, deletedBy);
   }
 }
