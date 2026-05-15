@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { logger } from "../../../common/utils/logger";
+import { sendUnauthorized } from "@workspace-service/utils/response.util";
+import { ERROR_CODES } from "@workspace-service/config/constants";
 
 // declare global {
 //   namespace Express {
@@ -24,7 +26,7 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
   const userRole = req.headers["x-user-role"];
 
   if (!userId || !userEmail || !userRole) {
-    return res.status(401).json({ message: "Missing user identity headers" });
+    return sendUnauthorized(res, ERROR_CODES.UNAUTHORIZED, "Missing user identity headers");
   }
 
   req.user = {

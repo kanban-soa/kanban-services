@@ -3,7 +3,8 @@ import { workspaceRepository } from "../repositories/workspace.repo";
 import { authClient } from "@workspace-service/infrastructure/clients/auth.client";
 import { generatePublicId } from "../utils/id.util";
 import { logger } from "../utils/logger";
-import { MEMBER_ROLES, MEMBER_STATUS, ERROR_MESSAGES } from "../config/constants";
+import { MEMBER_ROLES, MEMBER_STATUS, ERROR_CODES } from "../config/constants";
+import { AppError } from "../utils/AppError";
 
 export interface InviteMemberDTO {
   email: string;
@@ -30,7 +31,7 @@ export class MemberService {
       // Validate workspace exists
       const workspace = await workspaceRepository.findById(input.workspaceId);
       if (!workspace) {
-        throw new Error(ERROR_MESSAGES.WORKSPACE_NOT_FOUND);
+        throw new AppError(ERROR_CODES.WORKSPACE_NOT_FOUND);
       }
 
       // Verify user exists in auth-service
@@ -38,7 +39,7 @@ export class MemberService {
       try {
         authUser = await authClient.getUserByEmail(input.email);
       } catch {
-        throw new Error(ERROR_MESSAGES.USER_NOT_REGISTERED);
+        throw new AppError(ERROR_CODES.USER_NOT_REGISTERED);
       }
 
       // Check if member already exists
@@ -47,7 +48,7 @@ export class MemberService {
         input.workspaceId
       );
       if (exists) {
-        throw new Error(ERROR_MESSAGES.DUPLICATE_MEMBER);
+        throw new AppError(ERROR_CODES.DUPLICATE_MEMBER);
       }
 
       const publicId = generatePublicId();
@@ -82,12 +83,12 @@ export class MemberService {
     try {
       const member = await memberRepository.findById(memberId);
       if (!member) {
-        throw new Error(ERROR_MESSAGES.MEMBER_NOT_FOUND);
+        throw new AppError(ERROR_CODES.MEMBER_NOT_FOUND);
       }
 
       // Validate member is in "invited" status before accepting
       if (member.status !== MEMBER_STATUS.INVITED) {
-        throw new Error(`Member is not in invited status. Current status: ${member.status}`);
+        throw new AppError(ERROR_CODES.MEMBER_NOT_INVITED);
       }
 
       const updated = await memberRepository.update(memberId, {
@@ -110,7 +111,7 @@ export class MemberService {
     try {
       const member = await memberRepository.findById(memberId);
       if (!member) {
-        throw new Error(ERROR_MESSAGES.MEMBER_NOT_FOUND);
+        throw new AppError(ERROR_CODES.MEMBER_NOT_FOUND);
       }
       return member;
     } catch (error) {
@@ -142,12 +143,12 @@ export class MemberService {
       // Validate role
       const validRoles = Object.values(MEMBER_ROLES) as string[];
       if (!validRoles.includes(newRole)) {
-        throw new Error(ERROR_MESSAGES.INVALID_ROLE);
+        throw new AppError(ERROR_CODES.INVALID_ROLE);
       }
 
       const member = await memberRepository.findById(memberId);
       if (!member) {
-        throw new Error(ERROR_MESSAGES.MEMBER_NOT_FOUND);
+        throw new AppError(ERROR_CODES.MEMBER_NOT_FOUND);
       }
 
       const updated = await memberRepository.update(memberId, {
@@ -169,14 +170,14 @@ export class MemberService {
     try {
       const member = await memberRepository.findById(memberId);
       if (!member) {
-        throw new Error(ERROR_MESSAGES.MEMBER_NOT_FOUND);
+        throw new AppError(ERROR_CODES.MEMBER_NOT_FOUND);
       }
 
       // Prevent removing the only admin
       if (member.role === MEMBER_ROLES.ADMIN) {
         const admins = await memberRepository.findAdminsByWorkspace(member.workspaceId);
         if (admins.length === 1) {
-          throw new Error("Cannot remove the only admin member");
+          throw new AppError(ERROR_CODES.CANNOT_REMOVE_LAST_ADMIN);
         }
       }
 
@@ -196,7 +197,7 @@ export class MemberService {
     try {
       const member = await memberRepository.findById(memberId);
       if (!member) {
-        throw new Error(ERROR_MESSAGES.MEMBER_NOT_FOUND);
+        throw new AppError(ERROR_CODES.MEMBER_NOT_FOUND);
       }
       return member.role;
     } catch (error) {

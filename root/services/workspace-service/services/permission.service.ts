@@ -2,7 +2,8 @@ import { permissionRepository } from "../repositories/permission.repo";
 import { memberRepository } from "../repositories/member.repo";
 import { generatePublicId } from "../utils/id.util";
 import { logger } from "../utils/logger";
-import { ROLE_PERMISSIONS, PERMISSION_TYPES, ERROR_MESSAGES } from "../config/constants";
+import { ROLE_PERMISSIONS, PERMISSION_TYPES, ERROR_CODES } from "../config/constants";
+import { AppError } from "../utils/AppError";
 
 export interface CreateRoleDTO {
   workspaceId: number;
@@ -28,7 +29,7 @@ export class PermissionService {
         input.name
       );
       if (existing) {
-        throw new Error(`Role ${input.name} already exists in workspace`);
+        throw new AppError(ERROR_CODES.ROLE_ALREADY_EXISTS);
       }
 
       const publicId = generatePublicId();
@@ -57,7 +58,7 @@ export class PermissionService {
     try {
       const role = await permissionRepository.getRoleById(roleId);
       if (!role) {
-        throw new Error("Role not found");
+        throw new AppError(ERROR_CODES.ROLE_NOT_FOUND);
       }
       return role;
     } catch (error) {
@@ -86,7 +87,7 @@ export class PermissionService {
       // Validate permission against the canonical PERMISSION_TYPES list
       const validPermissions = Object.values(PERMISSION_TYPES) as string[];
       if (!validPermissions.includes(permission)) {
-        throw new Error(ERROR_MESSAGES.INVALID_PERMISSION);
+        throw new AppError(ERROR_CODES.INVALID_PERMISSION);
       }
 
       const result = await permissionRepository.createRolePermission({

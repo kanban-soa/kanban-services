@@ -3,7 +3,8 @@ import { memberRepository } from "../repositories/member.repo";
 import { permissionRepository } from "../repositories/permission.repo";
 import { generatePublicId, generateSlug, generateUniqueSlug } from "../utils/id.util";
 import { logger } from "../utils/logger";
-import { MEMBER_ROLES, MEMBER_STATUS, ERROR_MESSAGES } from "../config/constants";
+import { MEMBER_ROLES, MEMBER_STATUS, ERROR_CODES } from "../config/constants";
+import { AppError } from "../utils/AppError";
 
 export interface CreateWorkspaceDTO {
   name: string;
@@ -62,7 +63,7 @@ export class WorkspaceService {
   async getWorkspaceById(workspaceId: number) {
     const workspace = await workspaceRepository.findById(workspaceId);
     if (!workspace) {
-      throw new Error(ERROR_MESSAGES.WORKSPACE_NOT_FOUND);
+      throw new AppError(ERROR_CODES.WORKSPACE_NOT_FOUND);
     }
     const members = await memberRepository.countByWorkspace(workspaceId);
     return { ...workspace, members };
@@ -74,7 +75,7 @@ export class WorkspaceService {
   async getWorkspaceByPublicId(publicId: string) {
     const workspace = await workspaceRepository.findByPublicId(publicId);
     if (!workspace) {
-      throw new Error(ERROR_MESSAGES.WORKSPACE_NOT_FOUND);
+      throw new AppError(ERROR_CODES.WORKSPACE_NOT_FOUND);
     }
     return workspace;
   }
@@ -123,7 +124,7 @@ export class WorkspaceService {
       if (input.slug) {
         const slugExists = await workspaceRepository.slugExists(input.slug, workspaceId);
         if (slugExists) {
-          throw new Error(ERROR_MESSAGES.WORKSPACE_SLUG_EXISTS);
+          throw new AppError(ERROR_CODES.WORKSPACE_SLUG_EXISTS);
         }
       }
 

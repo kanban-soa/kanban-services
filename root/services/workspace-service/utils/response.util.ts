@@ -1,5 +1,6 @@
 import { Response } from "express";
-import { HTTP_STATUS } from "../config/constants";
+import { HTTP_STATUS, ERROR_CODE_MAP, ERROR_CODES } from "../config/constants";
+import { AppError } from "./AppError";
 
 /**
  * Standard API Response Interface
@@ -9,7 +10,7 @@ export interface ApiResponse<T = any> {
   statusCode: number;
   message: string;
   data?: T;
-  error?: string;
+  errorCode?: number;
   timestamp: string;
 }
 
@@ -71,11 +72,11 @@ export function sendNoContent(res: Response): Response {
 }
 
 /**
- * Send an error response
+ * Send an error response with errorCode
  */
 export function sendError(
   res: Response,
-  error: string,
+  errorCode: number,
   statusCode: number = HTTP_STATUS.INTERNAL_SERVER_ERROR,
   message: string = "Error"
 ): Response {
@@ -83,7 +84,7 @@ export function sendError(
     success: false,
     statusCode,
     message,
-    error,
+    errorCode,
     timestamp: new Date().toISOString(),
   };
 
@@ -95,10 +96,10 @@ export function sendError(
  */
 export function sendBadRequest(
   res: Response,
-  error: string,
+  errorCode: number,
   message: string = "Bad Request"
 ): Response {
-  return sendError(res, error, HTTP_STATUS.BAD_REQUEST, message);
+  return sendError(res, errorCode, HTTP_STATUS.BAD_REQUEST, message);
 }
 
 /**
@@ -106,10 +107,10 @@ export function sendBadRequest(
  */
 export function sendUnauthorized(
   res: Response,
-  error: string = "Unauthorized",
+  errorCode: number = ERROR_CODES.UNAUTHORIZED,
   message: string = "Unauthorized"
 ): Response {
-  return sendError(res, error, HTTP_STATUS.UNAUTHORIZED, message);
+  return sendError(res, errorCode, HTTP_STATUS.UNAUTHORIZED, message);
 }
 
 /**
@@ -117,10 +118,10 @@ export function sendUnauthorized(
  */
 export function sendForbidden(
   res: Response,
-  error: string = "Forbidden",
+  errorCode: number = ERROR_CODES.PERMISSION_DENIED,
   message: string = "Permission Denied"
 ): Response {
-  return sendError(res, error, HTTP_STATUS.FORBIDDEN, message);
+  return sendError(res, errorCode, HTTP_STATUS.FORBIDDEN, message);
 }
 
 /**
@@ -128,10 +129,10 @@ export function sendForbidden(
  */
 export function sendNotFound(
   res: Response,
-  error: string,
+  errorCode: number,
   message: string = "Not Found"
 ): Response {
-  return sendError(res, error, HTTP_STATUS.NOT_FOUND, message);
+  return sendError(res, errorCode, HTTP_STATUS.NOT_FOUND, message);
 }
 
 /**
@@ -173,4 +174,27 @@ export function calculatePagination(
     hasNextPage: page < totalPages,
     hasPreviousPage: page > 1,
   };
+}
+
+/**
+ * Handle an error caught in a controller.
+ * - If AppError: resolve code via ERROR_CODE_MAP and send mapped HTTP status with errorCode.
+ * - Otherwise: send generic 500 with no errorCode.
+ */
+export function handleControllerError(res: Response, error: unknown): Response {
+  if (error instanceof AppError) {
+    const entry = ERROR_CODE_MAP[error.code];
+    if (entry) {
+      return sendError(res, error.code, entry.httpStatus, "Error");
+    }
+  }
+
+  // Unexpected / non-AppError
+  const response: ApiResponse = {
+    success: false,
+    statusCode: HTTP_STATUS.INTERNAL_SERVER_ERROR,
+    message: "Internal Server Error",
+    timestamp: new Date().toISOString(),
+  };
+  return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json(response);
 }

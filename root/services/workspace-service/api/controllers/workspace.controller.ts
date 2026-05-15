@@ -4,14 +4,13 @@ import { permissionService } from "@workspace-service/services/permission.servic
 import {
   sendSuccess,
   sendCreated,
-  sendError,
   sendBadRequest,
-  sendNotFound,
-  sendForbidden,
   sendUnauthorized,
+  sendForbidden,
+  handleControllerError,
 } from "@workspace-service/utils/response.util";
 import { logger } from "@workspace-service/utils/logger";
-import { ERROR_MESSAGES, HTTP_STATUS } from "@workspace-service/config/constants";
+import { ERROR_CODES, HTTP_STATUS } from "@workspace-service/config/constants";
 import { boardClient } from "@workspace-service/infrastructure/clients";
 
 /**
@@ -34,7 +33,7 @@ export class WorkspaceController {
       const { name, slug, description } = req.body;
 
       if (!name || typeof name !== "string") {
-        return sendBadRequest(res, "Workspace name is required");
+        return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Workspace name is required");
       }
 
       const workspace = await workspaceService.createWorkspace({
@@ -57,7 +56,7 @@ export class WorkspaceController {
       return sendCreated(res, workspace, "Workspace created successfully");
     } catch (error) {
       logger.error("Error creating workspace", error);
-      return sendError(res, (error as Error).message);
+      return handleControllerError(res, error);
     }
   }
 
@@ -77,7 +76,7 @@ export class WorkspaceController {
 
       const workspaceId = parseInt(id as string, 10);
       if (isNaN(workspaceId)) {
-        return sendBadRequest(res, "Invalid workspace ID");
+        return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Invalid workspace ID");
       }
 
       const workspace = await workspaceService.getWorkspaceById(workspaceId);
@@ -85,17 +84,13 @@ export class WorkspaceController {
       // Check if user is member
       const isMember = await workspaceService.isMember(workspaceId, userId);
       if (!isMember) {
-        return sendForbidden(res, ERROR_MESSAGES.PERMISSION_DENIED);
+        return sendForbidden(res);
       }
 
       return sendSuccess(res, workspace);
     } catch (error) {
-      const message = (error as Error).message;
-      if (message === ERROR_MESSAGES.WORKSPACE_NOT_FOUND) {
-        return sendNotFound(res, message);
-      }
       logger.error("Error getting workspace", error);
-      return sendError(res, message);
+      return handleControllerError(res, error);
     }
   }
 
@@ -108,14 +103,14 @@ export class WorkspaceController {
       console.log("req.user", req.user);
       const userId = req.user?.id;
       if (!userId) {
-        return sendUnauthorized(res, "Unauthorized in get all workspaces");
+        return sendUnauthorized(res);
       }
 
       const workspaces = await workspaceService.getWorkspacesByUser(userId);
       return sendSuccess(res, workspaces);
     } catch (error) {
       logger.error("Error getting workspaces", error);
-      return sendError(res, (error as Error).message);
+      return handleControllerError(res, error);
     }
   }
 
@@ -134,13 +129,13 @@ export class WorkspaceController {
 
       const workspaceId = parseInt(id as string, 10);
       if (isNaN(workspaceId)) {
-        return sendBadRequest(res, "Invalid workspace ID");
+        return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Invalid workspace ID");
       }
 
       // Check if user is admin
       const isAdmin = await workspaceService.isAdmin(workspaceId, userId);
       if (!isAdmin) {
-        return sendForbidden(res, ERROR_MESSAGES.PERMISSION_DENIED);
+        return sendForbidden(res);
       }
 
       const { name, slug, description } = req.body;
@@ -153,15 +148,8 @@ export class WorkspaceController {
       logger.info(`Workspace updated by user ${userId}: ${workspaceId}`);
       return sendSuccess(res, workspace, "Workspace updated successfully");
     } catch (error) {
-      const message = (error as Error).message;
-      if (message === ERROR_MESSAGES.WORKSPACE_NOT_FOUND) {
-        return sendNotFound(res, message);
-      }
-      if (message === ERROR_MESSAGES.WORKSPACE_SLUG_EXISTS) {
-        return sendBadRequest(res, message);
-      }
       logger.error("Error updating workspace", error);
-      return sendError(res, message);
+      return handleControllerError(res, error);
     }
   }
 
@@ -180,13 +168,13 @@ export class WorkspaceController {
 
       const workspaceId = parseInt(id as string, 10);
       if (isNaN(workspaceId)) {
-        return sendBadRequest(res, "Invalid workspace ID");
+        return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Invalid workspace ID");
       }
 
       // Check if user is admin
       const isAdmin = await workspaceService.isAdmin(workspaceId, userId);
       if (!isAdmin) {
-        return sendForbidden(res, ERROR_MESSAGES.PERMISSION_DENIED);
+        return sendForbidden(res);
       }
 
       await workspaceService.deleteWorkspace(workspaceId, userId);
@@ -196,12 +184,8 @@ export class WorkspaceController {
       logger.info(`Workspace deleted by user ${userId}: ${workspaceId}`);
       return res.status(HTTP_STATUS.NO_CONTENT).send();
     } catch (error) {
-      const message = (error as Error).message;
-      if (message === ERROR_MESSAGES.WORKSPACE_NOT_FOUND) {
-        return sendNotFound(res, message);
-      }
       logger.error("Error deleting workspace", error);
-      return sendError(res, message);
+      return handleControllerError(res, error);
     }
   }
 }

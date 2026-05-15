@@ -4,19 +4,17 @@ import { workspaceService } from "@workspace-service/services/workspace.service"
 import {
   sendSuccess,
   sendCreated,
-  sendError,
   sendBadRequest,
-  sendNotFound,
+  sendUnauthorized,
   sendForbidden,
   sendNoContent,
-  sendUnauthorized,
   calculatePagination,
   sendPaginated,
+  handleControllerError,
 } from "@workspace-service/utils/response.util";
 import { logger } from "@workspace-service/utils/logger";
 import {
-  ERROR_MESSAGES,
-  HTTP_STATUS,
+  ERROR_CODES,
   PAGINATION,
 } from "@workspace-service/config/constants";
 
@@ -40,18 +38,18 @@ export class MemberController {
 
       const workspaceId = parseInt(id as string, 10);
       if (isNaN(workspaceId)) {
-        return sendBadRequest(res, "Invalid workspace ID");
+        return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Invalid workspace ID");
       }
 
       // Check if user is admin
       const isAdmin = await workspaceService.isAdmin(workspaceId, userId);
       if (!isAdmin) {
-        return sendForbidden(res, ERROR_MESSAGES.PERMISSION_DENIED);
+        return sendForbidden(res);
       }
 
       const { email, role } = req.body;
       if (!email || typeof email !== "string") {
-        return sendBadRequest(res, "Email is required");
+        return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Email is required");
       }
 
       const member = await memberService.inviteMember({
@@ -64,18 +62,8 @@ export class MemberController {
       logger.info(`Member invited by user ${userId}: ${email} to workspace ${workspaceId}`);
       return sendCreated(res, member, "Member invited successfully");
     } catch (error) {
-      const message = (error as Error).message;
-      if (message === ERROR_MESSAGES.DUPLICATE_MEMBER) {
-        return sendBadRequest(res, message);
-      }
-      if (message === ERROR_MESSAGES.USER_NOT_REGISTERED) {
-        return sendBadRequest(res, message);
-      }
-      if (message === ERROR_MESSAGES.WORKSPACE_NOT_FOUND) {
-        return sendNotFound(res, message);
-      }
       logger.error("Error inviting member", error);
-      return sendError(res, message);
+      return handleControllerError(res, error);
     }
   }
 
@@ -94,13 +82,13 @@ export class MemberController {
 
       const workspaceId = parseInt(id as string, 10);
       if (isNaN(workspaceId)) {
-        return sendBadRequest(res, "Invalid workspace ID");
+        return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Invalid workspace ID");
       }
 
       // Check if user is member
       const isMember = await workspaceService.isMember(workspaceId, userId);
       if (!isMember) {
-        return sendForbidden(res, ERROR_MESSAGES.PERMISSION_DENIED);
+        return sendForbidden(res);
       }
 
       const page = Math.max(1, parseInt(req.query.page as string) || PAGINATION.DEFAULT_PAGE);
@@ -120,12 +108,8 @@ export class MemberController {
       const pagination = calculatePagination(total, page, limit);
       return sendPaginated(res, members, pagination);
     } catch (error) {
-      const message = (error as Error).message;
-      if (message === ERROR_MESSAGES.WORKSPACE_NOT_FOUND) {
-        return sendNotFound(res, message);
-      }
       logger.error("Error getting members", error);
-      return sendError(res, message);
+      return handleControllerError(res, error);
     }
   }
 
@@ -146,18 +130,18 @@ export class MemberController {
       const memberIdNum = parseInt(memberId as string, 10);
 
       if (isNaN(workspaceId) || isNaN(memberIdNum)) {
-        return sendBadRequest(res, "Invalid workspace or member ID");
+        return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Invalid workspace or member ID");
       }
 
       // Check if user is admin
       const isAdmin = await workspaceService.isAdmin(workspaceId, userId);
       if (!isAdmin) {
-        return sendForbidden(res, ERROR_MESSAGES.PERMISSION_DENIED);
+        return sendForbidden(res);
       }
 
       const { role } = req.body;
       if (!role || typeof role !== "string") {
-        return sendBadRequest(res, "Role is required");
+        return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Role is required");
       }
 
       const member = await memberService.updateMemberRole(memberIdNum, role);
@@ -165,15 +149,8 @@ export class MemberController {
       logger.info(`Member role updated by user ${userId}: ${memberIdNum} -> ${role}`);
       return sendSuccess(res, member, "Member role updated successfully");
     } catch (error) {
-      const message = (error as Error).message;
-      if (message === ERROR_MESSAGES.MEMBER_NOT_FOUND) {
-        return sendNotFound(res, message);
-      }
-      if (message === ERROR_MESSAGES.INVALID_ROLE) {
-        return sendBadRequest(res, message);
-      }
       logger.error("Error updating member role", error);
-      return sendError(res, message);
+      return handleControllerError(res, error);
     }
   }
 
@@ -194,13 +171,13 @@ export class MemberController {
       const memberIdNum = parseInt(memberId as string, 10);
 
       if (isNaN(workspaceId) || isNaN(memberIdNum)) {
-        return sendBadRequest(res, "Invalid workspace or member ID");
+        return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Invalid workspace or member ID");
       }
 
       // Check if user is admin
       const isAdmin = await workspaceService.isAdmin(workspaceId, userId);
       if (!isAdmin) {
-        return sendForbidden(res, ERROR_MESSAGES.PERMISSION_DENIED);
+        return sendForbidden(res);
       }
 
       await memberService.removeMember(memberIdNum, userId);
@@ -208,12 +185,8 @@ export class MemberController {
       logger.info(`Member removed by user ${userId}: ${memberIdNum} from workspace ${workspaceId}`);
       return sendNoContent(res);
     } catch (error) {
-      const message = (error as Error).message;
-      if (message === ERROR_MESSAGES.MEMBER_NOT_FOUND) {
-        return sendNotFound(res, message);
-      }
       logger.error("Error removing member", error);
-      return sendError(res, message);
+      return handleControllerError(res, error);
     }
   }
 
@@ -234,24 +207,20 @@ export class MemberController {
       const memberIdNum = parseInt(memberId as string, 10);
 
       if (isNaN(workspaceId) || isNaN(memberIdNum)) {
-        return sendBadRequest(res, "Invalid workspace or member ID");
+        return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Invalid workspace or member ID");
       }
 
       // Check if user is member of workspace
       const isMember = await workspaceService.isMember(workspaceId, userId);
       if (!isMember) {
-        return sendForbidden(res, ERROR_MESSAGES.PERMISSION_DENIED);
+        return sendForbidden(res);
       }
 
       const member = await memberService.getMemberById(memberIdNum);
       return sendSuccess(res, member);
     } catch (error) {
-      const message = (error as Error).message;
-      if (message === ERROR_MESSAGES.MEMBER_NOT_FOUND) {
-        return sendNotFound(res, message);
-      }
       logger.error("Error getting member", error);
-      return sendError(res, message);
+      return handleControllerError(res, error);
     }
   }
 
@@ -270,12 +239,12 @@ export class MemberController {
 
       const workspaceId = parseInt(id as string, 10);
       if (isNaN(workspaceId)) {
-        return sendBadRequest(res, "Invalid workspace ID");
+        return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Invalid workspace ID");
       }
 
       const isMember = await workspaceService.isMember(workspaceId, userId);
       if (!isMember) {
-        return sendForbidden(res, ERROR_MESSAGES.PERMISSION_DENIED);
+        return sendForbidden(res);
       }
 
       const ids = Array.isArray(req.body?.ids) ? req.body.ids : [];
@@ -292,7 +261,7 @@ export class MemberController {
       return sendSuccess(res, { members }, "Member summaries");
     } catch (error) {
       logger.error("Error getting member summaries", error);
-      return sendError(res, (error as Error).message);
+      return handleControllerError(res, error);
     }
   }
 }
