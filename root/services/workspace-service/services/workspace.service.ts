@@ -64,7 +64,8 @@ export class WorkspaceService {
     if (!workspace) {
       throw new Error(ERROR_MESSAGES.WORKSPACE_NOT_FOUND);
     }
-    return workspace;
+    const members = await memberRepository.countByWorkspace(workspaceId);
+    return { ...workspace, members };
   }
 
   /**
@@ -83,23 +84,23 @@ export class WorkspaceService {
    */
   async getWorkspacesByUser(userId: string) {
     try {
-      const members = await memberRepository.findWorkspacesByUserId(userId);
-      if (!members || members.length === 0) {
+      const workspaces = await memberRepository.findWorkspacesByUserId(userId);
+      if (!workspaces || workspaces.length === 0) {
         return [];
       }
 
       // Get workspace details for each membership
-      const workspaces = await Promise.all(
-        members.map(async (member) => {
+      const resolvedWorkspaces = await Promise.all(
+        workspaces.map(async (workspace) => {
           try {
-            return await this.getWorkspaceById(member.workspaceId);
+            return await this.getWorkspaceById(workspace.id);
           } catch {
             return null;
           }
         })
       );
 
-      return workspaces.filter((ws) => ws !== null);
+      return resolvedWorkspaces.filter((ws) => ws !== null);
     } catch (error) {
       logger.error("Error getting workspaces by user", error);
       throw error;

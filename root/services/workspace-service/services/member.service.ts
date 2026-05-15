@@ -1,5 +1,6 @@
 import { memberRepository } from "../repositories/member.repo";
 import { workspaceRepository } from "../repositories/workspace.repo";
+import { authClient } from "@workspace-service/infrastructure/clients/auth.client";
 import { generatePublicId } from "../utils/id.util";
 import { logger } from "../utils/logger";
 import { MEMBER_ROLES, MEMBER_STATUS, ERROR_MESSAGES } from "../config/constants";
@@ -32,6 +33,14 @@ export class MemberService {
         throw new Error(ERROR_MESSAGES.WORKSPACE_NOT_FOUND);
       }
 
+      // Verify user exists in auth-service
+      let authUser;
+      try {
+        authUser = await authClient.getUserByEmail(input.email);
+      } catch {
+        throw new Error(ERROR_MESSAGES.USER_NOT_REGISTERED);
+      }
+
       // Check if member already exists
       const exists = await memberRepository.memberExistsByEmail(
         input.email,
@@ -47,10 +56,11 @@ export class MemberService {
       const member = await memberRepository.create({
         publicId,
         email: input.email,
+        userId: authUser.id,
         workspaceId: input.workspaceId,
         createdBy: input.invitedBy,
         role,
-        status: MEMBER_STATUS.INVITED,
+        status: MEMBER_STATUS.ACTIVE,
       });
 
       logger.info(

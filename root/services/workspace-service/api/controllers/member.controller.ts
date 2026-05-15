@@ -68,6 +68,9 @@ export class MemberController {
       if (message === ERROR_MESSAGES.DUPLICATE_MEMBER) {
         return sendBadRequest(res, message);
       }
+      if (message === ERROR_MESSAGES.USER_NOT_REGISTERED) {
+        return sendBadRequest(res, message);
+      }
       if (message === ERROR_MESSAGES.WORKSPACE_NOT_FOUND) {
         return sendNotFound(res, message);
       }

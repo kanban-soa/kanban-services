@@ -129,6 +129,7 @@ export const ERROR_MESSAGES = {
   DATABASE_ERROR: "Database error",
   USER_NOT_FOUND: "User not found",
   SERVICE_UNAVAILABLE: "External service unavailable",
+  USER_NOT_REGISTERED: "User with this email is not registered",
 } as const;
 
 /**
