@@ -13,6 +13,7 @@ interface Config {
   };
   logLevel: string;
   services: {
+    gatewayUrl: string;
     authUrl: string;
     boardUrl: string;
     notificationUrl: string;
@@ -59,6 +60,7 @@ function validateEnv(): Config {
     },
     logLevel,
     services: {
+      gatewayUrl: process.env.GATEWAY_URL || "http://localhost:8000",
       authUrl: process.env.AUTH_SERVICE_URL || "http://localhost:9001",
       boardUrl: process.env.BOARD_SERVICE_URL || "http://localhost:9003",
       notificationUrl: process.env.NOTIFICATION_SERVICE_URL || "http://localhost:9004",
