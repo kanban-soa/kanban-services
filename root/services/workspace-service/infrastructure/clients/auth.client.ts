@@ -23,7 +23,7 @@ export interface AuthUser {
  */
 class AuthClient extends BaseClient {
   constructor() {
-    super(config.services.gatewayUrl || config.services.authUrl, "auth-service");
+    super(config.services.authUrl, "auth-service");
   }
 
   /**

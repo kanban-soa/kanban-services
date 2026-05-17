@@ -3,15 +3,6 @@ import config from './env';
 
 export const routes: RouteConfig[] = [
   // ── Auth Service ──────────────────────────────────────────────────
-  // Internal: internal calls between services
-  {
-    prefix: '/internal/v1/auth/users',
-    target: config.services.auth,
-    auth: false,
-    methods: ['GET'],
-    rewrite: (p) => p.replace('/internal/v1/auth/users', '/api/users'),
-  },
-
   // Public: login and register do not require a JWT
   {
     prefix: '/api/v1/auth/login',
