@@ -14,13 +14,14 @@ export class WorkspaceServiceClient {
 
   async checkAdminOrOwner(workspaceId: number, userId: string): Promise<WorkspaceAccessCheck> {
     const response = await fetch(
-      `${this.baseUrl}/api/internal/workspaces/${workspaceId}/members/${userId}/authorization`,
+      `${this.baseUrl}/internal/workspaces/${workspaceId}/members/${userId}/authorization`,
     );
 
     if (!response.ok) {
       //TODO fix this
-      return {isAdmin: true, isOwner: true};
-      //return { isAdmin: false, isOwner: false };
+      //return {isAdmin: true, isOwner: true};
+      console.log("Response: ", response.statusText)
+      return { isAdmin: false, isOwner: false };
     }
 
     const result = await response.json();
