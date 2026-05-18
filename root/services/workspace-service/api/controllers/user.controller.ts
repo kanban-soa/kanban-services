@@ -2,9 +2,9 @@ import { Request, Response } from "express";
 // import { userService } from "@workspace-service/services/user.service";
 import { memberRepository } from "@workspace-service/repositories/member.repo";
 import { permissionService } from "@workspace-service/services/permission.service";
-import { sendSuccess, sendError, sendBadRequest, sendNotFound, sendForbidden, sendUnauthorized } from "@workspace-service/utils/response.util";
+import { sendSuccess, sendBadRequest, sendUnauthorized, sendForbidden, handleControllerError } from "@workspace-service/utils/response.util";
 import { logger } from "@workspace-service/utils/logger";
-import { ERROR_MESSAGES, HTTP_STATUS } from "@workspace-service/config/constants";
+import { ERROR_CODES } from "@workspace-service/config/constants";
 
 /**
  * User Controller
@@ -26,13 +26,13 @@ export class UserController {
 
             const workspaceId = parseInt(id as string, 10);
             if (isNaN(workspaceId)) {
-                return sendBadRequest(res, "Invalid workspace ID");
+                return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Invalid workspace ID");
             }
 
             // Check if user is member and resolve their memberId
             const member = await memberRepository.findByUserAndWorkspace(userId, workspaceId);
             if (!member) {
-                return sendForbidden(res, ERROR_MESSAGES.PERMISSION_DENIED);
+                return sendForbidden(res);
             }
 
             // Check permissions using the member's DB row ID
@@ -60,7 +60,7 @@ export class UserController {
             );
         } catch (error) {
             logger.error("Error getting permissions", error);
-            return sendError(res, (error as Error).message);
+            return handleControllerError(res, error);
         }
     }
 }
