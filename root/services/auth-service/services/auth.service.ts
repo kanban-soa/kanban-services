@@ -96,6 +96,11 @@ export class AuthService {
     return true;
   }
 
+  static async deleteSessionByToken(token: string) {
+    await db.delete(session).where(eq(session.token, token));
+    return true;
+  }
+
   static async deleteUserSessions(userId: string) {
     await db.delete(session).where(eq(session.userId, userId));
     return true;

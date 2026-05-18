@@ -12,7 +12,7 @@ describe("swagger docs", () => {
 
     expect(response.status).toBe(200);
     expect(response.body.openapi).toBe("3.0.3");
-    expect(response.body.paths["/api/statistics"]).toBeDefined();
+    expect(response.body.paths["/api/statistics/{workspaceId}"]).toBeDefined();
   });
 
   it("serves the Swagger UI", async () => {

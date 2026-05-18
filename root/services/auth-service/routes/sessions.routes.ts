@@ -3,6 +3,9 @@ import { AuthController } from '@/auth-service/controllers/auth.controller';
 
 const router = Router();
 
+router.post('/refresh', AuthController.refreshSession);
+router.post('/logout', AuthController.logout);
+
 router.post('/', AuthController.createSession);
 router.get('/:token', AuthController.getSession);
 router.get('/:token/user', AuthController.getSessionWithUser);

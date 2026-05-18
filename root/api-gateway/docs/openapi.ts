@@ -152,13 +152,20 @@ export const openApiDocument = {
         },
       },
     },
-    "/api/v1/statistics": {
+    "/api/v1/statistics/{workspaceId}": {
       get: {
         summary: "Get statistics",
         description: "Proxies to the statistic service.",
         tags: ["statistics"],
         parameters: [
           { $ref: "#/components/parameters/RequestIdHeader" },
+          {
+            name: "workspaceId",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+            description: "Workspace identifier.",
+          },
           {
             name: "range",
             in: "query",
@@ -169,6 +176,41 @@ export const openApiDocument = {
         ],
         responses: {
           "200": { description: "Statistics payload" },
+          "400": { description: "Invalid query parameters" },
+        },
+      },
+    },
+    "/api/v1/statistics/{workspaceId}/export": {
+      get: {
+        summary: "Export statistics",
+        description: "Proxies to the statistic service.",
+        tags: ["statistics"],
+        parameters: [
+          { $ref: "#/components/parameters/RequestIdHeader" },
+          {
+            name: "workspaceId",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+            description: "Workspace identifier.",
+          },
+          {
+            name: "range",
+            in: "query",
+            required: false,
+            schema: { type: "string", enum: ["7d", "30d", "90d"], default: "7d" },
+            description: "Time window for statistics.",
+          },
+          {
+            name: "format",
+            in: "query",
+            required: false,
+            schema: { type: "string", enum: ["csv", "json"], default: "csv" },
+            description: "Export format.",
+          },
+        ],
+        responses: {
+          "200": { description: "Exported statistics file" },
           "400": { description: "Invalid query parameters" },
         },
       },
@@ -228,4 +270,3 @@ export const openApiDocument = {
     },
   },
 } as const;
-

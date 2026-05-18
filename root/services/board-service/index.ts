@@ -17,7 +17,7 @@ app.use((req: Request, res: Response, next) => {
   next();
 });
 
-app.use('/api/boards', boardRoutes);
+app.use('/boards', boardRoutes);
 console.log('Board service is starting...');
 
 const port = process.env.BOARD_PORT || 9003;

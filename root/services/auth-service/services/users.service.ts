@@ -111,6 +111,30 @@ export class UsersService {
     return updated;
   }
 
+  static async resetPassword(id: string, newPassword: string) {
+    const passwordValidation = validatePassword(newPassword);
+    if (!passwordValidation.valid) {
+      throw new Error(passwordValidation.error);
+    }
+    
+    const existing = await this.getUserById(id);
+    if (!existing) {
+      throw new Error('User not found');
+    }
+
+    const hashedPassword = await hashPassword(newPassword);
+    
+    const [updated] = await db.update(users)
+      .set({
+        password: hashedPassword,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, id))
+      .returning();
+      
+    return updated;
+  }
+
   static async deleteUser(id: string): Promise<boolean> {
     const existing = await this.getUserById(id);
     if (!existing) {

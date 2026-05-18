@@ -4,8 +4,8 @@
   "description": "",
   "scripts": {
     "dev": "npx nodemon --watch './**/*.ts' --exec 'npx tsx index.ts'",
-    "db:push": "npx drizzle-kit push"
-
+    "db:push": "npx drizzle-kit push",
+    "seed": "npx tsx script/seed.ts"
   },
   "dependencies": {
     "dotenv": "^17.4.2",
@@ -14,5 +14,8 @@
     "jsonwebtoken": "^9.0.3",
     "nanoid": "^5.1.9",
     "pg": "^8.20.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.21.0"
   }
 }

@@ -18,8 +18,8 @@ export interface AuthUser {
  * Communicates with the auth-service for user verification and lookup.
  *
  * Endpoints:
- *   GET  /api/users/:id         → getUserById
- *   GET  /api/users?email=      → getUserByEmail
+ *   GET  /internal/v1/auth/users/:id         → getUserById
+ *   GET  /internal/v1/auth/users?email=      → getUserByEmail
  */
 class AuthClient extends BaseClient {
   constructor() {
@@ -27,11 +27,19 @@ class AuthClient extends BaseClient {
   }
 
   /**
+   * Override BaseClient get because auth-service doesn't wrap responses in { data: T }
+   */
+  protected async get<T>(url: string, config?: any): Promise<T> {
+    const response = await this.client.get<T>(url, config);
+    return response.data;
+  }
+
+  /**
    * Get user by ID
    * Throws on 404 (user not found)
    */
   async getUserById(userId: string): Promise<AuthUser> {
-    return this.get<AuthUser>(`/api/users/${userId}`);
+    return this.get<AuthUser>(`/internal/v1/auth/users/${userId}`);
   }
 
   /**
@@ -39,7 +47,7 @@ class AuthClient extends BaseClient {
    * Throws on 404 (user not found)
    */
   async getUserByEmail(email: string): Promise<AuthUser> {
-    return this.get<AuthUser>("/api/users", { params: { email } });
+    return this.get<AuthUser>("/internal/v1/auth/users", { params: { email } });
   }
 
   /**
