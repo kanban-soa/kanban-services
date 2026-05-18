@@ -7,6 +7,7 @@ import { sendGatewayError } from '../utils/response';
 const spoofableHeaders = new Set([
   'x-user-id',
   'x-user-email',
+  'x-user-name',
   'x-user-role',
   'x-request-id',
 ]);
@@ -39,6 +40,9 @@ function buildForwardHeaders(req: AuthenticatedRequest): Headers {
   }
   if (req.user?.email) {
     headers.set('x-user-email', req.user.email);
+  }
+  if (req.user?.name) {
+    headers.set('x-user-name', req.user.name);
   }
   if (req.user?.role) {
     headers.set('x-user-role', req.user.role);
