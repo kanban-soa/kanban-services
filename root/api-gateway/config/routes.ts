@@ -72,4 +72,3 @@ export const routes: RouteConfig[] = [
 export function matchRoute(pathname: string): RouteConfig | undefined {
   return routes.find((r) => pathname.startsWith(r.prefix));
 }
-

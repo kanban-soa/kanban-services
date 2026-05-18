@@ -183,6 +183,128 @@ export const openApiDocument = {
         },
       },
     },
+    "/api/statistics/{workspaceId}/activities": {
+      get: {
+        summary: "List workspace activities",
+        description: "Returns activity events for a workspace (admin/owner only).",
+        tags: ["statistics"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "workspaceId",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+            description: "Workspace identifier.",
+          },
+          {
+            name: "page",
+            in: "query",
+            required: false,
+            schema: { type: "integer", minimum: 1, default: 1 },
+            description: "Page number.",
+          },
+          {
+            name: "limit",
+            in: "query",
+            required: false,
+            schema: { type: "integer", minimum: 1, maximum: 100, default: 20 },
+            description: "Page size.",
+          },
+          {
+            name: "actionType",
+            in: "query",
+            required: false,
+            schema: { type: "string" },
+            description: "Filter by action type (e.g., card.updated).",
+          },
+          {
+            name: "entityType",
+            in: "query",
+            required: false,
+            schema: { type: "string" },
+            description: "Filter by entity type (board, card).",
+          },
+          {
+            name: "actorUserId",
+            in: "query",
+            required: false,
+            schema: { type: "string" },
+            description: "Filter by actor user id.",
+          },
+          {
+            name: "from",
+            in: "query",
+            required: false,
+            schema: { type: "string", format: "date-time" },
+            description: "Filter by start timestamp (inclusive).",
+          },
+          {
+            name: "to",
+            in: "query",
+            required: false,
+            schema: { type: "string", format: "date-time" },
+            description: "Filter by end timestamp (inclusive).",
+          },
+          {
+            name: "x-request-id",
+            in: "header",
+            required: false,
+            schema: { type: "string" },
+            description: "Optional request correlation id.",
+          },
+          {
+            name: "x-user-id",
+            in: "header",
+            required: false,
+            schema: { type: "string" },
+            description: "Optional user id for internal gateway auth.",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "Activity list",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ActivityListResponse" },
+              },
+            },
+          },
+          "400": {
+            description: "Invalid query parameters",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          "401": {
+            description: "Missing token",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          "403": {
+            description: "Forbidden",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          "500": {
+            description: "Unexpected error",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
   },
   components: {
     securitySchemes: {
@@ -212,6 +334,55 @@ export const openApiDocument = {
           },
         },
         required: ["range", "metrics", "activities", "priorities", "workloads"],
+      },
+      ActivityEvent: {
+        type: "object",
+        properties: {
+          id: { type: "string" },
+          publicId: { type: "string" },
+          workspaceId: { type: "number" },
+          actorUserId: { type: "string" },
+          actionType: { type: "string" },
+          entityType: { type: "string" },
+          entityId: { type: "string" },
+          metadata: { type: "object", nullable: true, additionalProperties: true },
+          createdAt: { type: "string", format: "date-time" },
+        },
+        required: [
+          "id",
+          "workspaceId",
+          "actorUserId",
+          "actionType",
+          "entityType",
+          "entityId",
+          "createdAt",
+        ],
+      },
+      ActivityListResponse: {
+        type: "object",
+        properties: {
+          data: {
+            type: "object",
+            properties: {
+              items: {
+                type: "array",
+                items: { $ref: "#/components/schemas/ActivityEvent" },
+              },
+              pagination: {
+                type: "object",
+                properties: {
+                  page: { type: "integer" },
+                  limit: { type: "integer" },
+                  total: { type: "integer" },
+                  totalPages: { type: "integer" },
+                },
+                required: ["page", "limit", "total", "totalPages"],
+              },
+            },
+            required: ["items", "pagination"],
+          },
+        },
+        required: ["data"],
       },
       StatisticsMetrics: {
         type: "object",

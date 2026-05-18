@@ -3,11 +3,13 @@ import "dotenv/config";
 import { authMiddleware } from "@/common/middleware/auth";
 import { v1Routes } from "./api/routes/v1";
 import { registerSwaggerDocs } from "./api/docs/swagger";
+import { requestLogger } from "../../common/middleware/request-logger";
 
 const app = express();
 const port = process.env.PORT ? parseInt(process.env.PORT) : 9002;
 
 app.use(express.json());
+app.use(requestLogger({ excludePaths: ["/health", "/docs"] }));
 registerSwaggerDocs(app);
 app.use("/api", v1Routes);
 
