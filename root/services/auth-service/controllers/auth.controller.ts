@@ -21,11 +21,13 @@ export const AuthController = {
         return res.status(401).json({ error: 'User not found' });
       }
 
-      const newAccessToken = generateToken({ id: user.id, email: user.email });
+      const newAccessToken = generateToken({ id: user.id, email: user.email, name: user.name, role: user.role ?? undefined });
+      const { password: _, ...userWithoutPassword } = user;
       
       res.json({
         token: newAccessToken,
-        refreshToken: session.token
+        refreshToken: session.token,
+        user: userWithoutPassword
       });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -174,6 +176,7 @@ export const AuthController = {
         token: {
           sub: userId,
           email: payload.email,
+          name: payload.name,
           role: payload.role,
           iat: payload.iat,
           exp: payload.exp,

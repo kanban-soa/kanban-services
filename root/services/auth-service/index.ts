@@ -8,6 +8,7 @@ app.use(requestLogger());
 app.use(express.json());
 
 app.use("/api", v1Router);
+app.use("/internal/v1/auth", v1Router);
 
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });

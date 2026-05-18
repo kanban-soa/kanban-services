@@ -45,6 +45,7 @@ export async function authMiddleware(req: AuthenticatedRequest, res: Response, n
     req.user = {
       id: String(tokenData.sub),
       email: user.email,
+      name: user.name || tokenData.name,
       role: tokenData.role || 'user',
       iat: tokenData.iat,
       exp: tokenData.exp,

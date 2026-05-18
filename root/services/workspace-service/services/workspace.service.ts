@@ -3,7 +3,8 @@ import { memberRepository } from "../repositories/member.repo";
 import { permissionRepository } from "../repositories/permission.repo";
 import { generatePublicId, generateSlug, generateUniqueSlug } from "../utils/id.util";
 import { logger } from "../utils/logger";
-import { MEMBER_ROLES, MEMBER_STATUS, ERROR_MESSAGES } from "../config/constants";
+import { MEMBER_ROLES, MEMBER_STATUS, ERROR_CODES } from "../config/constants";
+import { AppError } from "../utils/AppError";
 
 export interface CreateWorkspaceDTO {
   name: string;
@@ -62,9 +63,10 @@ export class WorkspaceService {
   async getWorkspaceById(workspaceId: number) {
     const workspace = await workspaceRepository.findById(workspaceId);
     if (!workspace) {
-      throw new Error(ERROR_MESSAGES.WORKSPACE_NOT_FOUND);
+      throw new AppError(ERROR_CODES.WORKSPACE_NOT_FOUND);
     }
-    return workspace;
+    const members = await memberRepository.countByWorkspace(workspaceId);
+    return { ...workspace, members };
   }
 
   /**
@@ -73,7 +75,7 @@ export class WorkspaceService {
   async getWorkspaceByPublicId(publicId: string) {
     const workspace = await workspaceRepository.findByPublicId(publicId);
     if (!workspace) {
-      throw new Error(ERROR_MESSAGES.WORKSPACE_NOT_FOUND);
+      throw new AppError(ERROR_CODES.WORKSPACE_NOT_FOUND);
     }
     return workspace;
   }
@@ -83,23 +85,23 @@ export class WorkspaceService {
    */
   async getWorkspacesByUser(userId: string) {
     try {
-      const members = await memberRepository.findWorkspacesByUserId(userId);
-      if (!members || members.length === 0) {
+      const workspaces = await memberRepository.findWorkspacesByUserId(userId);
+      if (!workspaces || workspaces.length === 0) {
         return [];
       }
 
       // Get workspace details for each membership
-      const workspaces = await Promise.all(
-        members.map(async (member) => {
+      const resolvedWorkspaces = await Promise.all(
+        workspaces.map(async (workspace) => {
           try {
-            return await this.getWorkspaceById(member.workspaceId);
+            return await this.getWorkspaceById(workspace.id);
           } catch {
             return null;
           }
         })
       );
 
-      return workspaces.filter((ws) => ws !== null);
+      return resolvedWorkspaces.filter((ws) => ws !== null);
     } catch (error) {
       logger.error("Error getting workspaces by user", error);
       throw error;
@@ -122,7 +124,7 @@ export class WorkspaceService {
       if (input.slug) {
         const slugExists = await workspaceRepository.slugExists(input.slug, workspaceId);
         if (slugExists) {
-          throw new Error(ERROR_MESSAGES.WORKSPACE_SLUG_EXISTS);
+          throw new AppError(ERROR_CODES.WORKSPACE_SLUG_EXISTS);
         }
       }
 
@@ -209,6 +211,27 @@ export class WorkspaceService {
       logger.error("Error checking admin status", error);
       throw error;
     }
+  }
+
+  /**
+   * Get authorization status for internal calls
+   * Returns whether the user is admin and/or owner of the workspace
+   */
+  async getAuthorization(workspaceId: number, userId: string) {
+    const workspace = await workspaceRepository.findById(workspaceId);
+    if (!workspace) {
+      throw new AppError(ERROR_CODES.WORKSPACE_NOT_FOUND);
+    }
+
+    const member = await memberRepository.findByUserAndWorkspace(userId, workspaceId);
+    if (!member) {
+      throw new AppError(ERROR_CODES.MEMBER_NOT_FOUND);
+    }
+
+    return {
+      isAdmin: member.role === MEMBER_ROLES.ADMIN,
+      isOwner: workspace.createdBy === userId,
+    };
   }
 
   /**

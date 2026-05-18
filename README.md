@@ -46,3 +46,9 @@ npm run seed:stats
 ```
 
 The script reuses the `stats-acme` and `stats-orbit` workspaces and refreshes their members/boards on each run.
+
+AUTH_SERVICE_URL=http://localhost:9001
+WORKSPACE_SERVICE_URL=http://localhost:9005
+BOARD_SERVICE_URL=http://localhost:9003
+NOTI_SERVICE_URL=http://localhost:9004
+STATISTIC_SERVICE_URL=http://localhost:9002
