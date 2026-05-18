@@ -214,6 +214,27 @@ export class WorkspaceService {
   }
 
   /**
+   * Get authorization status for internal calls
+   * Returns whether the user is admin and/or owner of the workspace
+   */
+  async getAuthorization(workspaceId: number, userId: string) {
+    const workspace = await workspaceRepository.findById(workspaceId);
+    if (!workspace) {
+      throw new AppError(ERROR_CODES.WORKSPACE_NOT_FOUND);
+    }
+
+    const member = await memberRepository.findByUserAndWorkspace(userId, workspaceId);
+    if (!member) {
+      throw new AppError(ERROR_CODES.MEMBER_NOT_FOUND);
+    }
+
+    return {
+      isAdmin: member.role === MEMBER_ROLES.ADMIN,
+      isOwner: workspace.createdBy === userId,
+    };
+  }
+
+  /**
    * Get workspace members count
    */
   async getMembersCount(workspaceId: number): Promise<number> {
