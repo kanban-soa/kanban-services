@@ -264,6 +264,78 @@ export class MemberController {
       return handleControllerError(res, error);
     }
   }
+
+  /**
+   * GET /api/workspaces/:id/members/invitation
+   * Get all invited members in workspace
+   */
+  async getInvitedMembers(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const userId = req.user?.id;
+
+      if (!userId) {
+        return sendUnauthorized(res);
+      }
+
+      const workspaceId = parseInt(id as string, 10);
+      if (isNaN(workspaceId)) {
+        return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Invalid workspace ID");
+      }
+
+      // Only admins can view the invitation list
+      const isAdmin = await workspaceService.isAdmin(workspaceId, userId);
+      if (!isAdmin) {
+        return sendForbidden(res);
+      }
+
+      const members = await memberService.getInvitedMembers(workspaceId);
+
+      logger.info(`Invited members fetched for workspace ${workspaceId} by user ${userId}`);
+      return sendSuccess(res, members, "Invited members retrieved successfully");
+    } catch (error) {
+      logger.error("Error getting invited members", error);
+      return handleControllerError(res, error);
+    }
+  }
+
+  /**
+   * DELETE /api/workspaces/:id/members/invitation/:invitationId
+   * Cancel (delete) a pending invitation
+   */
+  async cancelInvitation(req: Request, res: Response) {
+    try {
+      const { id, invitationId } = req.params;
+      const userId = req.user?.id;
+
+      if (!userId) {
+        return sendUnauthorized(res);
+      }
+
+      const workspaceId = parseInt(id as string, 10);
+      if (isNaN(workspaceId)) {
+        return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Invalid workspace ID");
+      }
+
+      if (!invitationId || typeof invitationId !== "string") {
+        return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Invalid invitation ID");
+      }
+
+      // Only admins can cancel invitations
+      const isAdmin = await workspaceService.isAdmin(workspaceId, userId);
+      if (!isAdmin) {
+        return sendForbidden(res);
+      }
+
+      await memberService.cancelInvitation(invitationId, workspaceId, userId);
+
+      logger.info(`Invitation ${invitationId} cancelled by user ${userId} in workspace ${workspaceId}`);
+      return sendNoContent(res);
+    } catch (error) {
+      logger.error("Error cancelling invitation", error);
+      return handleControllerError(res, error);
+    }
+  }
 }
 
 export const memberController = new MemberController();
