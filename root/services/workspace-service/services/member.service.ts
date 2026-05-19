@@ -136,6 +136,59 @@ export class MemberService {
   }
 
   /**
+   * Get all invited members in workspace
+   */
+  async getInvitedMembers(workspaceId: number) {
+    try {
+      const workspace = await workspaceRepository.findById(workspaceId);
+      if (!workspace) {
+        throw new AppError(ERROR_CODES.WORKSPACE_NOT_FOUND);
+      }
+
+      return await memberRepository.findInvitedByWorkspace(workspaceId);
+    } catch (error) {
+      logger.error("Error getting invited members", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Cancel a pending invitation in a workspace (admin only)
+   * invitationId is the member's publicId
+   */
+  async cancelInvitation(invitationId: string, workspaceId: number, cancelledBy: string) {
+    try {
+      const workspace = await workspaceRepository.findById(workspaceId);
+      if (!workspace) {
+        throw new AppError(ERROR_CODES.WORKSPACE_NOT_FOUND);
+      }
+
+      // Validate the record exists, belongs to workspace, and is still pending
+      const invitation = await memberRepository.findByPublicId(invitationId);
+      if (
+        !invitation ||
+        invitation.workspaceId !== workspaceId ||
+        invitation.status !== MEMBER_STATUS.INVITED ||
+        invitation.deletedAt !== null
+      ) {
+        throw new AppError(ERROR_CODES.MEMBER_NOT_FOUND);
+      }
+
+      const cancelled = await memberRepository.cancelInvitation(
+        invitationId,
+        workspaceId,
+        cancelledBy
+      );
+
+      logger.info(`Invitation cancelled: ${invitationId} in workspace ${workspaceId}`);
+      return cancelled;
+    } catch (error) {
+      logger.error("Error cancelling invitation", error);
+      throw error;
+    }
+  }
+
+  /**
    * Update member role in workspace
    */
   async updateMemberRole(memberId: number, newRole: string) {
