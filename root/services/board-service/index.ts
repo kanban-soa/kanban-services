@@ -1,36 +1,36 @@
 import express, { Request, Response } from 'express';
 import dotenv from 'dotenv';
-import { pool } from '../board-service/config';
-import { boardRoutes } from './api/routes/board.route';
+import { pool } from '@/board-service/config';
+import routes from '@/board-service/api/routes';
+import { errorHandler } from '@/board-service/middlewares/error.middleware';
 
 dotenv.config({
-  debug: true
+  debug: true,
 });
 
 const app = express();
 
 app.use(express.json());
 
-// Middleware to log requests
 app.use((req: Request, res: Response, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
   next();
 });
 
-app.use('/boards', boardRoutes);
-console.log('Board service is starting...');
+app.use('/', routes);
+app.use(errorHandler);
 
 const port = process.env.BOARD_PORT || 9003;
 
 app.listen(Number(port), () => {
-  console.log(`Server is running on port ${port}`);
+  console.log(`Board service listening on port ${port} (base path /)`);
 });
 
-pool.on("connect", () => {
-  console.log("Database connected");
+pool.on('connect', () => {
+  console.log('Database connected');
 });
 
-pool.on("error", (err) => {
-  console.error("Unexpected error on idle client", err);
+pool.on('error', (err) => {
+  console.error('Unexpected error on idle client', err);
   process.exit(-1);
 });

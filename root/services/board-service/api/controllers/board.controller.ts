@@ -1,8 +1,22 @@
 import { Request, Response, NextFunction } from 'express';
 import { BoardService } from '../../services/board.service';
 import { sendSuccess } from '../../shared/utils/response';
+import { workspaceService } from '../../shared/workspace.client';
 
 const boardService = new BoardService();
+
+export const getBoardMembers = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = req.headers['x-user-id'] as string;
+    const workspaceId = Number(req.headers['x-workspace-id']);
+    const boardId = req.params.boardId as string;
+    await boardService.getBoardById(userId, workspaceId, boardId);
+    const members = await workspaceService.getMembers(workspaceId);
+    sendSuccess(res, members, 'Workspace members retrieved successfully');
+  } catch (error) {
+    next(error);
+  }
+};
 
 export const getBoards = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -45,7 +59,7 @@ export const updateBoard = async (req: Request, res: Response, next: NextFunctio
   try {
     const userId = req.headers['x-user-id'] as string;
     const workspaceId = Number(req.headers['x-workspace-id']);
-    const { boardId } = req.params;
+    const boardId = Array.isArray(req.params.boardId) ? req.params.boardId[0]! : req.params.boardId;
 
     const updatedBoard = await boardService.updateBoard(userId, workspaceId, boardId, req.body);
     sendSuccess(res, updatedBoard, 'Board updated successfully');
@@ -58,7 +72,7 @@ export const deleteBoard = async (req: Request, res: Response, next: NextFunctio
   try {
     const userId = req.headers['x-user-id'] as string;
     const workspaceId = Number(req.headers['x-workspace-id']);
-    const { boardId } = req.params;
+    const boardId = req.params.boardId as string;
 
     await boardService.deleteBoard(userId, workspaceId, boardId);
     res.status(204).send(); // Standard NO CONTENT for deletion
@@ -71,7 +85,7 @@ export const getBoardDetail = async (req: Request, res: Response, next: NextFunc
   try {
     const userId = req.headers['x-user-id'] as string;
     const workspaceId = Number(req.headers['x-workspace-id']);
-    const { boardId } = req.params;
+    const boardId = req.params.boardId as string;
 
     const board = await boardService.getBoardDetail(userId, workspaceId, boardId);
     sendSuccess(res, board, 'Board detail retrieved successfully');

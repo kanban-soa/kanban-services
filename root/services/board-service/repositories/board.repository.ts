@@ -108,7 +108,14 @@ export class BoardRepository {
           with: {
             cards: {
               where: isNull(cards.deletedAt),
-              orderBy: (cards, { asc }) => [asc(cards.index)]
+              orderBy: (cards, { asc }) => [asc(cards.index)],
+              with: {
+              labels: {
+                with: {
+                  label: true
+                }
+              }
+            }
             }
           }
         }
