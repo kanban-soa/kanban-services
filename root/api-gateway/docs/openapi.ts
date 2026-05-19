@@ -157,6 +157,7 @@ export const openApiDocument = {
         summary: "Get statistics",
         description: "Proxies to the statistic service.",
         tags: ["statistics"],
+        security: [{ bearerAuth: [] }],
         parameters: [
           { $ref: "#/components/parameters/RequestIdHeader" },
           {
@@ -185,6 +186,7 @@ export const openApiDocument = {
         summary: "Export statistics",
         description: "Proxies to the statistic service.",
         tags: ["statistics"],
+        security: [{ bearerAuth: [] }],
         parameters: [
           { $ref: "#/components/parameters/RequestIdHeader" },
           {

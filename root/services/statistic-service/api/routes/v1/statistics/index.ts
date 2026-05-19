@@ -1,8 +1,9 @@
-import { Router, type Request, type Response } from "express";
+import { Router, type Response, type Request } from "express";
 import { z } from "zod";
 import { getStatistics } from "../../../../services/statistics";
 import { exportStatistics } from "../../../../services/export";
 import { getWorkspaceActivities } from "../../../../services/activity";
+import type { AuthenticatedRequest } from "../../../../middleware/auth";
 
 const paramsSchema = z.object({
   workspaceId: z.string().min(1),
@@ -33,7 +34,7 @@ type StatisticsParams = z.infer<typeof paramsSchema>;
 
 export const statisticsRoutes = Router();
 
-statisticsRoutes.get("/:workspaceId/export", async (req: Request, res: Response) => {
+statisticsRoutes.get("/:workspaceId/export", async (req: AuthenticatedRequest, res: Response) => {
   const paramsParsed = paramsSchema.safeParse(req.params);
   if (!paramsParsed.success) {
     return res.status(400).json({
@@ -66,7 +67,7 @@ statisticsRoutes.get("/:workspaceId/export", async (req: Request, res: Response)
       {
         authorization: req.headers.authorization,
         requestId: req.headers["x-request-id"] as string | undefined,
-        user: (req as { user?: { id?: string; email?: string; role?: string } }).user,
+        user: req.user,
       },
     );
   } catch (error) {
@@ -80,7 +81,7 @@ statisticsRoutes.get("/:workspaceId/export", async (req: Request, res: Response)
   }
 });
 
-statisticsRoutes.get("/:workspaceId/activities", async (req: Request, res: Response) => {
+statisticsRoutes.get("/:workspaceId/activities", async (req: AuthenticatedRequest, res: Response) => {
   const paramsParsed = paramsSchema.safeParse(req.params);
   if (!paramsParsed.success) {
     return res.status(400).json({
@@ -112,7 +113,7 @@ statisticsRoutes.get("/:workspaceId/activities", async (req: Request, res: Respo
       {
         authorization: req.headers.authorization,
         requestId: req.headers["x-request-id"] as string | undefined,
-        user: (req as { user?: { id?: string; email?: string; role?: string } }).user,
+        user: req.user,
       },
     );
 
@@ -160,7 +161,7 @@ statisticsRoutes.get("/:workspaceId", async (req: Request, res: Response) => {
       {
         authorization: req.headers.authorization,
         requestId: req.headers["x-request-id"] as string | undefined,
-        user: (req as { user?: { id?: string; email?: string; role?: string } }).user,
+        user: req.user,
       },
     );
     return res.json({ data });
