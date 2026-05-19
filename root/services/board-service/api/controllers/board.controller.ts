@@ -1,8 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import { BoardService } from '../../services/board.service';
+import { ActivityBoardEmitter } from '../../shared/board-activity.emitter';
 import { sendSuccess } from '../../shared/utils/response';
 
-const boardService = new BoardService();
+const boardService = new BoardService(new ActivityBoardEmitter());
 
 export const getBoards = async (req: Request, res: Response, next: NextFunction) => {
   try {
