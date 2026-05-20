@@ -8,7 +8,7 @@ const app = express();
 app.use(express.json());
 app.use(requestLogger({ excludePaths: ['/health', '/docs'] }));
 
-app.use('/api/v1', routes);
+app.use('/', routes);
 
 // app.use(errorMiddleware);
 

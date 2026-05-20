@@ -96,9 +96,12 @@ export const cardActivities = pgTable("card_activity", {
   labelId: bigint("labelId", { mode: "number" }).references(() => labels.id, {
     onDelete: "cascade",
   }),
-  workspaceMemberId: bigint("workspaceMemberId", {
-    mode: "number",
-  }),
+    workspaceMemberPublicId: varchar(
+      "workspaceMemberPublicId",
+      {
+        length: 12,
+      },
+    ),
   fromTitle: text("fromTitle"),
   toTitle: text("toTitle"),
   fromDescription: text("fromDescription"),
@@ -169,21 +172,84 @@ export const cardToLabelsRelations = relations(cardsToLabels, ({ one }) => ({
 export const cardToWorkspaceMembers = pgTable(
   "_card_workspace_members",
   {
-    cardId: bigint("cardId", { mode: "number" })
+    cardId: bigint("cardId", {
+      mode: "number",
+    })
       .notNull()
-      .references(() => cards.id, { onDelete: "cascade" }),
-    workspaceMemberId: bigint("workspaceMemberId", { mode: "number" }).notNull(),
-  },
-  (t) => [primaryKey({ columns: [t.cardId, t.workspaceMemberId] })],
-).enableRLS();
+      .references(() => cards.id, {
+        onDelete: "cascade",
+      }),
 
-export const cardToWorkspaceMembersRelations = relations(
-  cardToWorkspaceMembers,
-  ({ one }) => ({
-    card: one(cards, {
-      fields: [cardToWorkspaceMembers.cardId],
-      references: [cards.id],
-      relationName: "cardToWorkspaceMembersCard",
+    workspaceMemberPublicId: varchar(
+      "workspaceMemberPublicId",
+      {
+        length: 12,
+      },
+    ).notNull(),
+  },
+
+  (t) => ({
+    pk: primaryKey({
+      columns: [
+        t.cardId,
+        t.workspaceMemberPublicId,
+      ],
     }),
   }),
-);
+).enableRLS();
+
+export const cardToWorkspaceMembersRelations =
+  relations(
+    cardToWorkspaceMembers,
+    ({ one }) => ({
+      card: one(cards, {
+        fields: [
+          cardToWorkspaceMembers.cardId,
+        ],
+
+        references: [cards.id],
+
+        relationName:
+          "cardToWorkspaceMembersCard",
+      }),
+    }),
+  );
+// export const workspaceMemberSnapshots = pgTable(
+//   "workspace_member_snapshot",
+//   {
+//     id: bigserial("id", {
+//       mode: "number",
+//     }).primaryKey(),
+
+//     workspaceMemberId: bigint(
+//       "workspaceMemberId",
+//       {
+//         mode: "number",
+//       },
+//     )
+//       .notNull()
+//       .unique(),
+
+//     publicId: varchar("publicId", {
+//       length: 12,
+//     }).notNull(),
+
+//     displayName: varchar("displayName", {
+//       length: 255,
+//     }).notNull(),
+
+//     avatarUrl: text("avatarUrl"),
+
+//     email: varchar("email", {
+//       length: 255,
+//     }),
+
+//     role: varchar("role", {
+//       length: 50,
+//     }),
+
+//     syncedAt: timestamp("syncedAt")
+//       .defaultNow()
+//       .notNull(),
+//   },
+// );

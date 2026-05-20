@@ -1,4 +1,3 @@
-
 import { sql } from 'drizzle-orm';
 
 import { db } from '@/board-service/config';
@@ -14,13 +13,15 @@ import {
   userBoardFavorites,
 } from '@/board-service/schema';
 
+import { generatePublicId } from '@/board-service/shared/utils/public-id';
+
 async function seed() {
   console.log('🌱 Seeding board-service database...');
 
   /**
-   * =========================================================
+   * =====================================================
    * CLEAN DATABASE
-   * =========================================================
+   * =====================================================
    */
 
   await db.execute(sql`
@@ -37,199 +38,302 @@ async function seed() {
   `);
 
   /**
-   * =========================================================
-   * MOCK DATA
-   * =========================================================
+   * =====================================================
+   * MOCK USERS
+   * =====================================================
    */
 
   const workspaceId = 1;
 
-  const adminUserId =
+  const ownerUserId =
     '550e8400-e29b-41d4-a716-446655440000';
 
+  const member1UserId =
+    '550e8400-e29b-41d4-a716-446655440001';
+
+  const member2UserId =
+    '550e8400-e29b-41d4-a716-446655440002';
+
   /**
-   * =========================================================
+   * =====================================================
+   * WORKSPACE MEMBER PUBLIC IDS
+   * =====================================================
+   */
+
+  const ownerMemberPublicId =
+    generatePublicId();
+
+  const devMemberPublicId =
+    generatePublicId();
+
+  const qaMemberPublicId =
+    generatePublicId();
+
+  /**
+   * =====================================================
    * CREATE BOARDS
-   * =========================================================
+   * =====================================================
    */
 
-  const [backendBoard] = await db
+  const insertedBoards = await db
     .insert(boards)
-    .values({
-      publicId: 'brd001',
-      name: 'Backend Sprint',
-      description: 'Main backend sprint board',
-      slug: 'backend-sprint',
-      createdBy: adminUserId,
-      workspaceId,
-      visibility: 'private',
-      type: 'regular',
-    })
+    .values([
+      {
+        publicId: generatePublicId(),
+        name: 'Backend Sprint',
+        description:
+          'Backend microservice development',
+        slug: 'backend-sprint',
+        createdBy: ownerUserId,
+        workspaceId,
+      },
+
+      {
+        publicId: generatePublicId(),
+        name: 'Frontend Sprint',
+        description:
+          'Frontend kanban implementation',
+        slug: 'frontend-sprint',
+        createdBy: ownerUserId,
+        workspaceId,
+      },
+
+      {
+        publicId: generatePublicId(),
+        name: 'Bug Tracking',
+        description:
+          'Production issue tracking',
+        slug: 'bug-tracking',
+        createdBy: ownerUserId,
+        workspaceId,
+      },
+    ])
     .returning();
 
-  const [mobileBoard] = await db
-    .insert(boards)
-    .values({
-      publicId: 'brd002',
-      name: 'Mobile Sprint',
-      description: 'Mobile development board',
-      slug: 'mobile-sprint',
-      createdBy: adminUserId,
-      workspaceId,
-      visibility: 'private',
-      type: 'regular',
-    })
-    .returning();
+  const [
+    backendBoard,
+    frontendBoard,
+    bugBoard,
+  ] = insertedBoards;
 
   /**
-   * =========================================================
+   * =====================================================
    * FAVORITES
-   * =========================================================
+   * =====================================================
    */
 
-  await db.insert(userBoardFavorites).values({
-    userId: adminUserId,
-    boardId: backendBoard.id,
-  });
+  await db.insert(userBoardFavorites).values([
+    {
+      userId: ownerUserId,
+      boardId: backendBoard.id,
+    },
+
+    {
+      userId: member1UserId,
+      boardId: frontendBoard.id,
+    },
+
+    {
+      userId: member2UserId,
+      boardId: bugBoard.id,
+    },
+  ]);
 
   /**
-   * =========================================================
+   * =====================================================
    * LABELS
-   * =========================================================
+   * =====================================================
    */
 
   const insertedLabels = await db
     .insert(labels)
     .values([
       {
-        publicId: 'lbl001',
+        publicId: generatePublicId(),
         name: 'Bug',
         colourCode: '#ef4444',
-        createdBy: adminUserId,
         boardId: backendBoard.id,
+        createdBy: ownerUserId,
       },
+
       {
-        publicId: 'lbl002',
+        publicId: generatePublicId(),
         name: 'Feature',
         colourCode: '#22c55e',
-        createdBy: adminUserId,
         boardId: backendBoard.id,
+        createdBy: ownerUserId,
       },
+
       {
-        publicId: 'lbl003',
+        publicId: generatePublicId(),
         name: 'Urgent',
         colourCode: '#f97316',
-        createdBy: adminUserId,
         boardId: backendBoard.id,
+        createdBy: ownerUserId,
+      },
+
+      {
+        publicId: generatePublicId(),
+        name: 'Refactor',
+        colourCode: '#3b82f6',
+        boardId: backendBoard.id,
+        createdBy: ownerUserId,
+      },
+
+      {
+        publicId: generatePublicId(),
+        name: 'Testing',
+        colourCode: '#14b8a6',
+        boardId: backendBoard.id,
+        createdBy: ownerUserId,
       },
     ])
     .returning();
 
-  const bugLabel = insertedLabels[0];
-  const featureLabel = insertedLabels[1];
-  const urgentLabel = insertedLabels[2];
+  const [
+    bugLabel,
+    featureLabel,
+    urgentLabel,
+    refactorLabel,
+    testingLabel,
+  ] = insertedLabels;
 
   /**
-   * =========================================================
+   * =====================================================
    * LISTS
-   * =========================================================
+   * =====================================================
    */
 
   const insertedLists = await db
     .insert(lists)
     .values([
       {
-        publicId: 'lst001',
-        name: 'Todo',
+        publicId: generatePublicId(),
+        name: 'Backlog',
         index: 1000,
-        createdBy: adminUserId,
         boardId: backendBoard.id,
+        createdBy: ownerUserId,
       },
+
       {
-        publicId: 'lst002',
-        name: 'In Progress',
+        publicId: generatePublicId(),
+        name: 'Todo',
         index: 2000,
-        createdBy: adminUserId,
         boardId: backendBoard.id,
+        createdBy: ownerUserId,
       },
+
       {
-        publicId: 'lst003',
-        name: 'Review',
+        publicId: generatePublicId(),
+        name: 'In Progress',
         index: 3000,
-        createdBy: adminUserId,
         boardId: backendBoard.id,
+        createdBy: ownerUserId,
       },
+
       {
-        publicId: 'lst004',
-        name: 'Done',
+        publicId: generatePublicId(),
+        name: 'Review',
         index: 4000,
-        createdBy: adminUserId,
         boardId: backendBoard.id,
+        createdBy: ownerUserId,
+      },
+
+      {
+        publicId: generatePublicId(),
+        name: 'Done',
+        index: 5000,
+        boardId: backendBoard.id,
+        createdBy: ownerUserId,
       },
     ])
     .returning();
 
-  const todoList = insertedLists[0];
-  const doingList = insertedLists[1];
-  const reviewList = insertedLists[2];
-  const doneList = insertedLists[3];
+  const [
+    backlogList,
+    todoList,
+    doingList,
+    reviewList,
+    doneList,
+  ] = insertedLists;
 
   /**
-   * =========================================================
+   * =====================================================
    * CARDS
-   * =========================================================
+   * =====================================================
    */
 
   const insertedCards = await db
     .insert(cards)
     .values([
       {
-        publicId: 'crd001',
-        title: 'Implement JWT authentication',
+        publicId: generatePublicId(),
+        title:
+          'Implement JWT authentication',
         description:
-          'Support access token & refresh token',
+          'Support access token and refresh token',
         index: 1000,
-        createdBy: adminUserId,
         listId: todoList.id,
+        createdBy: ownerUserId,
         dueDate: new Date(
-          '2026-05-20T23:59:00Z',
+          '2026-06-10T23:59:00Z',
         ),
       },
+
       {
-        publicId: 'crd002',
+        publicId: generatePublicId(),
         title: 'Integrate Redis caching',
-        description: 'Improve API performance',
+        description:
+          'Improve API performance',
         index: 2000,
-        createdBy: adminUserId,
         listId: doingList.id,
+        createdBy: member1UserId,
       },
+
       {
-        publicId: 'crd003',
+        publicId: generatePublicId(),
         title: 'Setup websocket gateway',
-        description: 'Realtime synchronization',
+        description:
+          'Realtime collaboration sync',
         index: 3000,
-        createdBy: adminUserId,
         listId: reviewList.id,
+        createdBy: member2UserId,
       },
+
       {
-        publicId: 'crd004',
+        publicId: generatePublicId(),
         title: 'Setup CI/CD pipeline',
-        description: 'Github Actions deployment',
+        description:
+          'Github Actions deployment',
         index: 4000,
-        createdBy: adminUserId,
         listId: doneList.id,
+        createdBy: ownerUserId,
+      },
+
+      {
+        publicId: generatePublicId(),
+        title: 'Fix drag and drop issue',
+        description:
+          'Card flickering after reorder',
+        index: 5000,
+        listId: backlogList.id,
+        createdBy: member1UserId,
       },
     ])
     .returning();
 
-  const authCard = insertedCards[0];
-  const redisCard = insertedCards[1];
-  const socketCard = insertedCards[2];
+  const [
+    authCard,
+    redisCard,
+    socketCard,
+    cicdCard,
+    dndCard,
+  ] = insertedCards;
 
   /**
-   * =========================================================
+   * =====================================================
    * CARD LABELS
-   * =========================================================
+   * =====================================================
    */
 
   await db.insert(cardsToLabels).values([
@@ -237,99 +341,172 @@ async function seed() {
       cardId: authCard.id,
       labelId: featureLabel.id,
     },
+
     {
       cardId: authCard.id,
       labelId: urgentLabel.id,
     },
+
     {
       cardId: redisCard.id,
-      labelId: featureLabel.id,
+      labelId: refactorLabel.id,
     },
+
     {
       cardId: socketCard.id,
+      labelId: testingLabel.id,
+    },
+
+    {
+      cardId: dndCard.id,
       labelId: bugLabel.id,
     },
+
+    {
+      cardId: cicdCard.id,
+      labelId: featureLabel.id,
+    },
   ]);
 
   /**
-   * =========================================================
+   * =====================================================
    * CARD MEMBERS
-   * =========================================================
+   * =====================================================
    */
 
-  await db.insert(cardToWorkspaceMembers).values([
+  await db.insert(
+    cardToWorkspaceMembers,
+  ).values([
     {
       cardId: authCard.id,
-      workspaceMemberId: 1,
+      workspaceMemberPublicId:
+        ownerMemberPublicId,
     },
+
+    {
+      cardId: authCard.id,
+      workspaceMemberPublicId:
+        devMemberPublicId,
+    },
+
     {
       cardId: redisCard.id,
-      workspaceMemberId: 2,
+      workspaceMemberPublicId:
+        devMemberPublicId,
     },
+
     {
       cardId: socketCard.id,
-      workspaceMemberId: 1,
+      workspaceMemberPublicId:
+        qaMemberPublicId,
+    },
+
+    {
+      cardId: cicdCard.id,
+      workspaceMemberPublicId:
+        ownerMemberPublicId,
+    },
+
+    {
+      cardId: dndCard.id,
+      workspaceMemberPublicId:
+        devMemberPublicId,
     },
   ]);
 
   /**
-   * =========================================================
+   * =====================================================
    * CARD ACTIVITIES
-   * =========================================================
+   * =====================================================
    */
 
   await db.insert(cardActivities).values([
     {
-      publicId: 'act001',
+      publicId: generatePublicId(),
       type: 'card.created',
       cardId: authCard.id,
-      createdBy: adminUserId,
+      createdBy: ownerUserId,
     },
 
     {
-      publicId: 'act002',
+      publicId: generatePublicId(),
       type: 'card.updated.title',
       cardId: authCard.id,
       fromTitle: 'Setup auth',
-      toTitle: 'Implement JWT authentication',
-      createdBy: adminUserId,
+      toTitle:
+        'Implement JWT authentication',
+      createdBy: ownerUserId,
     },
 
     {
-      publicId: 'act003',
-      type: 'card.updated.list',
+      publicId: generatePublicId(),
+      type: 'card.updated.description',
       cardId: redisCard.id,
-      fromListId: todoList.id,
-      toListId: doingList.id,
-      fromIndex: 1000,
-      toIndex: 2000,
-      createdBy: adminUserId,
+      fromDescription:
+        'Improve performance',
+      toDescription:
+        'Improve API performance',
+      createdBy: member1UserId,
     },
 
     {
-      publicId: 'act004',
-      type: 'card.updated.dueDate.added',
+      publicId: generatePublicId(),
+      type: 'card.updated.list',
+      cardId: socketCard.id,
+      fromListId: todoList.id,
+      toListId: reviewList.id,
+      fromIndex: 1000,
+      toIndex: 3000,
+      createdBy: member2UserId,
+    },
+
+    {
+      publicId: generatePublicId(),
+      type:
+        'card.updated.dueDate.added',
       cardId: authCard.id,
       toDueDate: new Date(
-        '2026-05-20T23:59:00Z',
+        '2026-06-10T23:59:00Z',
       ),
-      createdBy: adminUserId,
+      createdBy: ownerUserId,
     },
 
     {
-      publicId: 'act005',
-      type: 'card.updated.member.added',
+      publicId: generatePublicId(),
+      type:
+        'card.updated.member.added',
       cardId: authCard.id,
-      workspaceMemberId: 1,
-      createdBy: adminUserId,
+      workspaceMemberPublicId:
+        devMemberPublicId,
+      createdBy: ownerUserId,
     },
 
     {
-      publicId: 'act006',
-      type: 'card.updated.label.added',
+      publicId: generatePublicId(),
+      type:
+        'card.updated.label.added',
       cardId: authCard.id,
       labelId: urgentLabel.id,
-      createdBy: adminUserId,
+      createdBy: ownerUserId,
+    },
+
+    {
+      publicId: generatePublicId(),
+      type:
+        'card.updated.member.added',
+      cardId: socketCard.id,
+      workspaceMemberPublicId:
+        qaMemberPublicId,
+      createdBy: member2UserId,
+    },
+
+    {
+      publicId: generatePublicId(),
+      type:
+        'card.updated.label.added',
+      cardId: dndCard.id,
+      labelId: bugLabel.id,
+      createdBy: member1UserId,
     },
   ]);
 
@@ -344,4 +521,3 @@ seed().catch((error) => {
   console.error('❌ Seed failed:', error);
   process.exit(1);
 });
-

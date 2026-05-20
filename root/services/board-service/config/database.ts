@@ -1,14 +1,15 @@
-
 import pg from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
+import type { NodePgQueryResultHKT } from 'drizzle-orm/node-postgres';
+import type { ExtractTablesWithRelations } from 'drizzle-orm';
+import type { PgTransaction } from 'drizzle-orm/pg-core';
 import * as schema from '../schema';
-import  dotenv  from 'dotenv';
+import dotenv from 'dotenv';
 dotenv.config();
 const { Pool } = pg;
 
-
 if (!process.env.BOARD_URL) {
-  throw new Error("BOARD_URL environment variable is not set");
+  throw new Error('BOARD_URL environment variable is not set');
 }
 
 export const pool = new Pool({
@@ -21,5 +22,9 @@ export const pool = new Pool({
 export const db = drizzle(pool, { schema });
 export type Database = typeof db;
 
-export default pool;
+type Schema = typeof schema;
+type Relations = ExtractTablesWithRelations<Schema>;
+export type BoardDbTransaction = PgTransaction<NodePgQueryResultHKT, Schema, Relations>;
+export type DbOrTx = Database | BoardDbTransaction;
 
+export default pool;
