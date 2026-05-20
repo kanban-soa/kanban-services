@@ -58,4 +58,3 @@ const config: GatewayConfig = {
 
 export type { GatewayConfig };
 export default config;
-

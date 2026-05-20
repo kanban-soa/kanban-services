@@ -3,3 +3,4 @@ CREATE DATABASE noti_db;
 CREATE DATABASE board_db;
 CREATE DATABASE workspace_db;
 CREATE DATABASE statistic_db;
+CREATE DATABASE activity_db;

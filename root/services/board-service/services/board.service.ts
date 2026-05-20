@@ -1,19 +1,34 @@
 import { BoardRepository } from '../repositories/board.repository';
+import { NoopBoardActivityEmitter, type BoardActivityEmitter } from '../shared/board-activity.emitter';
 // import { workspaceService } from '../shared/workspace.client';
 import { ApiError, ERROR_CODES } from '../shared/errors';
 
 export class BoardService {
   private readonly boardRepository = new BoardRepository();
+  private readonly activityEmitter: BoardActivityEmitter;
+
+  constructor(activityEmitter: BoardActivityEmitter = new NoopBoardActivityEmitter()) {
+    this.activityEmitter = activityEmitter;
+  }
 
   async createBoard(userId: string, workspaceId: number, data: any) {
     // await workspaceService.validateWorkspace(workspaceId);
     // await workspaceService.validateMember(workspaceId, userId);
 
-    return this.boardRepository.create({
+    const newBoard = await this.boardRepository.create({
       ...data,
       workspaceId,
       createdBy: userId,
     });
+
+    void this.activityEmitter.boardCreated({
+      workspaceId,
+      actorUserId: userId,
+      boardId: newBoard.publicId,
+      name: newBoard.name,
+    });
+
+    return newBoard;
   }
 
   async getBoards(userId: string, workspaceId: number) {
@@ -38,24 +53,33 @@ export class BoardService {
     // await workspaceService.validateWorkspace(workspaceId);
     // await workspaceService.validateMember(workspaceId, userId);
 
-    const board = await this.boardRepository.findById(boardId, workspaceId);
-    if (!board) {
-      throw new ApiError(404, ERROR_CODES.BOARD_NOT_FOUND, 'Board not found');
-    }
+    const updatedBoard = await this.boardRepository.update(boardId, workspaceId, data);
 
-    return this.boardRepository.update(boardId, workspaceId, data);
+    const updatedFields = Object.keys(data ?? {});
+    void this.activityEmitter.boardUpdated({
+      workspaceId,
+      actorUserId: userId,
+      boardId: updatedBoard?.publicId ?? boardId,
+      fields: updatedFields,
+    });
+
+    return updatedBoard;
   }
 
   async deleteBoard(userId: string, workspaceId: number, boardId: string) {
     // await workspaceService.validateWorkspace(workspaceId);
     // await workspaceService.validateMember(workspaceId, userId);
 
-    const board = await this.boardRepository.findById(boardId, workspaceId);
-    if (!board) {
-      throw new ApiError(404, ERROR_CODES.BOARD_NOT_FOUND, 'Board not found');
-    }
+    const deletedBoard = await this.boardRepository.softDelete(boardId, workspaceId, userId);
 
-    await this.boardRepository.softDelete(boardId, workspaceId, userId);
+    if (deletedBoard) {
+      void this.activityEmitter.boardDeleted({
+        workspaceId,
+        actorUserId: userId,
+        boardId: deletedBoard.publicId ?? boardId,
+        name: deletedBoard.name,
+      });
+    }
   }
 
   async getBoardDetail(userId: string, workspaceId: number, boardId: string) {
