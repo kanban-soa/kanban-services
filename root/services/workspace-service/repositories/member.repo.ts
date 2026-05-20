@@ -191,6 +191,36 @@ export class MemberRepository {
   }
 
   /**
+   * Cancel an invitation by publicId — soft-deletes only if status is 'invited'
+   * and the record belongs to the given workspace.
+   */
+  async cancelInvitation(publicId: string, workspaceId: number, deletedBy: string) {
+    try {
+      const result = await db
+        .update(workspaceMembers)
+        .set({
+          deletedAt: new Date(),
+          deletedBy,
+          status: "cancelled",
+        })
+        .where(
+          and(
+            eq(workspaceMembers.publicId, publicId),
+            eq(workspaceMembers.workspaceId, workspaceId),
+            eq(workspaceMembers.status, "invited"),
+            isNull(workspaceMembers.deletedAt)
+          )
+        )
+        .returning();
+      logger.debug("Invitation cancelled", { publicId, workspaceId, deletedBy });
+      return result[0] || null;
+    } catch (error) {
+      logger.error("Error cancelling invitation", error);
+      throw error;
+    }
+  }
+
+  /**
    * Soft delete member
    */
   async softDelete(id: number, deletedBy: string) {
@@ -234,6 +264,29 @@ export class MemberRepository {
       return result.length > 0;
     } catch (error) {
       logger.error("Error checking member existence by email", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all invited members in a workspace
+   */
+  async findInvitedByWorkspace(workspaceId: number) {
+    try {
+      const result = await db
+        .select()
+        .from(workspaceMembers)
+        .where(
+          and(
+            eq(workspaceMembers.workspaceId, workspaceId),
+            eq(workspaceMembers.status, "invited"),
+            isNull(workspaceMembers.deletedAt)
+          )
+        )
+        .orderBy(desc(workspaceMembers.createdAt));
+      return result;
+    } catch (error) {
+      logger.error("Error finding invited members by workspace", error);
       throw error;
     }
   }

@@ -5,17 +5,13 @@ import { memberRepository } from "@workspace-service/repositories/member.repo";
 import {
   sendSuccess,
   sendCreated,
-  sendError,
   sendBadRequest,
-  sendNotFound,
-  sendForbidden,
   sendUnauthorized,
+  sendForbidden,
+  handleControllerError,
 } from "@workspace-service/utils/response.util";
 import { logger } from "@workspace-service/utils/logger";
-import {
-  ERROR_MESSAGES,
-  HTTP_STATUS,
-} from "@workspace-service/config/constants";
+import { ERROR_CODES } from "@workspace-service/config/constants";
 
 /**
  * Permission Controller
@@ -37,13 +33,13 @@ export class PermissionController {
 
       const workspaceId = parseInt(id as string, 10);
       if (isNaN(workspaceId)) {
-        return sendBadRequest(res, "Invalid workspace ID");
+        return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Invalid workspace ID");
       }
 
       // Check if user is member and resolve their memberId
       const member = await memberRepository.findByUserAndWorkspace(userId, workspaceId);
       if (!member) {
-        return sendForbidden(res, ERROR_MESSAGES.PERMISSION_DENIED);
+        return sendForbidden(res);
       }
 
       // Check permissions using the member's DB row ID
@@ -71,7 +67,7 @@ export class PermissionController {
       );
     } catch (error) {
       logger.error("Error getting permissions", error);
-      return sendError(res, (error as Error).message);
+      return handleControllerError(res, error);
     }
   }
 
@@ -91,18 +87,18 @@ export class PermissionController {
       }
 
       if (!permission || typeof permission !== "string") {
-        return sendBadRequest(res, "Permission is required");
+        return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Permission is required");
       }
 
       const workspaceId = parseInt(id as string, 10);
       if (isNaN(workspaceId)) {
-        return sendBadRequest(res, "Invalid workspace ID");
+        return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Invalid workspace ID");
       }
 
       // Resolve the member row first to get correct memberId
       const member = await memberRepository.findByUserAndWorkspace(userId, workspaceId);
       if (!member) {
-        return sendForbidden(res, ERROR_MESSAGES.PERMISSION_DENIED);
+        return sendForbidden(res);
       }
 
       const hasPermission = await permissionService.memberHasPermission(
@@ -113,7 +109,7 @@ export class PermissionController {
       return sendSuccess(res, { hasPermission });
     } catch (error) {
       logger.error("Error checking permission", error);
-      return sendError(res, (error as Error).message);
+      return handleControllerError(res, error);
     }
   }
 
@@ -132,20 +128,20 @@ export class PermissionController {
 
       const workspaceId = parseInt(id as string, 10);
       if (isNaN(workspaceId)) {
-        return sendBadRequest(res, "Invalid workspace ID");
+        return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Invalid workspace ID");
       }
 
       // Check if user is admin
       const isAdmin = await workspaceService.isAdmin(workspaceId, userId);
       if (!isAdmin) {
-        return sendForbidden(res, ERROR_MESSAGES.PERMISSION_DENIED);
+        return sendForbidden(res);
       }
 
       const roles = await permissionService.getWorkspaceRoles(workspaceId);
       return sendSuccess(res, roles);
     } catch (error) {
       logger.error("Error getting roles", error);
-      return sendError(res, (error as Error).message);
+      return handleControllerError(res, error);
     }
   }
 
@@ -164,23 +160,23 @@ export class PermissionController {
 
       const workspaceId = parseInt(id as string, 10);
       if (isNaN(workspaceId)) {
-        return sendBadRequest(res, "Invalid workspace ID");
+        return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Invalid workspace ID");
       }
 
       // Check if user is admin
       const isAdmin = await workspaceService.isAdmin(workspaceId, userId);
       if (!isAdmin) {
-        return sendForbidden(res, ERROR_MESSAGES.PERMISSION_DENIED);
+        return sendForbidden(res);
       }
 
       const { name, description, hierarchyLevel } = req.body;
 
       if (!name || typeof name !== "string") {
-        return sendBadRequest(res, "Role name is required");
+        return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Role name is required");
       }
 
       if (hierarchyLevel === undefined || typeof hierarchyLevel !== "number") {
-        return sendBadRequest(res, "Hierarchy level is required");
+        return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Hierarchy level is required");
       }
 
       const role = await permissionService.createRole({
@@ -194,7 +190,7 @@ export class PermissionController {
       return sendCreated(res, role, "Role created successfully");
     } catch (error) {
       logger.error("Error creating role", error);
-      return sendError(res, (error as Error).message);
+      return handleControllerError(res, error);
     }
   }
 
@@ -215,20 +211,20 @@ export class PermissionController {
       const roleIdNum = parseInt(roleId as string, 10);
 
       if (isNaN(workspaceId) || isNaN(roleIdNum)) {
-        return sendBadRequest(res, "Invalid workspace or role ID");
+        return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Invalid workspace or role ID");
       }
 
       // Check if user is admin
       const isAdmin = await workspaceService.isAdmin(workspaceId, userId);
       if (!isAdmin) {
-        return sendForbidden(res, ERROR_MESSAGES.PERMISSION_DENIED);
+        return sendForbidden(res);
       }
 
       const permissions = await permissionService.getRolePermissions(roleIdNum);
       return sendSuccess(res, permissions);
     } catch (error) {
       logger.error("Error getting role permissions", error);
-      return sendError(res, (error as Error).message);
+      return handleControllerError(res, error);
     }
   }
 
@@ -247,20 +243,20 @@ export class PermissionController {
       }
 
       if (!permission || typeof permission !== "string") {
-        return sendBadRequest(res, "Permission is required");
+        return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Permission is required");
       }
 
       const workspaceId = parseInt(id as string, 10);
       const roleIdNum = parseInt(roleId as string, 10);
 
       if (isNaN(workspaceId) || isNaN(roleIdNum)) {
-        return sendBadRequest(res, "Invalid workspace or role ID");
+        return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Invalid workspace or role ID");
       }
 
       // Check if user is admin
       const isAdmin = await workspaceService.isAdmin(workspaceId, userId);
       if (!isAdmin) {
-        return sendForbidden(res, ERROR_MESSAGES.PERMISSION_DENIED);
+        return sendForbidden(res);
       }
 
       const result = await permissionService.grantPermissionToRole(roleIdNum, permission);
@@ -270,12 +266,8 @@ export class PermissionController {
       );
       return sendCreated(res, result, "Permission granted successfully");
     } catch (error) {
-      const message = (error as Error).message;
-      if (message === ERROR_MESSAGES.INVALID_PERMISSION) {
-        return sendBadRequest(res, message);
-      }
       logger.error("Error granting permission", error);
-      return sendError(res, message);
+      return handleControllerError(res, error);
     }
   }
 }

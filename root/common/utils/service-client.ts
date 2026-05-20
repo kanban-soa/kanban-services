@@ -138,36 +138,44 @@ export function createServiceClient(options: ServiceClientOptions) {
       }
     }
 
-    const response = await fetch(url, {
-      method: request.method,
-      headers,
-      body,
-      signal: AbortSignal.timeout(timeoutMs),
-    });
 
-    const responseHeaders = extractHeaders(response.headers);
-    const contentType = response.headers.get("content-type") ?? "";
-    let payload: unknown;
+    try {
+      const response = await fetch(url, {
+        method: request.method,
+        headers,
+        body,
+        signal: AbortSignal.timeout(timeoutMs),
+      });
 
-    if (contentType.includes("application/json")) {
-      payload = await response.json().catch(() => null);
-    } else {
-      payload = await response.text().catch(() => "");
+
+      const responseHeaders = extractHeaders(response.headers);
+      const contentType = response.headers.get("content-type") ?? "";
+      let payload: unknown;
+
+      if (contentType.includes("application/json")) {
+        payload = await response.json().catch(() => null);
+      } else {
+        payload = await response.text().catch(() => "");
+      }
+
+      if (!response.ok) {
+        throw new ServiceClientError(
+          `Request failed with status ${response.status}`,
+          response.status,
+          payload
+        );
+      }
+
+      return {
+        status: response.status,
+        data: payload as T,
+        headers: responseHeaders,
+      };
+
+    } catch (e) {
+      throw Error(`Can't request to service: ${url}`)
     }
 
-    if (!response.ok) {
-      throw new ServiceClientError(
-        `Request failed with status ${response.status}`,
-        response.status,
-        payload
-      );
-    }
-
-    return {
-      status: response.status,
-      data: payload as T,
-      headers: responseHeaders,
-    };
   }
 
   return {

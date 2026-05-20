@@ -1,8 +1,10 @@
 import { memberRepository } from "../repositories/member.repo";
 import { workspaceRepository } from "../repositories/workspace.repo";
+import { authClient } from "@workspace-service/infrastructure/clients/auth.client";
 import { generatePublicId } from "../utils/id.util";
 import { logger } from "../utils/logger";
-import { MEMBER_ROLES, MEMBER_STATUS, ERROR_MESSAGES } from "../config/constants";
+import { MEMBER_ROLES, MEMBER_STATUS, ERROR_CODES } from "../config/constants";
+import { AppError } from "../utils/AppError";
 
 export interface InviteMemberDTO {
   email: string;
@@ -29,7 +31,15 @@ export class MemberService {
       // Validate workspace exists
       const workspace = await workspaceRepository.findById(input.workspaceId);
       if (!workspace) {
-        throw new Error(ERROR_MESSAGES.WORKSPACE_NOT_FOUND);
+        throw new AppError(ERROR_CODES.WORKSPACE_NOT_FOUND);
+      }
+
+      // Verify user exists in auth-service
+      let authUser;
+      try {
+        authUser = await authClient.getUserByEmail(input.email);
+      } catch {
+        throw new AppError(ERROR_CODES.USER_NOT_REGISTERED);
       }
 
       // Check if member already exists
@@ -38,7 +48,7 @@ export class MemberService {
         input.workspaceId
       );
       if (exists) {
-        throw new Error(ERROR_MESSAGES.DUPLICATE_MEMBER);
+        throw new AppError(ERROR_CODES.DUPLICATE_MEMBER);
       }
 
       const publicId = generatePublicId();
@@ -47,10 +57,11 @@ export class MemberService {
       const member = await memberRepository.create({
         publicId,
         email: input.email,
+        userId: authUser.id,
         workspaceId: input.workspaceId,
         createdBy: input.invitedBy,
         role,
-        status: MEMBER_STATUS.INVITED,
+        status: MEMBER_STATUS.ACTIVE,
       });
 
       logger.info(
@@ -72,12 +83,12 @@ export class MemberService {
     try {
       const member = await memberRepository.findById(memberId);
       if (!member) {
-        throw new Error(ERROR_MESSAGES.MEMBER_NOT_FOUND);
+        throw new AppError(ERROR_CODES.MEMBER_NOT_FOUND);
       }
 
       // Validate member is in "invited" status before accepting
       if (member.status !== MEMBER_STATUS.INVITED) {
-        throw new Error(`Member is not in invited status. Current status: ${member.status}`);
+        throw new AppError(ERROR_CODES.MEMBER_NOT_INVITED);
       }
 
       const updated = await memberRepository.update(memberId, {
@@ -100,7 +111,7 @@ export class MemberService {
     try {
       const member = await memberRepository.findById(memberId);
       if (!member) {
-        throw new Error(ERROR_MESSAGES.MEMBER_NOT_FOUND);
+        throw new AppError(ERROR_CODES.MEMBER_NOT_FOUND);
       }
       return member;
     } catch (error) {
@@ -125,6 +136,59 @@ export class MemberService {
   }
 
   /**
+   * Get all invited members in workspace
+   */
+  async getInvitedMembers(workspaceId: number) {
+    try {
+      const workspace = await workspaceRepository.findById(workspaceId);
+      if (!workspace) {
+        throw new AppError(ERROR_CODES.WORKSPACE_NOT_FOUND);
+      }
+
+      return await memberRepository.findInvitedByWorkspace(workspaceId);
+    } catch (error) {
+      logger.error("Error getting invited members", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Cancel a pending invitation in a workspace (admin only)
+   * invitationId is the member's publicId
+   */
+  async cancelInvitation(invitationId: string, workspaceId: number, cancelledBy: string) {
+    try {
+      const workspace = await workspaceRepository.findById(workspaceId);
+      if (!workspace) {
+        throw new AppError(ERROR_CODES.WORKSPACE_NOT_FOUND);
+      }
+
+      // Validate the record exists, belongs to workspace, and is still pending
+      const invitation = await memberRepository.findByPublicId(invitationId);
+      if (
+        !invitation ||
+        invitation.workspaceId !== workspaceId ||
+        invitation.status !== MEMBER_STATUS.INVITED ||
+        invitation.deletedAt !== null
+      ) {
+        throw new AppError(ERROR_CODES.MEMBER_NOT_FOUND);
+      }
+
+      const cancelled = await memberRepository.cancelInvitation(
+        invitationId,
+        workspaceId,
+        cancelledBy
+      );
+
+      logger.info(`Invitation cancelled: ${invitationId} in workspace ${workspaceId}`);
+      return cancelled;
+    } catch (error) {
+      logger.error("Error cancelling invitation", error);
+      throw error;
+    }
+  }
+
+  /**
    * Update member role in workspace
    */
   async updateMemberRole(memberId: number, newRole: string) {
@@ -132,12 +196,12 @@ export class MemberService {
       // Validate role
       const validRoles = Object.values(MEMBER_ROLES) as string[];
       if (!validRoles.includes(newRole)) {
-        throw new Error(ERROR_MESSAGES.INVALID_ROLE);
+        throw new AppError(ERROR_CODES.INVALID_ROLE);
       }
 
       const member = await memberRepository.findById(memberId);
       if (!member) {
-        throw new Error(ERROR_MESSAGES.MEMBER_NOT_FOUND);
+        throw new AppError(ERROR_CODES.MEMBER_NOT_FOUND);
       }
 
       const updated = await memberRepository.update(memberId, {
@@ -159,14 +223,14 @@ export class MemberService {
     try {
       const member = await memberRepository.findById(memberId);
       if (!member) {
-        throw new Error(ERROR_MESSAGES.MEMBER_NOT_FOUND);
+        throw new AppError(ERROR_CODES.MEMBER_NOT_FOUND);
       }
 
       // Prevent removing the only admin
       if (member.role === MEMBER_ROLES.ADMIN) {
         const admins = await memberRepository.findAdminsByWorkspace(member.workspaceId);
         if (admins.length === 1) {
-          throw new Error("Cannot remove the only admin member");
+          throw new AppError(ERROR_CODES.CANNOT_REMOVE_LAST_ADMIN);
         }
       }
 
@@ -186,7 +250,7 @@ export class MemberService {
     try {
       const member = await memberRepository.findById(memberId);
       if (!member) {
-        throw new Error(ERROR_MESSAGES.MEMBER_NOT_FOUND);
+        throw new AppError(ERROR_CODES.MEMBER_NOT_FOUND);
       }
       return member.role;
     } catch (error) {

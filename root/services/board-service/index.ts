@@ -1,9 +1,9 @@
 import express, { Request, Response } from 'express';
 import dotenv from 'dotenv';
-import { pool } from '@/board-service/config';
 import routes from '@/board-service/api/routes';
 import { errorHandler } from '@/board-service/middlewares/error.middleware';
-
+import { pool } from '../board-service/config';
+import statisticsRoutes from "./api/routes/statistics.route";
 
 dotenv.config({
   debug: true,
@@ -19,7 +19,8 @@ app.use((req: Request, res: Response, next) => {
 });
 
 app.use('/api', routes);
-app.use(errorHandler);
+app.use("/api/boards/statistics", statisticsRoutes);
+console.log('Board service is starting...');
 
 const port = process.env.BOARD_PORT || 9003;
 

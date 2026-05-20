@@ -7,7 +7,7 @@ export const UsersController = {
   createUser: async (req: Request, res: Response) => {
     try {
       const user = await UsersService.createUser(req.body);
-      const token = generateToken({ id: user.id, email: user.email });
+      const token = generateToken({ id: user.id, email: user.email, name: user.name, role: user.role ?? undefined });
       const session = await AuthService.createSession({ userId: user.id });
       const { password, ...userWithoutPassword } = user;
       res.status(201).json({ token, refreshToken: session.token, user: userWithoutPassword });
@@ -20,7 +20,7 @@ export const UsersController = {
     try {
       const { email, password } = req.body;
       const user = await UsersService.login(email, password);
-      const token = generateToken({ id: user.id, email: user.email });
+      const token = generateToken({ id: user.id, email: user.email, name: user.name, role: user.role ?? undefined });
       const session = await AuthService.createSession({ userId: user.id });
       const { password: _, ...userWithoutPassword } = user;
       res.json({ token, refreshToken: session.token, user: userWithoutPassword });

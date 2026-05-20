@@ -257,6 +257,8 @@ export async function getStatistics(
 
   const workspaceId = query.workspaceId ? Number(query.workspaceId) : undefined;
 
+  console.log(`[SERVICES][STAT] Workspace id: ${workspaceId}`)
+
   const filter = { from, to, workspaceId };
   const prevFilter = { from: prevRange.from, to: prevRange.to, workspaceId };
 

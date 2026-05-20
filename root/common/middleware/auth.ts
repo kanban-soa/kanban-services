@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import config from "@/common/config/env";
+//import config from "@/common/config/env";
 import logger from "@/common/utils/logger";
 
 export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
