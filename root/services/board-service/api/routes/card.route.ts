@@ -12,15 +12,25 @@ import {
   updateCard,
 } from '../controllers/card.controller';
 
-export const cardRoutes = Router();
+export const cardRoutes = Router({ mergeParams: true });
 
-cardRoutes.patch('/:cardId/move', moveCard);
+
+cardRoutes.get('/:cardId', getCard);
+cardRoutes.patch('/:cardId', updateCard);//update title and description
+cardRoutes.delete('/:cardId', deleteCard); 
+
+
+cardRoutes.post('/:cardId/labels/', attachLabelToCard);
+cardRoutes.delete('/:cardId/labels/:labelId', detachLabelFromCard);
+
 cardRoutes.patch('/:cardId/due-date', patchDueDate);
 cardRoutes.delete('/:cardId/due-date', deleteDueDate);
-cardRoutes.post('/:cardId/labels', attachLabelToCard);
-cardRoutes.delete('/:cardId/labels/:labelId', detachLabelFromCard);
+
+
+
+cardRoutes.patch('/:cardId', moveCard);
+
+
+
 cardRoutes.post('/:cardId/members', addCardMember);
 cardRoutes.delete('/:cardId/members/:memberId', removeCardMember);
-cardRoutes.get('/:cardId', getCard);
-cardRoutes.patch('/:cardId', updateCard);
-cardRoutes.delete('/:cardId', deleteCard);

@@ -5,7 +5,8 @@ import { CardRepository } from '@/board-service/repositories/card.repository';
 import { LabelRepository } from '@/board-service/repositories/label.repository';
 import { insertCardActivity } from '@/board-service/shared/card-activity';
 import { ApiError, ERROR_CODES } from '@/board-service/shared/errors';
-import { workspaceService } from '@/board-service/shared/workspace.client';
+import { CardDetailResponseDto } from '../api/dto/card-response.dto';
+import { CardMapper } from '../api/mapper/card.mapper';
 
 function parseWorkspaceMemberId(raw: unknown): number | null {
   if (typeof raw === 'number' && Number.isFinite(raw)) return raw;
@@ -23,7 +24,7 @@ export class CardService {
   private readonly cardRepository = new CardRepository();
 
   async getCards(_userId: string, workspaceId: number, listPublicId: string) {
-    const result = await this.cardRepository.findManyByListPublicId(listPublicId, workspaceId);
+    const result = await this.cardRepository.findManyByListPublicId(listPublicId);
     if (!result) {
       throw new ApiError(404, ERROR_CODES.LIST_NOT_FOUND, 'List not found');
     }
@@ -32,7 +33,6 @@ export class CardService {
 
   async createCard(
     userId: string,
-    workspaceId: number,
     listPublicId: string,
     body: { title: string; description?: string | null },
   ) {
@@ -40,7 +40,7 @@ export class CardService {
       throw new ApiError(400, ERROR_CODES.BAD_REQUEST, 'Card title is required');
     }
 
-    const listBundle = await this.cardRepository.findManyByListPublicId(listPublicId, workspaceId);
+    const listBundle = await this.cardRepository.findManyByListPublicId(listPublicId);
     if (!listBundle) {
       throw new ApiError(404, ERROR_CODES.LIST_NOT_FOUND, 'List not found');
     }
@@ -63,21 +63,39 @@ export class CardService {
     });
   }
 
-  async getCard(_userId: string, workspaceId: number, cardPublicId: string) {
-    const card = await this.cardRepository.findByPublicIdWithContext(cardPublicId, workspaceId);
-    if (!card) {
-      throw new ApiError(404, ERROR_CODES.CARD_NOT_FOUND, 'Card not found');
-    }
-    return card;
+  async getCardDetails(
+      _userId: string,
+      cardPublicId: string,
+    ): Promise<CardDetailResponseDto> {
+      console.log('Getting card details for:', { cardPublicId });
+
+      /**
+       * Query card aggregate
+       */
+      const card = await this.cardRepository.findByPublicIdWithContext(cardPublicId);
+
+      if (!card) {
+        throw new ApiError(
+          404,
+          ERROR_CODES.CARD_NOT_FOUND,
+          'Card not found',
+        );
+      }
+
+      /**
+       * Transform response dto
+       */
+      return CardMapper.toDetailDto(
+        card,
+      );
   }
 
   async updateCard(
     userId: string,
-    workspaceId: number,
     cardPublicId: string,
     body: { title?: string; description?: string | null },
   ) {
-    const existing = await this.cardRepository.findByPublicIdWithContext(cardPublicId, workspaceId);
+    const existing = await this.cardRepository.findByPublicIdWithContext(cardPublicId);
     if (!existing) {
       throw new ApiError(404, ERROR_CODES.CARD_NOT_FOUND, 'Card not found');
     }
@@ -130,8 +148,8 @@ export class CardService {
     });
   }
 
-  async deleteCard(userId: string, workspaceId: number, cardPublicId: string) {
-    const existing = await this.cardRepository.findByPublicIdWithContext(cardPublicId, workspaceId);
+  async deleteCard(userId: string, cardPublicId: string) {
+    const existing = await this.cardRepository.findByPublicIdWithContext(cardPublicId);
     if (!existing) {
       throw new ApiError(404, ERROR_CODES.CARD_NOT_FOUND, 'Card not found');
     }
@@ -155,55 +173,93 @@ export class CardService {
 
   async moveCard(
     userId: string,
-    workspaceId: number,
     cardPublicId: string,
-    body: { targetListId: string; newIndex: number },
+    body: { targetListId: string; newIndex?: number },
   ) {
     if (!body?.targetListId || typeof body.targetListId !== 'string') {
       throw new ApiError(400, ERROR_CODES.BAD_REQUEST, 'targetListId is required');
     }
-    if (typeof body.newIndex !== 'number' || !Number.isFinite(body.newIndex) || body.newIndex < 0) {
+
+    if (
+      body.newIndex !== undefined &&
+      (
+        typeof body.newIndex !== 'number' ||
+        !Number.isFinite(body.newIndex) ||
+        body.newIndex < 0
+      )
+    ) {
       throw new ApiError(400, ERROR_CODES.BAD_REQUEST, 'newIndex must be a non-negative number');
     }
 
-    const card = await this.cardRepository.findByPublicIdWithContext(cardPublicId, workspaceId);
+    const card = await this.cardRepository.findByPublicIdWithContext(cardPublicId);
+
     if (!card) {
       throw new ApiError(404, ERROR_CODES.CARD_NOT_FOUND, 'Card not found');
     }
 
-    const targetList = await this.cardRepository.findManyByListPublicId(body.targetListId, workspaceId);
+    const targetList = await this.cardRepository.findManyByListPublicId(body.targetListId);
+
     if (!targetList) {
       throw new ApiError(404, ERROR_CODES.LIST_NOT_FOUND, 'Target list not found');
     }
 
     const sourceBoardId = card.list.board.id;
+
     if (targetList.list.boardId !== sourceBoardId) {
-      throw new ApiError(422, ERROR_CODES.VALIDATION_ERROR, 'Target list must belong to the same board');
+      throw new ApiError(
+        422,
+        ERROR_CODES.VALIDATION_ERROR,
+        'Target list must belong to the same board',
+      );
     }
 
     const sourceListId = card.list.id;
     const targetListId = targetList.list.id;
 
     await db.transaction(async (tx) => {
-      const sourceCards = await this.cardRepository.getOrderedCardsInList(tx, sourceListId);
+      const sourceCards = await this.cardRepository.getOrderedCardsInList(
+        tx,
+        sourceListId,
+      );
+
       const moving = sourceCards.find((c) => c.publicId === cardPublicId);
-      if (!moving) throw new ApiError(404, ERROR_CODES.CARD_NOT_FOUND, 'Card not found');
+
+      if (!moving) {
+        throw new ApiError(404, ERROR_CODES.CARD_NOT_FOUND, 'Card not found');
+      }
 
       const fromIndex = moving.index;
       const fromListId = sourceListId;
 
+      // =========================
+      // MOVE INSIDE SAME LIST
+      // =========================
       if (sourceListId === targetListId) {
         const ordered = sourceCards.filter((c) => c.id !== moving.id);
-        const boundedIndex = Math.min(body.newIndex, ordered.length);
+
+        const requestedIndex =
+          body.newIndex ?? ordered.length;
+
+        const boundedIndex = Math.min(
+          requestedIndex,
+          ordered.length,
+        );
+
         ordered.splice(boundedIndex, 0, moving);
 
         for (let i = 0; i < ordered.length; i++) {
-          await this.cardRepository.setCardIndex(tx, ordered[i]!.id, i);
+          await this.cardRepository.setCardIndex(
+            tx,
+            ordered[i]!.id,
+            i,
+          );
         }
 
-        const toIndex = ordered.findIndex((c) => c.id === moving.id);
+        const toIndex = ordered.findIndex(
+          (c) => c.id === moving.id,
+        );
 
-        if (fromListId === targetListId && fromIndex !== toIndex) {
+        if (fromIndex !== toIndex) {
           await insertCardActivity(tx, {
             type: 'card.updated.index',
             cardId: moving.id,
@@ -218,18 +274,49 @@ export class CardService {
         return;
       }
 
-      const sourceWithout = sourceCards.filter((c) => c.id !== moving.id);
+      // =========================
+      // REMOVE FROM SOURCE LIST
+      // =========================
+      const sourceWithout = sourceCards.filter(
+        (c) => c.id !== moving.id,
+      );
+
       for (let i = 0; i < sourceWithout.length; i++) {
-        await this.cardRepository.setCardIndex(tx, sourceWithout[i]!.id, i);
+        await this.cardRepository.setCardIndex(
+          tx,
+          sourceWithout[i]!.id,
+          i,
+        );
       }
 
-      const targetCards = await this.cardRepository.getOrderedCardsInList(tx, targetListId);
-      const boundedIndex = Math.min(body.newIndex, targetCards.length);
+      // =========================
+      // INSERT INTO TARGET LIST
+      // =========================
+      const targetCards =
+        await this.cardRepository.getOrderedCardsInList(
+          tx,
+          targetListId,
+        );
+
+      const requestedIndex =
+        body.newIndex ?? targetCards.length;
+
+      const boundedIndex = Math.min(
+        requestedIndex,
+        targetCards.length,
+      );
+
       const newOrder = [...targetCards];
+
       newOrder.splice(boundedIndex, 0, moving);
 
       for (let i = 0; i < newOrder.length; i++) {
-        await this.cardRepository.setCardListAndIndex(tx, newOrder[i]!.id, targetListId, i);
+        await this.cardRepository.setCardListAndIndex(
+          tx,
+          newOrder[i]!.id,
+          targetListId,
+          i,
+        );
       }
 
       await insertCardActivity(tx, {
@@ -243,19 +330,28 @@ export class CardService {
       });
     });
 
-    const refreshed = await this.cardRepository.findByPublicIdWithContext(cardPublicId, workspaceId);
+    const refreshed =
+      await this.cardRepository.findByPublicIdWithContext(
+        cardPublicId,
+      );
+
     if (!refreshed) {
-      throw new ApiError(404, ERROR_CODES.CARD_NOT_FOUND, 'Card not found');
+      throw new ApiError(
+        404,
+        ERROR_CODES.CARD_NOT_FOUND,
+        'Card not found',
+      );
     }
+
     return refreshed;
   }
 
-  async reorderCards(workspaceId: number, listPublicId: string, cardIds: string[]) {
+  async reorderCards( listPublicId: string, cardIds: string[]) {
     if (!Array.isArray(cardIds) || cardIds.length === 0) {
       throw new ApiError(400, ERROR_CODES.BAD_REQUEST, 'cardIds must be a non-empty array');
     }
 
-    const result = await this.cardRepository.reorderListCards(listPublicId, workspaceId, cardIds);
+    const result = await this.cardRepository.reorderListCards(listPublicId, cardIds);
     if (!result.ok) {
       if (result.reason === 'LIST_NOT_FOUND') {
         throw new ApiError(404, ERROR_CODES.LIST_NOT_FOUND, 'List not found');
@@ -264,7 +360,7 @@ export class CardService {
     }
   }
 
-  async patchDueDate(userId: string, workspaceId: number, cardPublicId: string, body: { dueDate: string }) {
+  async patchDueDate(userId: string, cardPublicId: string, body: { dueDate: string }) {
     if (!body?.dueDate || typeof body.dueDate !== 'string') {
       throw new ApiError(400, ERROR_CODES.BAD_REQUEST, 'dueDate is required');
     }
@@ -274,7 +370,7 @@ export class CardService {
       throw new ApiError(400, ERROR_CODES.BAD_REQUEST, 'dueDate must be a valid ISO date string');
     }
 
-    const existing = await this.cardRepository.findByPublicIdWithContext(cardPublicId, workspaceId);
+    const existing = await this.cardRepository.findByPublicIdWithContext(cardPublicId);
     if (!existing) {
       throw new ApiError(404, ERROR_CODES.CARD_NOT_FOUND, 'Card not found');
     }
@@ -303,8 +399,8 @@ export class CardService {
     });
   }
 
-  async deleteDueDate(userId: string, workspaceId: number, cardPublicId: string) {
-    const existing = await this.cardRepository.findByPublicIdWithContext(cardPublicId, workspaceId);
+  async deleteDueDate(userId: string, cardPublicId: string) {
+    const existing = await this.cardRepository.findByPublicIdWithContext(cardPublicId);
     if (!existing) {
       throw new ApiError(404, ERROR_CODES.CARD_NOT_FOUND, 'Card not found');
     }
@@ -334,12 +430,12 @@ export class CardService {
     });
   }
 
-  async attachLabel(userId: string, workspaceId: number, cardPublicId: string, body: { labelId: string }) {
+  async attachLabel(userId: string, cardPublicId: string, body: { labelId: string }) {
     if (!body?.labelId || typeof body.labelId !== 'string') {
       throw new ApiError(400, ERROR_CODES.BAD_REQUEST, 'labelId is required');
     }
 
-    const card = await this.cardRepository.findByPublicIdWithContext(cardPublicId, workspaceId);
+    const card = await this.cardRepository.findByPublicIdWithContext(cardPublicId);
     if (!card) {
       throw new ApiError(404, ERROR_CODES.CARD_NOT_FOUND, 'Card not found');
     }
@@ -366,15 +462,15 @@ export class CardService {
       });
     });
 
-    const refreshed = await this.cardRepository.findByPublicIdWithContext(cardPublicId, workspaceId);
+    const refreshed = await this.cardRepository.findByPublicIdWithContext(cardPublicId);
     if (!refreshed) {
       throw new ApiError(404, ERROR_CODES.CARD_NOT_FOUND, 'Card not found');
     }
     return refreshed;
   }
 
-  async detachLabel(userId: string, workspaceId: number, cardPublicId: string, labelPublicId: string) {
-    const card = await this.cardRepository.findByPublicIdWithContext(cardPublicId, workspaceId);
+  async detachLabel(userId: string, cardPublicId: string, labelPublicId: string) {
+    const card = await this.cardRepository.findByPublicIdWithContext(cardPublicId);
     if (!card) {
       throw new ApiError(404, ERROR_CODES.CARD_NOT_FOUND, 'Card not found');
     }
@@ -402,78 +498,139 @@ export class CardService {
     });
   }
 
-  async addMember(
-    userId: string,
-    workspaceId: number,
-    cardPublicId: string,
-    body: { workspaceMemberId: unknown },
+async addMember(
+  userId: string,
+  cardPublicId: string,
+  body: {
+    workspaceMemberPublicId: string;
+  },
+) {
+  if (
+    !body?.workspaceMemberPublicId ||
+    typeof body.workspaceMemberPublicId !==
+      'string'
   ) {
-    const memberId = parseWorkspaceMemberId(body?.workspaceMemberId);
-    if (memberId === null) {
-      throw new ApiError(400, ERROR_CODES.BAD_REQUEST, 'workspaceMemberId is required');
-    }
-
-    const members = await workspaceService.getMembers(workspaceId);
-    const isMember = members.some(
-      (m: { id?: number; workspaceMemberId?: number }) =>
-        m.id === memberId || m.workspaceMemberId === memberId,
+    throw new ApiError(
+      400,
+      ERROR_CODES.BAD_REQUEST,
+      'workspaceMemberPublicId is required',
     );
-    if (!isMember) {
-      throw new ApiError(400, ERROR_CODES.BAD_REQUEST, 'Invalid workspace member');
-    }
-
-    const card = await this.cardRepository.findByPublicIdWithContext(cardPublicId, workspaceId);
-    if (!card) {
-      throw new ApiError(404, ERROR_CODES.CARD_NOT_FOUND, 'Card not found');
-    }
-
-    const existing = await this.cardRepository.findMemberAssignment(card.id, memberId);
-    if (existing) {
-      throw new ApiError(409, ERROR_CODES.CONFLICT, 'Member already assigned to this card');
-    }
-
-    return db.transaction(async (tx) => {
-      await this.cardRepository.attachMember(tx, card.id, memberId);
-
-      await insertCardActivity(tx, {
-        type: 'card.updated.member.added',
-        cardId: card.id,
-        createdBy: userId,
-        workspaceMemberId: memberId,
-      });
-    });
   }
+
+  const card =
+    await this.cardRepository.findByPublicIdWithContext(
+      cardPublicId,
+    );
+
+  if (!card) {
+    throw new ApiError(
+      404,
+      ERROR_CODES.CARD_NOT_FOUND,
+      'Card not found',
+    );
+  }
+
+  const existing =
+    await this.cardRepository.findMemberAssignment(
+      card.id,
+      body.workspaceMemberPublicId,
+    );
+
+  if (existing) {
+    throw new ApiError(
+      409,
+      ERROR_CODES.CONFLICT,
+      'Member already assigned to this card',
+    );
+  }
+
+  await db.transaction(async (tx) => {
+    await this.cardRepository.attachMember(
+      tx,
+      card.id,
+      body.workspaceMemberPublicId,
+    );
+    await insertCardActivity(tx, {
+      type:
+        'card.updated.member.added',
+
+      cardId: card.id,
+      createdBy: userId,
+      workspaceMemberPublicId:
+        body.workspaceMemberPublicId,
+    });
+  });
+
+  return {
+    success: true,
+  };
+}
 
   async removeMember(
-    userId: string,
-    workspaceId: number,
-    cardPublicId: string,
-    memberPublicOrNumeric: string,
+  userId: string,
+  cardPublicId: string,
+  workspaceMemberPublicId: string,
+) {
+  if (
+    !workspaceMemberPublicId ||
+    typeof workspaceMemberPublicId !==
+      'string'
   ) {
-    const memberId = parseWorkspaceMemberId(memberPublicOrNumeric);
-    if (memberId === null) {
-      throw new ApiError(400, ERROR_CODES.BAD_REQUEST, 'Invalid member id');
-    }
-
-    const card = await this.cardRepository.findByPublicIdWithContext(cardPublicId, workspaceId);
-    if (!card) {
-      throw new ApiError(404, ERROR_CODES.CARD_NOT_FOUND, 'Card not found');
-    }
-
-    const existing = await this.cardRepository.findMemberAssignment(card.id, memberId);
-    if (!existing) {
-      throw new ApiError(404, ERROR_CODES.MEMBER_NOT_FOUND, 'Member is not assigned to this card');
-    }
-
-    return db.transaction(async (tx) => {
-      await this.cardRepository.detachMember(tx, card.id, memberId);
-
-      await insertCardActivity(tx, {
-        type: 'card.updated.member.removed',
-        cardId: card.id,
-        createdBy: userId,
-        workspaceMemberId: memberId,
-      });
-    });
+    throw new ApiError(
+      400,
+      ERROR_CODES.BAD_REQUEST,
+      'workspaceMemberPublicId is required',
+    );
   }
+
+  const card =
+    await this.cardRepository.findByPublicIdWithContext(
+      cardPublicId,
+    );
+
+  if (!card) {
+    throw new ApiError(
+      404,
+      ERROR_CODES.CARD_NOT_FOUND,
+      'Card not found',
+    );
+  }
+
+  const existing =
+    await this.cardRepository.findMemberAssignment(
+      card.id,
+      workspaceMemberPublicId,
+    );
+
+  if (!existing) {
+    throw new ApiError(
+      404,
+      ERROR_CODES.MEMBER_NOT_FOUND,
+      'Member is not assigned to this card',
+    );
+  }
+
+  await db.transaction(async (tx) => {
+    await this.cardRepository.detachMember(
+      tx,
+      card.id,
+      workspaceMemberPublicId,
+    );
+
+    await insertCardActivity(tx, {
+      type:
+        'card.updated.member.removed',
+
+      cardId: card.id,
+
+      createdBy: userId,
+
+      workspaceMemberPublicId,
+    });
+  });
+
+  return {
+    success: true,
+  };
+}
 }

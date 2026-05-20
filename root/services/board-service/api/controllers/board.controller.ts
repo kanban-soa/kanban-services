@@ -1,39 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
 import { BoardService } from '../../services/board.service';
 import { sendSuccess } from '../../shared/utils/response';
-import { workspaceService } from '../../shared/workspace.client';
 
 const boardService = new BoardService();
 
-export const getBoardMembers = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const userId = req.headers['x-user-id'] as string;
-    const workspaceId = Number(req.headers['x-workspace-id']);
-    const boardId = req.params.boardId as string;
-    await boardService.getBoardById(userId, workspaceId, boardId);
-    const members = await workspaceService.getMembers(workspaceId);
-    sendSuccess(res, members, 'Workspace members retrieved successfully');
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const getBoards = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const userId = req.headers['x-user-id'] as string;
-    const workspaceId = Number(req.headers['x-workspace-id']);
-    
-    const boards = await boardService.getBoards(userId, workspaceId);
-    sendSuccess(res, boards, 'Boards retrieved successfully');
-  } catch (error) {
-    next(error);
-  }
-};
 
 export const createBoard = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.headers['x-user-id'] as string;
-    const workspaceId = Number(req.headers['x-workspace-id']);
+    const workspaceId = Number(req.params.workspaceId as string);
     
     const newBoard = await boardService.createBoard(userId, workspaceId, req.body);
     sendSuccess(res, newBoard, 'Board created successfully', 201);
@@ -45,7 +20,7 @@ export const createBoard = async (req: Request, res: Response, next: NextFunctio
 export const getBoardById = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.headers['x-user-id'] as string;
-    const workspaceId = Number(req.headers['x-workspace-id']);
+    const workspaceId = Number(req.params.workspaceId as string);
     const boardId = req.params.boardId as string;
 
     const board = await boardService.getBoardById(userId, workspaceId, boardId);
@@ -58,7 +33,7 @@ export const getBoardById = async (req: Request, res: Response, next: NextFuncti
 export const updateBoard = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.headers['x-user-id'] as string;
-    const workspaceId = Number(req.headers['x-workspace-id']);
+    const workspaceId = Number(req.params.workspaceId as string);
     const boardId = Array.isArray(req.params.boardId) ? req.params.boardId[0]! : req.params.boardId;
 
     const updatedBoard = await boardService.updateBoard(userId, workspaceId, boardId, req.body);
@@ -71,8 +46,9 @@ export const updateBoard = async (req: Request, res: Response, next: NextFunctio
 export const deleteBoard = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.headers['x-user-id'] as string;
-    const workspaceId = Number(req.headers['x-workspace-id']);
+    const workspaceId = Number(req.params.workspaceId as string);    
     const boardId = req.params.boardId as string;
+    console.log(`Attempting to delete boardId: ${boardId} in workspaceId: ${workspaceId} for userId: ${userId}`);
 
     await boardService.deleteBoard(userId, workspaceId, boardId);
     res.status(204).send(); // Standard NO CONTENT for deletion
@@ -84,12 +60,12 @@ export const deleteBoard = async (req: Request, res: Response, next: NextFunctio
 export const getBoardDetail = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.headers['x-user-id'] as string;
-    const workspaceId = Number(req.headers['x-workspace-id']);
+    const workspaceId = Number(req.params.workspaceId as string);
     const boardId = req.params.boardId as string;
-
     const board = await boardService.getBoardDetail(userId, workspaceId, boardId);
     sendSuccess(res, board, 'Board detail retrieved successfully');
   } catch (error) {
     next(error);
   }
+
 };

@@ -1,30 +1,78 @@
 import { db, type DbOrTx } from '@/board-service/config/database';
-import { cards, cardsToLabels, cardToWorkspaceMembers, lists } from '@/board-service/schema';
+import { cards, cardsToLabels, cardToWorkspaceMembers, labels, lists } from '../schema';
 import { generatePublicId } from '@/board-service/shared/utils/public-id';
 import { and, asc, eq, isNull, max } from 'drizzle-orm';
 
 export class CardRepository {
-  async findByPublicIdWithContext(cardPublicId: string, workspaceId: number) {
-    const row = await db.query.cards.findFirst({
-      where: and(eq(cards.publicId, cardPublicId), isNull(cards.deletedAt)),
-      with: {
-        list: {
-          with: { board: true },
+  async findByPublicIdWithContext(
+  cardId: string,
+) {
+  return db.query.cards.findFirst({
+    where: and(
+      eq(cards.publicId, cardId),
+      isNull(cards.deletedAt),
+    ),
+
+    with: {
+      /**
+       * Current list
+       */
+      list: {
+        with: {
+          board: {
+            with: {
+              /**
+               * All lists in board
+               */
+              allLists: {
+                where: isNull(
+                  lists.deletedAt,
+                ),
+
+                orderBy: (
+                  lists,
+                  { asc },
+                ) => [
+                  asc(lists.index),
+                ],
+              },
+
+              /**
+               * All labels in board
+               */
+              labels: {
+                where: isNull(
+                  labels.deletedAt,
+                ),
+              },
+            },
+          },
         },
       },
-    });
-    if (!row?.list?.board || row.list.board.deletedAt) return null;
-    if (row.list.board.workspaceId !== workspaceId) return null;
-    return row;
-  }
 
-  async findManyByListPublicId(listPublicId: string, workspaceId: number) {
+      /**
+       * Current attached labels
+       */
+      labels: {
+        with: {
+          label: true,
+        },
+      },
+
+      /**
+       * Current assigned members
+       */
+      members: true,
+    },
+  });
+}
+
+  async findManyByListPublicId(listPublicId: string) {
     const listRow = await db.query.lists.findFirst({
       where: and(eq(lists.publicId, listPublicId), isNull(lists.deletedAt)),
       with: { board: true },
     });
     if (!listRow?.board || listRow.board.deletedAt) return null;
-    if (listRow.board.workspaceId !== workspaceId) return null;
 
     const rows = await db.query.cards.findMany({
       where: and(eq(cards.listId, listRow.id), isNull(cards.deletedAt)),
@@ -68,10 +116,9 @@ export class CardRepository {
 
   async update(
     cardPublicId: string,
-    workspaceId: number,
     data: { title?: string; description?: string | null },
   ) {
-    const existing = await this.findByPublicIdWithContext(cardPublicId, workspaceId);
+    const existing = await this.findByPublicIdWithContext(cardPublicId);
     if (!existing) return null;
 
     const [updated] = await db
@@ -82,8 +129,8 @@ export class CardRepository {
     return updated ?? null;
   }
 
-  async softDelete(cardPublicId: string, workspaceId: number, userId: string) {
-    const existing = await this.findByPublicIdWithContext(cardPublicId, workspaceId);
+  async softDelete(cardPublicId: string, userId: string) {
+    const existing = await this.findByPublicIdWithContext(cardPublicId);
     if (!existing) return null;
 
     const [updated] = await db
@@ -94,7 +141,7 @@ export class CardRepository {
     return updated ?? null;
   }
 
-  async reorderListCards(listPublicId: string, workspaceId: number, cardPublicIds: string[]) {
+  async reorderListCards(listPublicId: string, cardPublicIds: string[]) {
     return db.transaction(async (tx) => {
       const listRow = await tx.query.lists.findFirst({
         where: and(eq(lists.publicId, listPublicId), isNull(lists.deletedAt)),
@@ -103,10 +150,6 @@ export class CardRepository {
       if (!listRow?.board || listRow.board.deletedAt) {
         return { ok: false as const, reason: 'LIST_NOT_FOUND' as const };
       }
-      if (listRow.board.workspaceId !== workspaceId) {
-        return { ok: false as const, reason: 'LIST_NOT_FOUND' as const };
-      }
-
       const active = await tx.query.cards.findMany({
         where: and(eq(cards.listId, listRow.id), isNull(cards.deletedAt)),
       });
@@ -187,30 +230,62 @@ export class CardRepository {
       );
   }
 
-  async findMemberAssignment(cardInternalId: number, workspaceMemberId: number) {
+  async findMemberAssignment(
+    cardInternalId: number,
+    workspaceMemberPublicId: string,
+  ) {
     const [row] = await db
       .select()
       .from(cardToWorkspaceMembers)
       .where(
         and(
-          eq(cardToWorkspaceMembers.cardId, cardInternalId),
-          eq(cardToWorkspaceMembers.workspaceMemberId, workspaceMemberId),
+          eq(
+            cardToWorkspaceMembers.cardId,
+            cardInternalId,
+          ),
+
+          eq(
+            cardToWorkspaceMembers.workspaceMemberPublicId,
+            workspaceMemberPublicId,
+          ),
         ),
       );
+
     return row ?? null;
   }
 
-  async attachMember(tx: DbOrTx, cardInternalId: number, workspaceMemberId: number) {
-    await tx.insert(cardToWorkspaceMembers).values({ cardId: cardInternalId, workspaceMemberId });
+  async attachMember(
+    tx: DbOrTx,
+    cardInternalId: number,
+    workspaceMemberPublicId: string,
+  ) {
+    await tx
+      .insert(cardToWorkspaceMembers)
+      .values({
+        cardId: cardInternalId,
+
+        workspaceMemberPublicId,
+      });
   }
 
-  async detachMember(tx: DbOrTx, cardInternalId: number, workspaceMemberId: number) {
+  async detachMember(
+    tx: DbOrTx,
+    cardInternalId: number,
+    workspaceMemberPublicId: string,
+  ) {
     await tx
       .delete(cardToWorkspaceMembers)
       .where(
         and(
-          eq(cardToWorkspaceMembers.cardId, cardInternalId),
-          eq(cardToWorkspaceMembers.workspaceMemberId, workspaceMemberId),
+          eq(
+            cardToWorkspaceMembers.cardId,
+            cardInternalId,
+          ),
+
+          eq(
+            cardToWorkspaceMembers.workspaceMemberPublicId,
+            workspaceMemberPublicId,
+          ),
         ),
       );
   }

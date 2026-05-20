@@ -7,7 +7,7 @@ const listService = new ListService();
 export const getListsByBoard = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.headers['x-user-id'] as string;
-    const workspaceId = Number(req.headers['x-workspace-id']);
+    const workspaceId = Number(req.params.workspaceId as string);    
     const boardId = req.params.boardId as string;
     const lists = await listService.getLists(userId, workspaceId, boardId);
     sendSuccess(res, lists, 'Lists retrieved successfully');
@@ -19,32 +19,30 @@ export const getListsByBoard = async (req: Request, res: Response, next: NextFun
 export const createListOnBoard = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.headers['x-user-id'] as string;
-    const workspaceId = Number(req.headers['x-workspace-id']);
+    const workspaceId = Number(req.params.workspaceId as string);    
     const boardId = req.params.boardId as string;
-    const created = await listService.createList(userId, workspaceId, boardId, req.body);
+    const created = await listService.createList(userId, boardId, req.body);
     sendSuccess(res, created, 'List created successfully', 201);
   } catch (e) {
     next(e);
   }
 };
 
-export const reorderBoardLists = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const workspaceId = Number(req.headers['x-workspace-id']);
-    const boardId = req.params.boardId as string;
-    await listService.reorderLists(workspaceId, boardId, req.body.listIds);
-    sendSuccess(res, null, 'Lists reordered successfully');
-  } catch (e) {
-    next(e);
-  }
-};
+// export const reorderBoardLists = async (req: Request, res: Response, next: NextFunction) => {
+//   try {
+//     const workspaceId = Number(req.params.workspaceId as string);    const boardId = req.params.boardId as string;
+//     await listService.reorderLists(workspaceId, boardId, req.body.listIds);
+//     sendSuccess(res, null, 'Lists reordered successfully');
+//   } catch (e) {
+//     next(e);
+//   }
+// };
 
 export const updateList = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.headers['x-user-id'] as string;
-    const workspaceId = Number(req.headers['x-workspace-id']);
     const listId = req.params.listId as string;
-    const updated = await listService.updateList(userId, workspaceId, listId, req.body);
+    const updated = await listService.updateList(userId, listId, req.body);
     sendSuccess(res, updated, 'List updated successfully');
   } catch (e) {
     next(e);
@@ -53,10 +51,9 @@ export const updateList = async (req: Request, res: Response, next: NextFunction
 
 export const deleteList = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = req.headers['x-user-id'] as string;
-    const workspaceId = Number(req.headers['x-workspace-id']);
+    const userId = req.headers['x-user-id'] as string;  
     const listId = req.params.listId as string;
-    await listService.deleteList(userId, workspaceId, listId);
+    await listService.deleteList(userId, listId);
     res.status(204).send();
   } catch (e) {
     next(e);

@@ -2,13 +2,13 @@ import { db, type DbOrTx } from '@/board-service/config/database';
 import { boards, labels } from '@/board-service/schema';
 import { generatePublicId } from '@/board-service/shared/utils/public-id';
 import { and, asc, eq, isNull } from 'drizzle-orm';
+import { ApiError, ERROR_CODES } from '../shared/errors';
 
 export class LabelRepository {
-  async findBoardInternal(boardPublicId: string, workspaceId: number) {
+  async findBoardInternal(boardPublicId: string) {
     return db.query.boards.findFirst({
       where: and(
         eq(boards.publicId, boardPublicId),
-        eq(boards.workspaceId, workspaceId),
         isNull(boards.deletedAt),
       ),
     });
@@ -29,6 +29,23 @@ export class LabelRepository {
         isNull(labels.deletedAt),
       ),
     });
+  }
+
+  async update(
+    tx: DbOrTx,
+    labelInternalId: number,
+    input: { name?: string; colourCode?: string | null },
+  ) {
+    const [updated] = await tx
+      .update(labels)
+      .set({
+        name: input.name,
+        colourCode: input.colourCode ?? null,
+        updatedAt: new Date()
+      })
+      .where(eq(labels.id, labelInternalId))
+      .returning();
+    return updated;
   }
 
   async create(
@@ -52,4 +69,21 @@ export class LabelRepository {
       .returning();
     return created;
   }
+
+  async softDelete(userId: string, labelPublicId: string) {
+    return db.transaction(async (tx) => {
+      const existing = await tx.query.labels.findFirst({
+        where: and(eq(labels.publicId, labelPublicId), isNull(labels.deletedAt)),
+        with: { board: true },
+      });
+      if (!existing?.board || existing.board.deletedAt) return null;
+
+      const [deletedLabel] = await tx
+        .update(labels)
+        .set({ deletedAt: new Date(), deletedBy: userId })
+        .where(eq(labels.id, existing.id))
+        .returning();
+      return deletedLabel ?? null;
+    });
+  }  
 }

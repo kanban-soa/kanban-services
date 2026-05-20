@@ -6,7 +6,7 @@ import {
   BoardVisibility,
   CreateBoardDto,
   UpdateBoardDto,
-} from '@/board-service/api/dto/board.dto';
+} from '@/services/board-service/api/dto/board-response.dto';
 
 import { ApiError, ERROR_CODES } from '../shared/errors';
 

@@ -4,6 +4,7 @@ import { pool } from '@/board-service/config';
 import routes from '@/board-service/api/routes';
 import { errorHandler } from '@/board-service/middlewares/error.middleware';
 
+
 dotenv.config({
   debug: true,
 });
@@ -17,13 +18,13 @@ app.use((req: Request, res: Response, next) => {
   next();
 });
 
-app.use('/', routes);
+app.use('/api', routes);
 app.use(errorHandler);
 
 const port = process.env.BOARD_PORT || 9003;
 
 app.listen(Number(port), () => {
-  console.log(`Board service listening on port ${port} (base path /)`);
+  console.log(`Board service listening on port ${port} (base path /api)`);
 });
 
 pool.on('connect', () => {

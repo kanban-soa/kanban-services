@@ -4,17 +4,16 @@ import { generatePublicId } from '@/board-service/shared/utils/public-id';
 import { and, asc, eq, isNull, max } from 'drizzle-orm';
 
 export class ListRepository {
-  async findBoardByPublicId(boardPublicId: string, workspaceId: number) {
+  async findBoardByPublicId(boardPublicId: string) {
     return db.query.boards.findFirst({
       where: and(
         eq(boards.publicId, boardPublicId),
-        eq(boards.workspaceId, workspaceId),
         isNull(boards.deletedAt),
       ),
     });
   }
 
-  async findByPublicIdWithBoard(listPublicId: string, workspaceId: number) {
+  async findByPublicIdWithBoard(listPublicId: string) {
     const row = await db.query.lists.findFirst({
       where: and(eq(lists.publicId, listPublicId), isNull(lists.deletedAt)),
       with: {
@@ -22,7 +21,6 @@ export class ListRepository {
       },
     });
     if (!row?.board || row.board.deletedAt) return null;
-    if (row.board.workspaceId !== workspaceId) return null;
     return row;
   }
 
@@ -64,8 +62,8 @@ export class ListRepository {
     return created;
   }
 
-  async updateName(listPublicId: string, workspaceId: number, name: string) {
-    const existing = await this.findByPublicIdWithBoard(listPublicId, workspaceId);
+  async updateName(listPublicId: string, name: string) {
+    const existing = await this.findByPublicIdWithBoard(listPublicId);
     if (!existing) return null;
 
     const [updated] = await db
@@ -76,14 +74,13 @@ export class ListRepository {
     return updated ?? null;
   }
 
-  async softDelete(listPublicId: string, workspaceId: number, userId: string) {
+  async softDelete(listPublicId: string, userId: string) {
     return db.transaction(async (tx) => {
       const existing = await tx.query.lists.findFirst({
         where: and(eq(lists.publicId, listPublicId), isNull(lists.deletedAt)),
         with: { board: true },
       });
       if (!existing?.board || existing.board.deletedAt) return null;
-      if (existing.board.workspaceId !== workspaceId) return null;
 
       const [deletedList] = await tx
         .update(lists)
