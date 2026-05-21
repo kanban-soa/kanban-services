@@ -43,7 +43,7 @@ export class MemberService {
       }
 
       const publicId = generatePublicId();
-      const role: MemberRole = (input.role as unknown as MemberRole) || MEMBER_ROLES.MEMBER;
+      const role: MemberRole = MEMBER_ROLES.MEMBER;
 
       const member = await memberRepository.create({
         publicId,
@@ -52,7 +52,7 @@ export class MemberService {
         workspaceId: input.workspaceId,
         createdBy: input.invitedBy,
         role,
-        status: MEMBER_STATUS.ACTIVE,
+        status: MEMBER_STATUS.INVITED,
       });
 
       logger.info(
@@ -184,35 +184,17 @@ export class MemberService {
    */
   async updateMemberRole(memberId: string, input: UpdateMemberDTO) {
     try {
-      const newRole = (input.role || "").toString().trim().toLowerCase();
-
-      // Map common synonyms to canonical roles
-      let normalizedRole: MemberRole;
-      if (newRole === "owner") {
-        normalizedRole = MEMBER_ROLES.OWNER;
-      } else if (newRole === "observe" || newRole === "observer") {
-        normalizedRole = MEMBER_ROLES.OBSERVER;
-      } else {
-        normalizedRole = (newRole as unknown) as MemberRole;
-      }
-
-      // Validate role
-      const validRoles = Object.values(MEMBER_ROLES) as MemberRole[];
-      if (!validRoles.includes(normalizedRole)) {
-        throw new AppError(ERROR_CODES.INVALID_ROLE);
-      }
 
       // Lookup member by publicId (controller sends publicId as memberId)
-      const member = await memberRepository.findByPublicId(memberId);
+      const member = await memberRepository.findMemberByUserId(memberId);
       if (!member) {
         throw new AppError(ERROR_CODES.MEMBER_NOT_FOUND);
       }
 
       const updated = await memberRepository.update(member.id, {
-        role: normalizedRole,
+        role: input.role,
       });
 
-      logger.info(`Member role updated: ${memberId} -> ${normalizedRole}`);
       return updated;
     } catch (error) {
       logger.error("Error updating member role", error);

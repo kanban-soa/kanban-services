@@ -1,3 +1,5 @@
+import { MemberRole } from "@workspace-service/config/constants";
+
 export interface CreateMemberInput {
   publicId: string;
   email: string;
@@ -12,7 +14,7 @@ export interface CreateMemberInput {
 export interface UpdateMemberInput {
   email?: string;
   userId?: string;
-  role?: any;
+  role?: MemberRole;
   roleId?: number;
   status?: any;
   updatedAt?: Date;

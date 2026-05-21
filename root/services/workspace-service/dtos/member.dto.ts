@@ -1,3 +1,5 @@
+import { MemberRole, MemberStatus } from "@workspace-service/config/constants";
+
 export interface InviteMemberDTO {
   email: string;
   role?: string;
@@ -6,8 +8,8 @@ export interface InviteMemberDTO {
 }
 
 export interface UpdateMemberDTO {
-  role?: string;
-  status?: string;
+  role?: MemberRole;
+  status?: MemberStatus;
 }
 
 export interface MemberSummaryDTO {
