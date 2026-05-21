@@ -2,33 +2,13 @@ import { db } from "@workspace-service/lib/db";
 import { workspaceRoles, workspaceRolePermissions, workspaceMemberPermissions } from "@workspace-service/schema/permissions";
 import { eq, and, isNull } from "drizzle-orm";
 import { logger } from "@workspace-service/utils/logger";
-
-export interface CreateRoleInput {
-  publicId: string;
-  workspaceId: number;
-  name: string;
-  description?: string;
-  hierarchyLevel: number;
-  isSystem: boolean;
-}
-
-export interface CreateRolePermissionInput {
-  workspaceRoleId: number;
-  permission: string;
-  granted: boolean;
-}
-
-export interface CreateMemberPermissionInput {
-  workspaceMemberId: number;
-  permission: string;
-  granted: boolean;
-}
+import { PermissionDao, CreateRoleInput, CreateRolePermissionInput, CreateMemberPermissionInput } from "./dao/permission.dao";
 
 /**
  * Permission Repository
  * Handles all database operations for roles and permissions
  */
-export class PermissionRepository {
+export class PermissionRepository implements PermissionDao {
   /**
    * Create a new role
    */
