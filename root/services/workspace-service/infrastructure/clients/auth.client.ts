@@ -1,20 +1,8 @@
 import { BaseClient } from "./base.client";
 import config from "@workspace-service/config/env";
+import { AuthUserDTO } from "../../dtos/auth.dto";
 
-/**
- * Auth service response types
- */
-export interface AuthUser {
-  id: string;
-  name?: string | null;
-  email: string;
-  emailVerified?: boolean;
-  password?: string | null; // hashed password if returned (nullable)
-  image?: string | null;
-  role?: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
+export type AuthUser = AuthUserDTO;
 
 /**
  * AuthClient

@@ -5,13 +5,7 @@ import { generatePublicId, generateSlug, generateUniqueSlug } from "../utils/id.
 import { logger } from "../utils/logger";
 import { MEMBER_ROLES, MEMBER_STATUS, ERROR_CODES } from "../config/constants";
 import { AppError } from "../utils/AppError";
-
-export interface CreateWorkspaceDTO {
-  name: string;
-  slug?: string;
-  description?: string;
-  createdBy: string;
-}
+import { CreateWorkspaceDTO } from "../dtos/workspace.dto";
 
 /**
  * Workspace Service

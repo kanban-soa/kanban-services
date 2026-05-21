@@ -6,19 +6,8 @@ import { logger } from "../utils/logger";
 import { MEMBER_ROLES, MEMBER_STATUS, ERROR_CODES } from "../config/constants";
 import { AppError } from "../utils/AppError";
 import { MemberRole } from "@workspace-service/schema";
-import { AuthUser } from "@workspace-service/infrastructure/clients/auth.client";
-
-export interface InviteMemberDTO {
-  email: string;
-  role?: MemberRole;
-  workspaceId: number;
-  invitedBy: string;
-}
-
-export interface UpdateMemberDTO {
-  role?: string;
-  status?: string;
-}
+import { InviteMemberDTO, UpdateMemberDTO } from "../dtos/member.dto";
+import { AuthUserDTO as AuthUser } from "../dtos/auth.dto";
 
 /**
  * Member Service
@@ -54,7 +43,7 @@ export class MemberService {
       }
 
       const publicId = generatePublicId();
-      const role: MemberRole = input.role || MEMBER_ROLES.MEMBER;
+      const role: MemberRole = (input.role as unknown as MemberRole) || MEMBER_ROLES.MEMBER;
 
       const member = await memberRepository.create({
         publicId,
