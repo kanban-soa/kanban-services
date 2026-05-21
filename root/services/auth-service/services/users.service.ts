@@ -24,7 +24,8 @@ function validatePassword(password: string): { valid: boolean; error?: string } 
   return { valid: true };
 }
 
-function sanitizeEmail(email: string): string {
+function sanitizeEmail(email: any): string {
+  if (typeof email !== 'string') return '';
   return email.toLowerCase().trim();
 }
 

@@ -24,6 +24,7 @@ export async function authMiddleware(req: AuthenticatedRequest, res: Response, n
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
+        'x-request-id': req.requestId,
       },
       signal: AbortSignal.timeout(config.upstreamTimeoutMs),
     });

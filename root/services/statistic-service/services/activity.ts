@@ -58,10 +58,14 @@ function requireServiceUrl(name: "ACTIVITY_SERVICE_URL"): string {
 }
 
 function buildAuthHeaders(context?: ServiceContext): Record<string, string> {
-  if (!context?.authorization) {
-    return {};
+  const headers: Record<string, string> = {};
+  if (context?.authorization) {
+    headers.authorization = context.authorization;
   }
-  return { authorization: context.authorization };
+  if (context?.requestId) {
+    headers["x-request-id"] = context.requestId;
+  }
+  return headers;
 }
 
 let cachedActivityClient: ReturnType<typeof createServiceClient> | null = null;
