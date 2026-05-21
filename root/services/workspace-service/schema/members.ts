@@ -12,19 +12,19 @@ import {
 
 import { workspaceRoles } from "./permissions";
 import { workspaces } from "./workspaces";
+import { MEMBER_ROLES, MEMBER_STATUS, MemberRole } from "@workspace-service/config/constants";
+// export const memberRoles = ["admin", "member", "observer", "owner"] as const;
+// export type MemberRole = (typeof memberRoles)[number];
+export const memberRoleEnum = pgEnum("role", MEMBER_ROLES);
 
-export const memberRoles = ["admin", "member", "observer", "owner"] as const;
-export type MemberRole = (typeof memberRoles)[number];
-export const memberRoleEnum = pgEnum("role", memberRoles);
-
-export const memberStatuses = [
-  "invited",
-  "active",
-  "removed",
-  "cancelled",
-] as const;
-export type MemberStatus = (typeof memberStatuses)[number];
-export const memberStatusEnum = pgEnum("member_status", memberStatuses);
+// export const memberStatuses = [
+//   "invited",
+//   "active",
+//   "removed",
+//   "cancelled",
+// ] as const;
+// export type MemberStatus = (typeof memberStatuses)[number];
+export const memberStatusEnum = pgEnum("member_status", MEMBER_STATUS);
 
 export const workspaceMembers = pgTable(
   "workspace_members",

@@ -47,14 +47,13 @@ export class MemberController {
         return sendForbidden(res);
       }
 
-      const { email, role } = req.body;
+      const { email } = req.body;
       if (!email || typeof email !== "string") {
         return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Email is required");
       }
 
       const member = await memberService.inviteMember({
         email,
-        role,
         workspaceId,
         invitedBy: userId,
       });
@@ -144,7 +143,7 @@ export class MemberController {
         return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Role is required");
       }
 
-      const member = await memberService.updateMemberRole(memberUUId, role);
+      const member = await memberService.updateMemberRole(memberUUId, { role });
 
       // logger.info(`Member role updated by user ${userId}: ${memberUUId} -> ${role}`);
       return sendSuccess(res, member, "Member role updated successfully");

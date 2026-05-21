@@ -5,9 +5,9 @@ import { generatePublicId } from "../utils/id.util";
 import { logger } from "../utils/logger";
 import { MEMBER_ROLES, MEMBER_STATUS, ERROR_CODES } from "../config/constants";
 import { AppError } from "../utils/AppError";
-import { MemberRole } from "@workspace-service/schema";
 import { InviteMemberDTO, UpdateMemberDTO } from "../dtos/member.dto";
 import { AuthUserDTO as AuthUser } from "../dtos/auth.dto";
+import { MemberRole } from "../config/constants";
 
 /**
  * Member Service
@@ -182,20 +182,18 @@ export class MemberService {
   /**
    * Update member role in workspace
    */
-  async updateMemberRole(memberId: string, newRole: string) {
+  async updateMemberRole(memberId: string, input: UpdateMemberDTO) {
     try {
-      // Normalize incoming role strings to known internal roles
-      const incoming = (newRole || "").toString().trim().toLowerCase();
+      const newRole = (input.role || "").toString().trim().toLowerCase();
 
       // Map common synonyms to canonical roles
       let normalizedRole: MemberRole;
-      if (incoming === "owner") {
+      if (newRole === "owner") {
         normalizedRole = MEMBER_ROLES.OWNER;
-      } else if (incoming === "observe" || incoming === "observer") {
+      } else if (newRole === "observe" || newRole === "observer") {
         normalizedRole = MEMBER_ROLES.OBSERVER;
       } else {
-        // assume it's already a canonical role (e.g., 'member', 'admin', 'guest')
-        normalizedRole = incoming as MemberRole;
+        normalizedRole = (newRole as unknown) as MemberRole;
       }
 
       // Validate role
