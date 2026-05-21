@@ -84,6 +84,10 @@ export interface BoardDetailResponseDto {
   type: BoardType;
 
   createdBy: string | null;
+  creator?: {
+    name: string;
+    image: string | null;
+  } | null;
 
   createdAt: Date;
   updatedAt: Date | null;
@@ -147,6 +151,10 @@ export interface BoardResponseDto {
   type: BoardType;
 
   createdBy: string | null;
+  creator?: {
+    name: string;
+    image: string | null;
+  } | null;
 
   createdAt: Date;
   updatedAt: Date | null;

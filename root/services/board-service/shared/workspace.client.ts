@@ -42,6 +42,22 @@ export class WorkspaceServiceClient {
     const result = await response.json();
     return result.data || [];
   }
+
+  async getMembersByPublicIds(workspaceId: number, publicIds: string[]): Promise<any[]> {
+    if (!publicIds || publicIds.length === 0) return [];
+    
+    const response = await fetch(`${this.baseUrl}/internal/workspaces/${workspaceId}/members/bulk`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ publicIds }),
+    });
+    
+    if (!response.ok) {
+      throw new ApiError(400, ERROR_CODES.BAD_REQUEST, 'Failed to fetch workspace members bulk');
+    }
+    const result = await response.json();
+    return result.data || [];
+  }
 }
 
 export const workspaceService = new WorkspaceServiceClient();

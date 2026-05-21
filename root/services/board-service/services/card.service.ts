@@ -5,6 +5,7 @@ import { CardRepository } from '@/board-service/repositories/card.repository';
 import { LabelRepository } from '@/board-service/repositories/label.repository';
 import { insertCardActivity } from '@/board-service/shared/card-activity';
 import { ApiError, ERROR_CODES } from '@/board-service/shared/errors';
+import { workspaceService } from '@/board-service/shared/workspace.client';
 import { CardDetailResponseDto } from '../api/dto/card-response.dto';
 import { CardMapper } from '../api/mapper/card.mapper';
 
@@ -80,6 +81,25 @@ export class CardService {
           ERROR_CODES.CARD_NOT_FOUND,
           'Card not found',
         );
+      }
+
+      /**
+       * Enrich assigned members
+       */
+      const memberPublicIds = card.members.map(m => m.workspaceMemberPublicId);
+      if (memberPublicIds.length > 0) {
+        try {
+          const workspaceId = card.list.board.workspaceId;
+          const enrichedMembers = await workspaceService.getMembersByPublicIds(workspaceId, memberPublicIds);
+          (card as any).assignedMembersEnriched = enrichedMembers.map((m: any) => ({
+            publicId: m.publicId,
+            name: m.user?.name || m.email,
+            image: m.user?.image || null,
+          }));
+        } catch (error) {
+          console.error('Failed to enrich card members:', error);
+          // Non-blocking
+        }
       }
 
       /**
@@ -542,6 +562,14 @@ async addMember(
       ERROR_CODES.CONFLICT,
       'Member already assigned to this card',
     );
+  }
+
+  // Validate member exists in workspace
+  try {
+    const workspaceId = card.list.board.workspaceId;
+    await workspaceService.getMembersByPublicIds(workspaceId, [body.workspaceMemberPublicId]);
+  } catch (error) {
+    throw new ApiError(404, ERROR_CODES.MEMBER_NOT_FOUND, 'Member not found in workspace');
   }
 
   await db.transaction(async (tx) => {

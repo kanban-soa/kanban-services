@@ -1,6 +1,6 @@
 import { db} from '@/auth-service/config/database';
 import { users } from "@/auth-service/schema";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { comparePassword, hashPassword } from "@/auth-service/lib";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -143,5 +143,21 @@ export class UsersService {
 
     await db.delete(users).where(eq(users.id, id));
     return true;
+  }
+
+  static async getUsersByIds(ids: string[]) {
+    if (!ids || ids.length === 0) return [];
+    
+    const result = await db.select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      image: users.image,
+      role: users.role
+    })
+    .from(users)
+    .where(inArray(users.id, ids));
+    
+    return result;
   }
 }

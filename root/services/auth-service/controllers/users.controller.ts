@@ -120,4 +120,17 @@ export const UsersController = {
       res.status(500).json({ error: error.message });
     }
   },
+
+  getUsersBulk: async (req: Request, res: Response) => {
+    try {
+      const { ids } = req.body;
+      if (!ids || !Array.isArray(ids)) {
+        return res.status(400).json({ error: 'ids array is required' });
+      }
+      const users = await UsersService.getUsersByIds(ids);
+      res.json(users);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  },
 };

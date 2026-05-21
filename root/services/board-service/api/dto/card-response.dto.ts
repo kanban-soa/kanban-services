@@ -57,6 +57,15 @@ export interface CardDetailResponseDto {
   assignedWorkspaceMemberPublicIds: string[];
 
   /**
+   * Assigned members details
+   */
+  assignedMembers?: {
+    publicId: string;
+    name: string;
+    image: string | null;
+  }[];
+
+  /**
    * All lists inside board
    */
   availableLists: ListOptionDto[];

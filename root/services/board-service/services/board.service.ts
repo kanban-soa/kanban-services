@@ -2,6 +2,7 @@ import { BoardDetailResponseDto } from '../api/dto/board-response.dto';
 import { BoardMapper } from '../api/mapper/board.mapper';
 import { BoardRepository } from '../repositories/board.repository';
 // import { workspaceService } from '../shared/workspace.client';
+import { authService } from '../shared/auth.client';
 import { ApiError, ERROR_CODES } from '../shared/errors';
 
 export class BoardService {
@@ -72,8 +73,26 @@ export class BoardService {
       'Board not found'
     );
   }
+
+  const dto = BoardMapper.toDetailDto(boardDetail);
+
+  if (dto.createdBy) {
+    try {
+      const creator = await authService.getUserById(dto.createdBy);
+      if (creator) {
+        dto.creator = {
+          name: creator.name,
+          image: creator.image || null,
+        };
+      }
+    } catch (error) {
+      console.error('Failed to fetch board creator info:', error);
+      // Non-blocking, we still return the board
+    }
+  }
+
   console.log('Board detail retrieved:', boardDetail);
-  return BoardMapper.toDetailDto(boardDetail);
+  return dto;
 }
   
   

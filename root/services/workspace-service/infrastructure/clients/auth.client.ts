@@ -61,6 +61,21 @@ class AuthClient extends BaseClient {
       return false;
     }
   }
+
+  /**
+   * Get multiple users by ID
+   */
+  async getUsersBulk(userIds: string[]): Promise<AuthUser[]> {
+    if (!userIds || userIds.length === 0) return [];
+    // The auth-service bulk endpoint expects { ids: string[] }
+    // and returns AuthUser[] directly (based on my previous controller update)
+    // Note: getUserById was overridden to return response.data directly
+    // because auth-service doesn't wrap in { data: T } for some endpoints.
+    // Let's check if we should use this.get or this.client.post
+    
+    const response = await this.client.post<AuthUser[]>("/internal/v1/auth/users/bulk", { ids: userIds });
+    return response.data;
+  }
 }
 
 export const authClient = new AuthClient();

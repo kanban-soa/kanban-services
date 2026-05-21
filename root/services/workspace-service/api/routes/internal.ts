@@ -9,4 +9,9 @@ router.get(
   internalController.getAuthorization.bind(internalController)
 );
 
+router.post(
+  "/workspaces/:workspaceId/members/bulk",
+  internalController.getMembersBulk.bind(internalController)
+);
+
 export default router;

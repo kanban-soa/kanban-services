@@ -64,6 +64,11 @@ export class CardMapper {
         ),
 
       /**
+       * Assigned members details
+       */
+      assignedMembers: card.assignedMembersEnriched || [],
+
+      /**
        * All lists in board
        */
       availableLists:

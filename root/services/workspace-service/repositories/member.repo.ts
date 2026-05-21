@@ -337,6 +337,31 @@ export class MemberRepository {
       throw error;
     }
   }
+
+  /**
+   * Find members by public ids within a workspace
+   */
+  async findByPublicIds(workspaceId: number, publicIds: string[]) {
+    try {
+      if (publicIds.length === 0) {
+        return [];
+      }
+      const result = await db
+        .select()
+        .from(workspaceMembers)
+        .where(
+          and(
+            eq(workspaceMembers.workspaceId, workspaceId),
+            inArray(workspaceMembers.publicId, publicIds),
+            isNull(workspaceMembers.deletedAt)
+          )
+        );
+      return result;
+    } catch (error) {
+      logger.error("Error finding members by public ids", error);
+      throw error;
+    }
+  }
 }
 
 export const memberRepository = new MemberRepository();

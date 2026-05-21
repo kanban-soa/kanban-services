@@ -128,7 +128,33 @@ export class MemberService {
       // Validate workspace exists
       await workspaceRepository.findById(workspaceId);
 
-      return await memberRepository.findByWorkspace(workspaceId, limit, offset);
+      const members = await memberRepository.findByWorkspace(workspaceId, limit, offset);
+      
+      // Collect user IDs for bulk lookup
+      const userIds = members
+        .map(m => m.userId)
+        .filter((id): id is string => id !== null);
+
+      if (userIds.length === 0) {
+        return members;
+      }
+
+      // Fetch user details from auth-service
+      const authUsers = await authClient.getUsersBulk(userIds);
+      const userMap = new Map(authUsers.map(u => [u.id, u]));
+
+      // Enrich members with user details (name, image)
+      return members.map(member => {
+        if (!member.userId) return member;
+        const authUser = userMap.get(member.userId);
+        return {
+          ...member,
+          user: authUser ? {
+            name: authUser.name,
+            image: authUser.avatarUrl || (authUser as any).image, // Handle both naming conventions
+          } : null
+        };
+      });
     } catch (error) {
       logger.error("Error getting workspace members", error);
       throw error;
@@ -304,6 +330,39 @@ export class MemberService {
       email: member.email,
       userId: member.userId ?? null,
     }));
+  }
+
+  /**
+   * Get members by public IDs and enrich with auth data
+   */
+  async getMembersByPublicIds(workspaceId: number, publicIds: string[]) {
+    const members = await memberRepository.findByPublicIds(workspaceId, publicIds);
+    
+    // Collect user IDs for bulk lookup
+    const userIds = members
+      .map(m => m.userId)
+      .filter((id): id is string => id !== null);
+
+    if (userIds.length === 0) {
+      return members;
+    }
+
+    // Fetch user details from auth-service
+    const authUsers = await authClient.getUsersBulk(userIds);
+    const userMap = new Map(authUsers.map(u => [u.id, u]));
+
+    // Enrich members with user details
+    return members.map(member => {
+      if (!member.userId) return member;
+      const authUser = userMap.get(member.userId);
+      return {
+        ...member,
+        user: authUser ? {
+          name: authUser.name,
+          image: authUser.avatarUrl || (authUser as any).image,
+        } : null
+      };
+    });
   }
 }
 
