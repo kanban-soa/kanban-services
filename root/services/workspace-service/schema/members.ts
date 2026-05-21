@@ -13,7 +13,7 @@ import {
 import { workspaceRoles } from "./permissions";
 import { workspaces } from "./workspaces";
 
-export const memberRoles = ["admin", "member", "guest"] as const;
+export const memberRoles = ["admin", "member", "observer", "owner"] as const;
 export type MemberRole = (typeof memberRoles)[number];
 export const memberRoleEnum = pgEnum("role", memberRoles);
 
@@ -21,7 +21,6 @@ export const memberStatuses = [
   "invited",
   "active",
   "removed",
-  "paused",
   "cancelled",
 ] as const;
 export type MemberStatus = (typeof memberStatuses)[number];

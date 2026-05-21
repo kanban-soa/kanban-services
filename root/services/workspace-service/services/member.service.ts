@@ -6,6 +6,7 @@ import { logger } from "../utils/logger";
 import { MEMBER_ROLES, MEMBER_STATUS, ERROR_CODES } from "../config/constants";
 import { AppError } from "../utils/AppError";
 import { MemberRole } from "@workspace-service/schema";
+import { AuthUser } from "@workspace-service/infrastructure/clients/auth.client";
 
 export interface InviteMemberDTO {
   email: string;
@@ -36,7 +37,7 @@ export class MemberService {
       }
 
       // Verify user exists in auth-service
-      let authUser;
+      let authUser: AuthUser;
       try {
         authUser = await authClient.getUserByEmail(input.email);
       } catch {
@@ -192,24 +193,39 @@ export class MemberService {
   /**
    * Update member role in workspace
    */
-  async updateMemberRole(memberId: number, newRole: MemberRole) {
+  async updateMemberRole(memberId: string, newRole: string) {
     try {
+      // Normalize incoming role strings to known internal roles
+      const incoming = (newRole || "").toString().trim().toLowerCase();
+
+      // Map common synonyms to canonical roles
+      let normalizedRole: MemberRole;
+      if (incoming === "owner") {
+        normalizedRole = MEMBER_ROLES.OWNER;
+      } else if (incoming === "observe" || incoming === "observer") {
+        normalizedRole = MEMBER_ROLES.OBSERVER;
+      } else {
+        // assume it's already a canonical role (e.g., 'member', 'admin', 'guest')
+        normalizedRole = incoming as MemberRole;
+      }
+
       // Validate role
       const validRoles = Object.values(MEMBER_ROLES) as MemberRole[];
-      if (!validRoles.includes(newRole)) {
+      if (!validRoles.includes(normalizedRole)) {
         throw new AppError(ERROR_CODES.INVALID_ROLE);
       }
 
-      const member = await memberRepository.findById(memberId);
+      // Lookup member by publicId (controller sends publicId as memberId)
+      const member = await memberRepository.findByPublicId(memberId);
       if (!member) {
         throw new AppError(ERROR_CODES.MEMBER_NOT_FOUND);
       }
 
-      const updated = await memberRepository.update(memberId, {
-        role: newRole,
+      const updated = await memberRepository.update(member.id, {
+        role: normalizedRole,
       });
 
-      logger.info(`Member role updated: ${memberId} -> ${newRole}`);
+      logger.info(`Member role updated: ${memberId} -> ${normalizedRole}`);
       return updated;
     } catch (error) {
       logger.error("Error updating member role", error);

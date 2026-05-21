@@ -337,6 +337,27 @@ export class MemberRepository {
       throw error;
     }
   }
-}
 
+  /**
+   * Find member by user ID
+   */
+  async findMemberByUserId(memberId: string) {
+    try {
+      const result = await db
+        .select()
+        .from(workspaceMembers)
+        .where(
+          and(
+            eq(workspaceMembers.userId, memberId),
+            isNull(workspaceMembers.deletedAt)
+          )
+        )
+        .limit(1);
+      return result[0] || null;
+    } catch (error) {
+      logger.error("Error finding member by user ID", error);
+      throw error;
+    }
+  }
+}
 export const memberRepository = new MemberRepository();

@@ -6,11 +6,14 @@ import config from "@workspace-service/config/env";
  */
 export interface AuthUser {
   id: string;
+  name?: string | null;
   email: string;
-  role: string;
-  name?: string;
-  avatarUrl?: string;
+  emailVerified?: boolean;
+  password?: string | null; // hashed password if returned (nullable)
+  image?: string | null;
+  role?: string;
   createdAt?: string;
+  updatedAt?: string;
 }
 
 /**
