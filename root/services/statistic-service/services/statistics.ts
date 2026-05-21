@@ -114,10 +114,14 @@ function requireServiceUrl(name: "BOARD_SERVICE_URL" | "WORKSPACE_SERVICE_URL"):
 }
 
 function buildAuthHeaders(context?: ServiceContext): Record<string, string> {
-  if (!context?.authorization) {
-    return {};
+  const headers: Record<string, string> = {};
+  if (context?.authorization) {
+    headers.authorization = context.authorization;
   }
-  return { authorization: context.authorization };
+  if (context?.requestId) {
+    headers["x-request-id"] = context.requestId;
+  }
+  return headers;
 }
 
 let cachedBoardClient: ReturnType<typeof createServiceClient> | null = null;
@@ -256,6 +260,8 @@ export async function getStatistics(
   prevRange.from.setDate(prevRange.from.getDate() - rangeDays[range]);
 
   const workspaceId = query.workspaceId ? Number(query.workspaceId) : undefined;
+
+  console.log(`[SERVICES][STAT] Workspace id: ${workspaceId}`)
 
   const filter = { from, to, workspaceId };
   const prevFilter = { from: prevRange.from, to: prevRange.to, workspaceId };

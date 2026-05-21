@@ -1,3 +1,4 @@
+import { authClient } from "@workspace-service/infrastructure/clients/auth.client";
 import { workspaceRepository } from "../repositories/workspace.repo";
 import { memberRepository } from "../repositories/member.repo";
 import { permissionRepository } from "../repositories/permission.repo";
@@ -160,9 +161,9 @@ export class WorkspaceService {
     try {
       const publicId = generatePublicId();
       
-      // Get or find user email (would need user service call)
-      // For now, we'll use a placeholder
-      const email = `user-${userId}@workspace.local`;
+      // Fetch user email from auth-service
+      const authUser = await authClient.getUserById(userId);
+      const email = authUser.email;
 
       await memberRepository.create({
         publicId,

@@ -1,20 +1,27 @@
 import { Router } from 'express';
 import {
-  getBoards,
   createBoard,
-  getBoardById,
   updateBoard,
   deleteBoard,
-  getBoardDetail
+  getBoardDetail,
 } from '../controllers/board.controller';
 
-const router = Router();
+import { createListOnBoard } from '../controllers/list.controller';
 
-router.get('/', getBoards);
+
+const router = Router({ mergeParams: true });
+
+
+router.get('/:boardId', getBoardDetail);
 router.post('/', createBoard);
-router.get('/:boardId', getBoardById);
-router.patch('/:boardId', updateBoard);
-router.delete('/:boardId', deleteBoard);
-router.get('/:boardId/detail', getBoardDetail);
+router.patch('/:boardId/', updateBoard);
+router.delete('/:boardId/', deleteBoard);
+router.get('/:boardId/lists', createListOnBoard);
+
+
+
+
+
+
 
 export const boardRoutes = router;

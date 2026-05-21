@@ -1,5 +1,5 @@
 import { db } from '../config/database';
-import { boards, lists, cards } from '../schema';
+import { boards, lists, cards, labels } from '../schema';
 import { generatePublicId } from '../shared/utils/public-id';
 import { slugify } from '../shared/utils/slugify';
 import { and, eq, isNull } from 'drizzle-orm';
@@ -108,11 +108,18 @@ export class BoardRepository {
           with: {
             cards: {
               where: isNull(cards.deletedAt),
-              orderBy: (cards, { asc }) => [asc(cards.index)]
-            }
-          }
-        }
-      }
+              orderBy: (cards, { asc }) => [asc(cards.index)],
+              with: {
+                labels: {
+                  with: {
+                    label: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     });
   }
 }

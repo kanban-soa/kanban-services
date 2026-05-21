@@ -34,6 +34,14 @@ class AuthClient extends BaseClient {
   }
 
   /**
+   * Get multiple users by IDs
+   */
+  async getUsersByIds(userIds: string[]): Promise<AuthUser[]> {
+    if (userIds.length === 0) return [];
+    return this.get<AuthUser[]>("/internal/v1/auth/users", { params: { ids: userIds.join(",") } });
+  }
+
+  /**
    * Get user by email
    * Throws on 404 (user not found)
    */

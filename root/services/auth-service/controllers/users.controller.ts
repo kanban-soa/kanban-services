@@ -6,19 +6,29 @@ import { generateToken, sendPasswordResetEmail } from '@/auth-service/lib';
 export const UsersController = {
   createUser: async (req: Request, res: Response) => {
     try {
+      const { email, password } = req.body;
+      if (!email || !password) {
+        return res.status(400).json({ error: 'Email and password are required' });
+      }
+
       const user = await UsersService.createUser(req.body);
       const token = generateToken({ id: user.id, email: user.email, name: user.name, role: user.role ?? undefined });
       const session = await AuthService.createSession({ userId: user.id });
-      const { password, ...userWithoutPassword } = user;
+      const { password: _, ...userWithoutPassword } = user;
       res.status(201).json({ token, refreshToken: session.token, user: userWithoutPassword });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      const status = error.message.includes('already registered') || error.message.includes('format') ? 400 : 500;
+      res.status(status).json({ error: error.message });
     }
   },
 
   login: async (req: Request, res: Response) => {
     try {
       const { email, password } = req.body;
+      if (!email || !password) {
+        return res.status(400).json({ error: 'Email and password are required' });
+      }
+
       const user = await UsersService.login(email, password);
       const token = generateToken({ id: user.id, email: user.email, name: user.name, role: user.role ?? undefined });
       const session = await AuthService.createSession({ userId: user.id });
@@ -86,6 +96,21 @@ export const UsersController = {
         return res.status(404).json({ error: 'User not found' });
       }
       res.json(user);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  },
+
+  getUsers: async (req: Request, res: Response) => {
+    try {
+      const ids = req.query.ids as string;
+      if (!ids) {
+        return res.status(400).json({ error: 'User IDs are required' });
+      }
+      const userIds = ids.split(',');
+      const users = await UsersService.getUsersByIds(userIds);
+      const usersWithoutPassword = users.map(({ password, ...user }) => user);
+      res.json(usersWithoutPassword);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

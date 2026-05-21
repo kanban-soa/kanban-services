@@ -1,0 +1,25 @@
+{
+  "name": "activity-service",
+  "version": "1.0.0",
+  "description": "Workspace activity history service",
+  "scripts": {
+    "dev": "npx nodemon --exec \"npx tsx server.ts\"",
+    "start": "npx tsx server.ts",
+    "db:push": "npx drizzle-kit push",
+    "smoke": "node scripts/smoke.js"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "drizzle-orm": "^0.45.2",
+    "express": "^5.2.1",
+    "nanoid": "^5.1.9",
+    "pg": "^8.20.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^20",
+    "tsx": "^4.21.0",
+    "typescript": "^5"
+  }
+}
+

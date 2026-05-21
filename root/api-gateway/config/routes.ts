@@ -19,6 +19,12 @@ export const routes: RouteConfig[] = [
     rewrite: (p) => p.replace('/api/v1/auth/register', '/api/users'),
   },
   {
+    prefix: '/api/v1/auth/users',
+    target: config.services.auth,
+    auth: true,
+    rewrite: (p) => p.replace('/api/v1/auth/users', '/api/users'),
+  },
+  {
     prefix: '/api/v1/auth/verify-jwt',
     target: config.services.auth,
     auth: false,
@@ -63,7 +69,7 @@ export const routes: RouteConfig[] = [
   {
     prefix: '/api/v1/statistics',
     target: config.services.statistic,
-    auth: false,
+    auth: true,
     rewrite: (p) => p.replace('/api/v1/statistics', '/api/statistics'),
     rateLimit: { windowMs: 60_000, maxRequests: 60 },
   },
@@ -72,4 +78,3 @@ export const routes: RouteConfig[] = [
 export function matchRoute(pathname: string): RouteConfig | undefined {
   return routes.find((r) => pathname.startsWith(r.prefix));
 }
-
