@@ -12,6 +12,7 @@ export class CardMapper {
       index: card.index,
       createdAt: card.createdAt,
       updatedAt: card.updatedAt,
+      createdBy: card.createdBy,
       /**
        * Current list
        */
