@@ -8,7 +8,7 @@ export interface CreateWorkspaceInput {
   name: string;
   slug: string;
   description?: string;
-  plan: string;
+  plan: typeof workspaces.$inferInsert.plan;
   createdBy: string;
 }
 
@@ -16,7 +16,7 @@ export interface UpdateWorkspaceInput {
   name?: string;
   slug?: string;
   description?: string;
-  plan?: string;
+  plan?: typeof workspaces.$inferInsert.plan;
   updatedAt?: Date;
 }
 

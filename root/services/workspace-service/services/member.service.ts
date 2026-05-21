@@ -5,10 +5,11 @@ import { generatePublicId } from "../utils/id.util";
 import { logger } from "../utils/logger";
 import { MEMBER_ROLES, MEMBER_STATUS, ERROR_CODES } from "../config/constants";
 import { AppError } from "../utils/AppError";
+import { MemberRole } from "@workspace-service/schema";
 
 export interface InviteMemberDTO {
   email: string;
-  role?: string;
+  role?: MemberRole;
   workspaceId: number;
   invitedBy: string;
 }
@@ -52,7 +53,7 @@ export class MemberService {
       }
 
       const publicId = generatePublicId();
-      const role = input.role || MEMBER_ROLES.MEMBER;
+      const role: MemberRole = input.role || MEMBER_ROLES.MEMBER;
 
       const member = await memberRepository.create({
         publicId,
@@ -191,10 +192,10 @@ export class MemberService {
   /**
    * Update member role in workspace
    */
-  async updateMemberRole(memberId: number, newRole: string) {
+  async updateMemberRole(memberId: number, newRole: MemberRole) {
     try {
       // Validate role
-      const validRoles = Object.values(MEMBER_ROLES) as string[];
+      const validRoles = Object.values(MEMBER_ROLES) as MemberRole[];
       if (!validRoles.includes(newRole)) {
         throw new AppError(ERROR_CODES.INVALID_ROLE);
       }

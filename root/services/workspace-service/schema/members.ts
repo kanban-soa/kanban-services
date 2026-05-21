@@ -22,6 +22,7 @@ export const memberStatuses = [
   "active",
   "removed",
   "paused",
+  "cancelled",
 ] as const;
 export type MemberStatus = (typeof memberStatuses)[number];
 export const memberStatusEnum = pgEnum("member_status", memberStatuses);

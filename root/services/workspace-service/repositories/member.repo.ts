@@ -9,17 +9,17 @@ export interface CreateMemberInput {
   userId?: string;
   workspaceId: number;
   createdBy: string;
-  role: string;
+  role: typeof workspaceMembers.$inferInsert.role;
   roleId?: number;
-  status: string;
+  status: typeof workspaceMembers.$inferInsert.status;
 }
 
 export interface UpdateMemberInput {
   email?: string;
   userId?: string;
-  role?: string;
+  role?: typeof workspaceMembers.$inferInsert.role;
   roleId?: number;
-  status?: string;
+  status?: typeof workspaceMembers.$inferInsert.status;
   updatedAt?: Date;
 }
 
@@ -179,7 +179,7 @@ export class MemberRepository {
     try {
       const result = await db
         .update(workspaceMembers)
-        .set({ ...input, updatedAt: new Date() })
+        .set({ ...input , updatedAt: new Date() })
         .where(eq(workspaceMembers.id, id))
         .returning();
       logger.debug("Member updated", { id });
