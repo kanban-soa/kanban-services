@@ -19,6 +19,12 @@ export const routes: RouteConfig[] = [
     rewrite: (p) => p.replace('/api/v1/auth/register', '/api/users'),
   },
   {
+    prefix: '/api/v1/auth/users',
+    target: config.services.auth,
+    auth: true,
+    rewrite: (p) => p.replace('/api/v1/auth/users', '/api/users'),
+  },
+  {
     prefix: '/api/v1/auth/verify-jwt',
     target: config.services.auth,
     auth: false,
