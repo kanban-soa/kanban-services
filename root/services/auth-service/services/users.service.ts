@@ -1,6 +1,6 @@
 import { db} from '@/auth-service/config/database';
 import { users } from "@/auth-service/schema";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { comparePassword, hashPassword } from "@/auth-service/lib";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -33,6 +33,11 @@ export class UsersService {
   static async getUserById(id: string) {
     const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
     return result[0] || null;
+  }
+
+  static async getUsersByIds(ids: string[]) {
+    if (ids.length === 0) return [];
+    return db.select().from(users).where(inArray(users.id, ids));
   }
 
   static async getUserByEmail(email: string) {

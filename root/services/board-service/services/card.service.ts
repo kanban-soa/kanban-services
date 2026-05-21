@@ -5,6 +5,7 @@ import { CardRepository } from '@/board-service/repositories/card.repository';
 import { LabelRepository } from '@/board-service/repositories/label.repository';
 import { insertCardActivity } from '@/board-service/shared/card-activity';
 import { ApiError, ERROR_CODES } from '@/board-service/shared/errors';
+import { authService } from '@/board-service/shared/auth.client';
 import { CardDetailResponseDto } from '../api/dto/card-response.dto';
 import { CardMapper } from '../api/mapper/card.mapper';
 
@@ -82,12 +83,25 @@ export class CardService {
         );
       }
 
+      let creator = undefined;
+      if (card.createdBy) {
+        try {
+          const authUser = await authService.getUserById(card.createdBy);
+          creator = {
+            id: authUser.id,
+            name: authUser.name || null,
+            image: authUser.image || null,
+          };
+        } catch (error) {
+          console.error('Failed to fetch card creator info:', error);
+        }
+      }
+
       /**
        * Transform response dto
        */
-      return CardMapper.toDetailDto(
-        card,
-      );
+      const dto = CardMapper.toDetailDto(card);
+      return { ...dto, creator };
   }
 
   async updateCard(

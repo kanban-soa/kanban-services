@@ -91,6 +91,21 @@ export const UsersController = {
     }
   },
 
+  getUsers: async (req: Request, res: Response) => {
+    try {
+      const ids = req.query.ids as string;
+      if (!ids) {
+        return res.status(400).json({ error: 'User IDs are required' });
+      }
+      const userIds = ids.split(',');
+      const users = await UsersService.getUsersByIds(userIds);
+      const usersWithoutPassword = users.map(({ password, ...user }) => user);
+      res.json(usersWithoutPassword);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  },
+
   getUserByEmail: async (req: Request, res: Response) => {
     try {
       const user = await UsersService.getUserByEmail(req.query.email as string);

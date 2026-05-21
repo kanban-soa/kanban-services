@@ -36,6 +36,13 @@ export interface CardDetailResponseDto {
 
   updatedAt: Date | null;
 
+  createdBy: string | null;
+  creator?: {
+    id: string;
+    name: string | null;
+    image: string | null;
+  };
+
   /**
    * Current list of card
    */

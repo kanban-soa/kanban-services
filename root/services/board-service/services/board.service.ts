@@ -2,6 +2,7 @@ import { BoardDetailResponseDto } from '../api/dto/board-response.dto';
 import { BoardMapper } from '../api/mapper/board.mapper';
 import { BoardRepository } from '../repositories/board.repository';
 // import { workspaceService } from '../shared/workspace.client';
+import { authService } from '../shared/auth.client';
 import { ApiError, ERROR_CODES } from '../shared/errors';
 
 export class BoardService {
@@ -58,23 +59,31 @@ export class BoardService {
   }
 
   async getBoardDetail(
-  userId: string,
-  workspaceId: number,
-  boardId: string
-): Promise<BoardDetailResponseDto> {
+    userId: string,
+    workspaceId: number,
+    boardId: string
+  ): Promise<BoardDetailResponseDto> {
+    const boardDetail = await this.boardRepository.findBoardWithDetail(boardId, workspaceId);
 
-  const boardDetail = await this.boardRepository.findBoardWithDetail(boardId,workspaceId);
+    if (!boardDetail) {
+      throw new ApiError(404, ERROR_CODES.BOARD_NOT_FOUND, 'Board not found');
+    }
 
-  if (!boardDetail) {
-    throw new ApiError(
-      404,
-      ERROR_CODES.BOARD_NOT_FOUND,
-      'Board not found'
-    );
+    let creator = undefined;
+    if (boardDetail.createdBy) {
+      try {
+        const authUser = await authService.getUserById(boardDetail.createdBy);
+        creator = {
+          id: authUser.id,
+          name: authUser.name || null,
+          image: authUser.image || null,
+        };
+      } catch (error) {
+        console.error('Failed to fetch board creator info:', error);
+      }
+    }
+
+    const dto = BoardMapper.toDetailDto(boardDetail);
+    return { ...dto, creator };
   }
-  console.log('Board detail retrieved:', boardDetail);
-  return BoardMapper.toDetailDto(boardDetail);
-}
-  
-  
 }

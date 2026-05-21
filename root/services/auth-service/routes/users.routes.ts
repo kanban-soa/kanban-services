@@ -9,7 +9,12 @@ router.post('/forgot-password', UsersController.forgotPassword);
 router.post('/reset-password', UsersController.resetPassword);
 
 router.get('/:id', UsersController.getUser);
-router.get('/', UsersController.getUserByEmail);
+router.get('/', (req, res) => {
+  if (req.query.ids) {
+    return UsersController.getUsers(req, res);
+  }
+  return UsersController.getUserByEmail(req, res);
+});
 router.put('/:id', UsersController.updateUser);
 router.delete('/:id', UsersController.deleteUser);
 

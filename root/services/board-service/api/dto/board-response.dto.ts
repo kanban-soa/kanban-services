@@ -84,6 +84,11 @@ export interface BoardDetailResponseDto {
   type: BoardType;
 
   createdBy: string | null;
+  creator?: {
+    id: string;
+    name: string | null;
+    image: string | null;
+  };
 
   createdAt: Date;
   updatedAt: Date | null;
