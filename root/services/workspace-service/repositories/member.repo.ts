@@ -29,6 +29,29 @@ export class MemberRepository implements MemberDao {
       throw error;
     }
   }
+  /**
+   * Get all invitations for a user (status: invited, not deleted)
+   */
+  async findInvitationsByUser(userId: string) {
+    // This will return all invitations for the user across all workspaces, including workspace details if needed
+    try {
+      const result = await db
+        .select()
+        .from(workspaceMembers)
+        .where(
+          and(
+            eq(workspaceMembers.userId, userId),
+            eq(workspaceMembers.status, "invited"),
+            isNull(workspaceMembers.deletedAt)
+          )
+        )
+        .orderBy(desc(workspaceMembers.createdAt));
+      return result;
+    } catch (error) {
+      logger.error("Error finding invitations by user", error);
+      throw error;
+    }
+  }
 
   /**
    * Get member by ID
@@ -338,6 +361,31 @@ export class MemberRepository implements MemberDao {
       return result[0] || null;
     } catch (error) {
       logger.error("Error finding member by user ID", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Find active members by workspace
+   */
+  async findActiveMembersByWorkspace(workspaceId: number, limit: number, offset: number) {
+    try {
+      const result = await db
+        .select()
+        .from(workspaceMembers)
+        .where(
+          and(
+            eq(workspaceMembers.workspaceId, workspaceId),
+            eq(workspaceMembers.status, "active"),
+            isNull(workspaceMembers.deletedAt)
+          )
+        )
+        .orderBy(desc(workspaceMembers.createdAt))
+        .limit(limit)
+        .offset(offset);
+        return result;
+    } catch (error) {
+      logger.error("Error finding active members by workspace", error);
       throw error;
     }
   }
