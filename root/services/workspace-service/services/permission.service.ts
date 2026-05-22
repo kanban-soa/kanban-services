@@ -4,14 +4,7 @@ import { generatePublicId } from "../utils/id.util";
 import { logger } from "../utils/logger";
 import { ROLE_PERMISSIONS, PERMISSION_TYPES, ERROR_CODES } from "../config/constants";
 import { AppError } from "../utils/AppError";
-
-export interface CreateRoleDTO {
-  workspaceId: number;
-  name: string;
-  description?: string;
-  hierarchyLevel: number;
-  isSystem?: boolean;
-}
+import { CreateRoleDTO } from "../dtos/permission.dto";
 
 /**
  * Permission Service
@@ -229,7 +222,8 @@ export class PermissionService {
       const roleToPermissions: Record<string, string[]> = {
         admin: ROLE_PERMISSIONS.admin,
         member: ROLE_PERMISSIONS.member,
-        guest: ROLE_PERMISSIONS.guest,
+        guest: ROLE_PERMISSIONS.observer,
+        owner: ROLE_PERMISSIONS.owner,
       };
 
       const defaultPermissions = roleToPermissions[roleName.toLowerCase()] || [];

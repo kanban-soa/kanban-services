@@ -1,19 +1,9 @@
 import { BaseClient } from "./base.client";
 import config from "@workspace-service/config/env";
 import { logger } from "@workspace-service/utils/logger";
+import { BoardDTO } from "../../dtos/board.dto";
 
-/**
- * Board service response types
- */
-export interface Board {
-  id: string;
-  publicId: string;
-  title: string;
-  workspaceId: string;
-  createdBy: string;
-  createdAt: string;
-  updatedAt: string;
-}
+export type Board = BoardDTO;
 
 /**
  * BoardClient

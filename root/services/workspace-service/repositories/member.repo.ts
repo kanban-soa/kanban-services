@@ -2,32 +2,14 @@ import { db } from "@workspace-service/lib/db";
 import { workspaceMembers } from "@workspace-service/schema/members";
 import { eq, and, isNull, desc, inArray } from "drizzle-orm";
 import { logger } from "@workspace-service/utils/logger";
-
-export interface CreateMemberInput {
-  publicId: string;
-  email: string;
-  userId?: string;
-  workspaceId: number;
-  createdBy: string;
-  role: string;
-  roleId?: number;
-  status: string;
-}
-
-export interface UpdateMemberInput {
-  email?: string;
-  userId?: string;
-  role?: string;
-  roleId?: number;
-  status?: string;
-  updatedAt?: Date;
-}
+import { CreateMemberInput, UpdateMemberInput, MemberDao } from "./dao/member.dao";
+import { MEMBER_STATUS } from "@workspace-service/config/constants";
 
 /**
  * Member Repository
  * Handles all database operations for workspace members
  */
-export class MemberRepository {
+export class MemberRepository implements MemberDao {
   /**
    * Create a new member
    */
@@ -179,7 +161,7 @@ export class MemberRepository {
     try {
       const result = await db
         .update(workspaceMembers)
-        .set({ ...input, updatedAt: new Date() })
+        .set({ ...input , updatedAt: new Date() })
         .where(eq(workspaceMembers.id, id))
         .returning();
       logger.debug("Member updated", { id });
@@ -201,7 +183,7 @@ export class MemberRepository {
         .set({
           deletedAt: new Date(),
           deletedBy,
-          status: "cancelled",
+          status: MEMBER_STATUS.REMOVED,
         })
         .where(
           and(
@@ -337,6 +319,27 @@ export class MemberRepository {
       throw error;
     }
   }
-}
 
+  /**
+   * Find member by user ID
+   */
+  async findMemberByUserId(memberId: string) {
+    try {
+      const result = await db
+        .select()
+        .from(workspaceMembers)
+        .where(
+          and(
+            eq(workspaceMembers.userId, memberId),
+            isNull(workspaceMembers.deletedAt)
+          )
+        )
+        .limit(1);
+      return result[0] || null;
+    } catch (error) {
+      logger.error("Error finding member by user ID", error);
+      throw error;
+    }
+  }
+}
 export const memberRepository = new MemberRepository();

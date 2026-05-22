@@ -5,18 +5,9 @@ import { generatePublicId } from "../utils/id.util";
 import { logger } from "../utils/logger";
 import { MEMBER_ROLES, MEMBER_STATUS, ERROR_CODES } from "../config/constants";
 import { AppError } from "../utils/AppError";
-
-export interface InviteMemberDTO {
-  email: string;
-  role?: string;
-  workspaceId: number;
-  invitedBy: string;
-}
-
-export interface UpdateMemberDTO {
-  role?: string;
-  status?: string;
-}
+import { InviteMemberDTO, UpdateMemberDTO } from "../dtos/member.dto";
+import { AuthUserDTO as AuthUser } from "../dtos/auth.dto";
+import { MemberRole } from "../config/constants";
 
 /**
  * Member Service
@@ -35,7 +26,7 @@ export class MemberService {
       }
 
       // Verify user exists in auth-service
-      let authUser;
+      let authUser: AuthUser;
       try {
         authUser = await authClient.getUserByEmail(input.email);
       } catch {
@@ -52,7 +43,7 @@ export class MemberService {
       }
 
       const publicId = generatePublicId();
-      const role = input.role || MEMBER_ROLES.MEMBER;
+      const role: MemberRole = MEMBER_ROLES.MEMBER;
 
       const member = await memberRepository.create({
         publicId,
@@ -61,7 +52,7 @@ export class MemberService {
         workspaceId: input.workspaceId,
         createdBy: input.invitedBy,
         role,
-        status: MEMBER_STATUS.ACTIVE,
+        status: MEMBER_STATUS.INVITED,
       });
 
       logger.info(
@@ -191,24 +182,19 @@ export class MemberService {
   /**
    * Update member role in workspace
    */
-  async updateMemberRole(memberId: number, newRole: string) {
+  async updateMemberRole(memberId: string, input: UpdateMemberDTO) {
     try {
-      // Validate role
-      const validRoles = Object.values(MEMBER_ROLES) as string[];
-      if (!validRoles.includes(newRole)) {
-        throw new AppError(ERROR_CODES.INVALID_ROLE);
-      }
 
-      const member = await memberRepository.findById(memberId);
+      // Lookup member by publicId (controller sends publicId as memberId)
+      const member = await memberRepository.findMemberByUserId(memberId);
       if (!member) {
         throw new AppError(ERROR_CODES.MEMBER_NOT_FOUND);
       }
 
-      const updated = await memberRepository.update(memberId, {
-        role: newRole,
+      const updated = await memberRepository.update(member.id, {
+        role: input.role,
       });
 
-      logger.info(`Member role updated: ${memberId} -> ${newRole}`);
       return updated;
     } catch (error) {
       logger.error("Error updating member role", error);

@@ -47,14 +47,13 @@ export class MemberController {
         return sendForbidden(res);
       }
 
-      const { email, role } = req.body;
+      const { email } = req.body;
       if (!email || typeof email !== "string") {
         return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Email is required");
       }
 
       const member = await memberService.inviteMember({
         email,
-        role,
         workspaceId,
         invitedBy: userId,
       });
@@ -127,9 +126,9 @@ export class MemberController {
       }
 
       const workspaceId = parseInt(id as string, 10);
-      const memberIdNum = parseInt(memberId as string, 10);
+      const memberUUId = memberId as string; // Keep as string for role update
 
-      if (isNaN(workspaceId) || isNaN(memberIdNum)) {
+      if (isNaN(workspaceId) || !memberUUId) {
         return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Invalid workspace or member ID");
       }
 
@@ -140,13 +139,13 @@ export class MemberController {
       }
 
       const { role } = req.body;
-      if (!role || typeof role !== "string") {
+      if (!role) {
         return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Role is required");
       }
 
-      const member = await memberService.updateMemberRole(memberIdNum, role);
+      const member = await memberService.updateMemberRole(memberUUId, { role });
 
-      logger.info(`Member role updated by user ${userId}: ${memberIdNum} -> ${role}`);
+      // logger.info(`Member role updated by user ${userId}: ${memberUUId} -> ${role}`);
       return sendSuccess(res, member, "Member role updated successfully");
     } catch (error) {
       logger.error("Error updating member role", error);
