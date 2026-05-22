@@ -24,6 +24,59 @@ import {
  */
 export class MemberController {
   /**
+   * GET /api/v1/invitations
+   * Get all invitations for the current user
+   */
+  async getUserInvitations(req: Request, res: Response) {
+    try {
+      const userId = req.user?.id;
+      if (!userId) return sendUnauthorized(res);
+      const invitations = await memberService.getUserInvitations(userId);
+      return sendSuccess(res, invitations, "User invitations fetched");
+    } catch (error) {
+      logger.error("Error getting user invitations", error);
+      return handleControllerError(res, error);
+    }
+  }
+
+  /**
+   * PATCH /api/v1/invitations/:invitationId/accept
+   * Accept an invitation for the current user
+   */
+  async acceptUserInvitation(req: Request, res: Response) {
+    try {
+      const userId = req.user?.id;
+      let { invitationId } = req.params;
+      if (!userId) return sendUnauthorized(res);
+      if (!invitationId) return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Invalid invitation ID");
+      if (Array.isArray(invitationId)) invitationId = invitationId[0];
+      const updated = await memberService.acceptUserInvitation(invitationId, userId);
+      return sendSuccess(res, updated, "Invitation accepted");
+    } catch (error) {
+      logger.error("Error accepting invitation", error);
+      return handleControllerError(res, error);
+    }
+  }
+
+  /**
+   * PATCH /api/v1/invitations/:invitationId/reject
+   * Reject an invitation for the current user
+   */
+  async rejectUserInvitation(req: Request, res: Response) {
+    try {
+      const userId = req.user?.id;
+      let { invitationId } = req.params;
+      if (!userId) return sendUnauthorized(res);
+      if (!invitationId) return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Invalid invitation ID");
+      if (Array.isArray(invitationId)) invitationId = invitationId[0];
+      const updated = await memberService.rejectUserInvitation(invitationId, userId);
+      return sendSuccess(res, updated, "Invitation rejected");
+    } catch (error) {
+      logger.error("Error rejecting invitation", error);
+      return handleControllerError(res, error);
+    }
+  }
+  /**
    * POST /workspaces/:id/members
    * Invite a member to workspace
    */

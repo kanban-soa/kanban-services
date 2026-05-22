@@ -29,6 +29,29 @@ export class MemberRepository implements MemberDao {
       throw error;
     }
   }
+  /**
+   * Get all invitations for a user (status: invited, not deleted)
+   */
+  async findInvitationsByUser(userId: string) {
+    // This will return all invitations for the user across all workspaces, including workspace details if needed
+    try {
+      const result = await db
+        .select()
+        .from(workspaceMembers)
+        .where(
+          and(
+            eq(workspaceMembers.userId, userId),
+            eq(workspaceMembers.status, "invited"),
+            isNull(workspaceMembers.deletedAt)
+          )
+        )
+        .orderBy(desc(workspaceMembers.createdAt));
+      return result;
+    } catch (error) {
+      logger.error("Error finding invitations by user", error);
+      throw error;
+    }
+  }
 
   /**
    * Get member by ID
