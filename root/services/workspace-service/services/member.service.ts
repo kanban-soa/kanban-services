@@ -127,6 +127,21 @@ export class MemberService {
   }
 
   /**
+   * Get all active members in workspace
+   */
+  async getWorkspaceActiveMembers(workspaceId: number, limit: number = 20, offset: number = 0) {
+    try {
+      // Validate workspace exists
+      await workspaceRepository.findById(workspaceId);
+
+      return await memberRepository.findActiveMembersByWorkspace(workspaceId, limit, offset);
+    } catch (error) {
+      logger.error("Error getting workspace members", error);
+      throw error;
+    }
+  }
+
+  /**
    * Get all invited members in workspace
    */
   async getInvitedMembers(workspaceId: number) {

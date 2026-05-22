@@ -97,7 +97,7 @@ export class MemberController {
       );
       const offset = (page - 1) * limit;
 
-      const members = await memberService.getWorkspaceMembers(
+      const members = await memberService.getWorkspaceActiveMembers(
         workspaceId,
         limit,
         offset

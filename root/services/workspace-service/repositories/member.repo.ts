@@ -341,5 +341,30 @@ export class MemberRepository implements MemberDao {
       throw error;
     }
   }
+
+  /**
+   * Find active members by workspace
+   */
+  async findActiveMembersByWorkspace(workspaceId: number, limit: number, offset: number) {
+    try {
+      const result = await db
+        .select()
+        .from(workspaceMembers)
+        .where(
+          and(
+            eq(workspaceMembers.workspaceId, workspaceId),
+            eq(workspaceMembers.status, "active"),
+            isNull(workspaceMembers.deletedAt)
+          )
+        )
+        .orderBy(desc(workspaceMembers.createdAt))
+        .limit(limit)
+        .offset(offset);
+        return result;
+    } catch (error) {
+      logger.error("Error finding active members by workspace", error);
+      throw error;
+    }
+  }
 }
 export const memberRepository = new MemberRepository();
