@@ -18,6 +18,8 @@ export interface UpdateMemberInput {
   roleId?: number;
   status?: any;
   updatedAt?: Date;
+  deletedAt?: Date;
+  deletedBy?: string;
 }
 
 export interface MemberDao {
