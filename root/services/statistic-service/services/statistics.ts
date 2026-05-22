@@ -103,6 +103,7 @@ type MemberSummary = {
   id: number;
   email: string;
   userId?: string | null;
+  name: string;
 };
 
 function requireServiceUrl(name: "BOARD_SERVICE_URL" | "WORKSPACE_SERVICE_URL"): string {
@@ -243,6 +244,7 @@ async function fetchMemberSummaries(
     context,
   });
 
+
   const members = response.data.data.members ?? [];
   return new Map(members.map((member) => [member.id, member]));
 }
@@ -274,15 +276,24 @@ export async function getStatistics(
     fetchBoardWorkloads(filter, context),
   ]);
 
+  console.log(`[SERVICES][STAT] Metrics: ${JSON.stringify(metrics)}`)
+  console.log(`[SERVICES][STAT] Prev Metrics: ${JSON.stringify(prevMetrics)}`)
+  console.log(`[SERVICES][STAT] Activities: ${JSON.stringify(activities)}`)
+  console.log(`[SERVICES][STAT] Priorities: ${JSON.stringify(prioritiesRows)}`)
+  console.log(`[SERVICES][STAT] Workloads: ${JSON.stringify(workloadsRows)}`)
+
+
   const memberIds = Array.from(
     new Set(
       [...activities, ...workloadsRows]
         .map((item) => item.workspaceMemberId)
-        .filter((value): value is number => typeof value === "number"),
+          .filter((id): id is number => id !== null)
     ),
   );
 
+
   const memberMap = await fetchMemberSummaries(workspaceId, memberIds, context);
+
 
   const priorities: StatisticPriority[] = prioritiesRows.map((row) => ({
     label: row.label,
@@ -292,8 +303,10 @@ export async function getStatistics(
 
   const workloads: StatisticWorkload[] = workloadsRows.map((row) => {
     const capacity = Math.min(100, Math.round((row.assignedCount / 20) * 100));
-    const member = row.workspaceMemberId ? memberMap.get(row.workspaceMemberId) : undefined;
-    const name = member?.email ?? "Unknown";
+    console.log(`[SERVICES][STAT] ROW: ${JSON.stringify(row)}`)
+    const rowId = row.workspaceMemberId ? parseInt(row.workspaceMemberId, 10) : undefined;
+    const member = rowId ? memberMap.get(rowId) : undefined;
+    const name = member?.name ?? "Unknown";
     return {
       name,
       capacity,
@@ -319,8 +332,9 @@ export async function getStatistics(
       const time = Number.isNaN(timeValue.getTime())
         ? String(rawTime ?? "")
         : timeValue.toDateString();
-      const member = activity.workspaceMemberId
-        ? memberMap.get(activity.workspaceMemberId)
+      const activityId = activity.workspaceMemberId ? parseInt(activity.workspaceMemberId, 10) : undefined;
+      const member = activityId
+        ? memberMap.get(activityId)
         : undefined;
 
       return {

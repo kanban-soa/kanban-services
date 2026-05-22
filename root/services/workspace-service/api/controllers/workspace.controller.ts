@@ -107,6 +107,7 @@ export class WorkspaceController {
       }
 
       const workspaces = await workspaceService.getWorkspacesByUser(userId);
+      console.log(`[API.CONTROLLER][110] userId: ${userId}, workspaces`, JSON.stringify(workspaces));
       return sendSuccess(res, workspaces);
     } catch (error) {
       logger.error("Error getting workspaces", error);

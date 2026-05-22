@@ -87,6 +87,7 @@ export class WorkspaceService {
   async getWorkspacesByUser(userId: string) {
     try {
       const workspaces = await memberRepository.findWorkspacesByUserId(userId);
+      console.log(`[WORKSPACE][getWorkspacesByUser] workspaces: ${JSON.stringify(workspaces)}`)
       if (!workspaces || workspaces.length === 0) {
         return [];
       }
@@ -95,7 +96,8 @@ export class WorkspaceService {
       const resolvedWorkspaces = await Promise.all(
         workspaces.map(async (workspace) => {
           try {
-            return await this.getWorkspaceById(workspace.id);
+            console.log(`[WORKSPACE][getWorkspacesByUser] workspaceId: ${JSON.stringify(workspace.workspaceId)}`)
+            return await this.getWorkspaceById(workspace.workspaceId);
           } catch {
             return null;
           }
