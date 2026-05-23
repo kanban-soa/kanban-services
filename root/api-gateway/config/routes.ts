@@ -53,7 +53,7 @@ export const routes: RouteConfig[] = [
     prefix: '/api/v1/boards',
     target: config.services.board,
     auth: true,
-    rewrite: (p) => p.replace('/api/v1', ''),
+    rewrite: (p) => p.replace('/api/v1', '/api'),
     rateLimit: { windowMs: 60_000, maxRequests: 200 },
   },
 
