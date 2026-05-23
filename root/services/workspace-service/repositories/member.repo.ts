@@ -9,7 +9,7 @@ import { MEMBER_STATUS } from "@workspace-service/config/constants";
  * Member Repository
  * Handles all database operations for workspace members
  */
-export class MemberRepository {
+export class MemberRepository implements MemberDao {
   /**
    * Create a new member
    */
@@ -26,6 +26,29 @@ export class MemberRepository {
       return result[0];
     } catch (error) {
       logger.error("Error creating member", error);
+      throw error;
+    }
+  }
+  /**
+   * Get all invitations for a user (status: invited, not deleted)
+   */
+  async findInvitationsByUser(userId: string) {
+    // This will return all invitations for the user across all workspaces, including workspace details if needed
+    try {
+      const result = await db
+        .select()
+        .from(workspaceMembers)
+        .where(
+          and(
+            eq(workspaceMembers.userId, userId),
+            eq(workspaceMembers.status, "invited"),
+            isNull(workspaceMembers.deletedAt)
+          )
+        )
+        .orderBy(desc(workspaceMembers.createdAt));
+      return result;
+    } catch (error) {
+      logger.error("Error finding invitations by user", error);
       throw error;
     }
   }
@@ -161,7 +184,7 @@ export class MemberRepository {
     try {
       const result = await db
         .update(workspaceMembers)
-        .set({ ...input, updatedAt: new Date() })
+        .set({ ...input , updatedAt: new Date() })
         .where(eq(workspaceMembers.id, id))
         .returning();
       logger.debug("Member updated", { id });
@@ -183,7 +206,7 @@ export class MemberRepository {
         .set({
           deletedAt: new Date(),
           deletedBy,
-          status: "cancelled",
+          status: MEMBER_STATUS.REMOVED,
         })
         .where(
           and(
@@ -319,6 +342,52 @@ export class MemberRepository {
       throw error;
     }
   }
-}
 
+  /**
+   * Find member by user ID
+   */
+  async findMemberByUserId(memberId: string) {
+    try {
+      const result = await db
+        .select()
+        .from(workspaceMembers)
+        .where(
+          and(
+            eq(workspaceMembers.userId, memberId),
+            isNull(workspaceMembers.deletedAt)
+          )
+        )
+        .limit(1);
+      return result[0] || null;
+    } catch (error) {
+      logger.error("Error finding member by user ID", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Find active members by workspace
+   */
+  async findActiveMembersByWorkspace(workspaceId: number, limit: number, offset: number) {
+    try {
+      const result = await db
+        .select()
+        .from(workspaceMembers)
+        .where(
+          and(
+            eq(workspaceMembers.workspaceId, workspaceId),
+            eq(workspaceMembers.status, "active"),
+            isNull(workspaceMembers.deletedAt)
+          )
+        )
+        .orderBy(desc(workspaceMembers.createdAt))
+        .limit(limit)
+        .offset(offset);
+        return result;
+    } catch (error) {
+      logger.error("Error finding active members by workspace", error);
+      throw error;
+    }
+  }
+}
 export const memberRepository = new MemberRepository();

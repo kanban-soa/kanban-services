@@ -80,17 +80,15 @@ export class WorkspaceService {
    */
   async getWorkspacesByUser(userId: string) {
     try {
-      const workspaces = await memberRepository.findWorkspacesByUserId(userId);
-      console.log(`[WORKSPACE][getWorkspacesByUser] workspaces: ${JSON.stringify(workspaces)}`)
-      if (!workspaces || workspaces.length === 0) {
+      const memberWorkspaces = await memberRepository.findWorkspacesByUserId(userId);
+      if (!memberWorkspaces || memberWorkspaces.length === 0) {
         return [];
       }
 
       // Get workspace details for each membership
       const resolvedWorkspaces = await Promise.all(
-        workspaces.map(async (workspace) => {
+        memberWorkspaces.map(async (workspace) => {
           try {
-            console.log(`[WORKSPACE][getWorkspacesByUser] workspaceId: ${JSON.stringify(workspace.workspaceId)}`)
             return await this.getWorkspaceById(workspace.workspaceId);
           } catch {
             return null;

@@ -268,7 +268,6 @@ export class MemberService {
         role: input.role,
       });
 
-      logger.info(`Member role updated: ${memberId} -> ${newRole}`);
       return updated;
     } catch (error) {
       logger.error("Error updating member role", error);

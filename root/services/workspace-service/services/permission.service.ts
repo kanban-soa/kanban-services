@@ -222,7 +222,8 @@ export class PermissionService {
       const roleToPermissions: Record<string, string[]> = {
         admin: ROLE_PERMISSIONS.admin,
         member: ROLE_PERMISSIONS.member,
-        guest: ROLE_PERMISSIONS.guest,
+        guest: ROLE_PERMISSIONS.observer,
+        owner: ROLE_PERMISSIONS.owner,
       };
 
       const defaultPermissions = roleToPermissions[roleName.toLowerCase()] || [];

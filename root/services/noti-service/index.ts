@@ -11,10 +11,13 @@ const app = express();
 
 app.use(express.json());
 
-// Routes
 app.use('/api/notifications', notificationRouter);
 
-app.get('/', (req: Request, res: Response) => {
+app.get('/health', (_req: Request, res: Response) => {
+    res.json({ status: 'ok', service: 'noti-service' });
+});
+
+app.get('/', (_req: Request, res: Response) => {
     res.json({ message: 'Notification service is running' });
 });
 
