@@ -1,6 +1,7 @@
 import { db } from "@workspace-service/lib/db";
 import { workspaces } from "@workspace-service/schema/workspaces";
-import { eq, ne, and, isNull, desc } from "drizzle-orm";
+import { workspaceMembers } from "@workspace-service/schema/members";
+import { eq, ne, and, isNull, desc, ilike } from "drizzle-orm";
 import { logger } from "@workspace-service/utils/logger";
 import { WorkspaceDao, CreateWorkspaceInput, UpdateWorkspaceInput } from "./dao/workspace.dao";
 
@@ -132,6 +133,48 @@ export class WorkspaceRepository implements WorkspaceDao {
       return result.length;
     } catch (error) {
       logger.error("Error counting workspaces", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Search workspaces by name (or slug) for a specific user.
+   * Returns only workspaces the user is an active member of.
+   */
+  async searchByNameForUser(
+    userId: string,
+    query: string,
+    limit: number = 20,
+    offset: number = 0,
+  ) {
+    try {
+      const pattern = `%${query}%`;
+      const result = await db
+        .selectDistinct({
+          id: workspaces.id,
+          publicId: workspaces.publicId,
+          name: workspaces.name,
+          slug: workspaces.slug,
+          description: workspaces.description,
+          createdBy: workspaces.createdBy,
+          createdAt: workspaces.createdAt,
+          updatedAt: workspaces.updatedAt,
+        })
+        .from(workspaces)
+        .innerJoin(workspaceMembers, eq(workspaceMembers.workspaceId, workspaces.id))
+        .where(
+          and(
+            eq(workspaceMembers.userId, userId),
+            isNull(workspaces.deletedAt),
+            ilike(workspaces.name, pattern),
+          ),
+        )
+        .orderBy(desc(workspaces.createdAt))
+        .limit(limit)
+        .offset(offset);
+      return result;
+    } catch (error) {
+      logger.error("Error searching workspaces by name", error);
       throw error;
     }
   }

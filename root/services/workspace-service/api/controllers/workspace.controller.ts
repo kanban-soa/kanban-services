@@ -115,6 +115,37 @@ export class WorkspaceController {
   }
 
   /**
+   * GET /api/workspaces/search?q=...&limit=&offset=
+   * Search workspaces by name within the current user's memberships.
+   */
+  async search(req: Request, res: Response) {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return sendUnauthorized(res);
+      }
+
+      const rawQuery = req.query.q;
+      const query = typeof rawQuery === "string" ? rawQuery : "";
+      if (!query.trim()) {
+        return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Query 'q' is required");
+      }
+
+      const limit = req.query.limit ? Number(req.query.limit) : undefined;
+      const offset = req.query.offset ? Number(req.query.offset) : undefined;
+
+      const items = await workspaceService.searchWorkspacesByName(userId, query, {
+        limit,
+        offset,
+      });
+      return sendSuccess(res, items);
+    } catch (error) {
+      logger.error("Error searching workspaces", error);
+      return handleControllerError(res, error);
+    }
+  }
+
+  /**
    * PATCH /api/v1/workspaces/:id
    * Update workspace
    */

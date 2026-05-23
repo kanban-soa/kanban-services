@@ -104,6 +104,24 @@ export class WorkspaceService {
   }
 
   /**
+   * Search workspaces by name for a given user.
+   * Returns workspaces (active) the user is a member of whose name matches the query.
+   */
+  async searchWorkspacesByName(
+    userId: string,
+    query: string,
+    opts: { limit?: number; offset?: number } = {},
+  ) {
+    const trimmed = (query ?? "").trim();
+    if (!trimmed) return [];
+
+    const limit = Math.min(Math.max(opts.limit ?? 20, 1), 100);
+    const offset = Math.max(opts.offset ?? 0, 0);
+
+    return workspaceRepository.searchByNameForUser(userId, trimmed, limit, offset);
+  }
+
+  /**
    * Update workspace details
    */
   async updateWorkspace(

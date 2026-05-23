@@ -403,6 +403,24 @@ export const openApiDocument = {
         responses: { "201": { description: "Workspace created" } },
       },
     },
+    "/api/v1/workspaces/search": {
+      get: {
+        summary: "Search workspaces by name",
+        description: "Case-insensitive substring match on workspace name, scoped to workspaces the current user belongs to.",
+        tags: ["workspaces"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: "q", in: "query", required: true, schema: { type: "string" }, description: "Search query (substring)." },
+          { name: "limit", in: "query", schema: { type: "integer", minimum: 1, maximum: 100, default: 20 } },
+          { name: "offset", in: "query", schema: { type: "integer", minimum: 0, default: 0 } },
+        ],
+        responses: {
+          "200": { description: "Matching workspaces" },
+          "400": { description: "Missing query" },
+          "401": { description: "Missing or invalid token" },
+        },
+      },
+    },
     "/api/v1/workspaces/invitations": {
       get: {
         summary: "List the current user's pending invitations",
@@ -682,6 +700,57 @@ export const openApiDocument = {
     // ─────────────────────────────────────────────────────────────────
     // BOARD SERVICE — PROXIED THROUGH GATEWAY (/api/v1/boards/* → /api/*)
     // ─────────────────────────────────────────────────────────────────
+    "/api/v1/boards/workspaces/{workspaceId}/search": {
+      get: {
+        summary: "Search boards, lists, and cards in a workspace",
+        description: "Case-insensitive substring match on board name, list name, and card title within the workspace. Use `scope` to restrict to a single entity type.",
+        tags: ["boards"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: "workspaceId", in: "path", required: true, schema: { type: "string" } },
+          { name: "q", in: "query", required: true, schema: { type: "string" }, description: "Search query (substring)." },
+          {
+            name: "scope",
+            in: "query",
+            schema: {
+              type: "string",
+              enum: ["all", "boards", "lists", "cards"],
+              default: "all",
+            },
+            description: "Restrict to a specific entity type.",
+          },
+          { name: "limit", in: "query", schema: { type: "integer", minimum: 1, maximum: 100, default: 20 } },
+          { name: "offset", in: "query", schema: { type: "integer", minimum: 0, default: 0 } },
+        ],
+        responses: {
+          "200": {
+            description: "Search results",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: {
+                      type: "object",
+                      properties: {
+                        query: { type: "string" },
+                        scope: { type: "string", enum: ["all", "boards", "lists", "cards"] },
+                        boards: { type: "array", items: { type: "object" } },
+                        lists: { type: "array", items: { type: "object" } },
+                        cards: { type: "array", items: { type: "object" } },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          "400": { description: "Missing query" },
+          "401": { description: "Missing or invalid token" },
+        },
+      },
+    },
     "/api/v1/boards/workspaces/{workspaceId}/boards": {
       post: {
         summary: "Create a board in a workspace",

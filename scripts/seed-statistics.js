@@ -10,7 +10,8 @@ const bcrypt = require("bcrypt");
 // --- Configuration ---
 
 const authUrl = process.env.AUTH_DATABASE_URL || process.env.DATABASE_URL;
-const workspaceUrl = process.env.WORKSPACE_DATABASE_URL || process.env.DATABASE_URL;
+const workspaceUrl =
+  process.env.WORKSPACE_DATABASE_URL || process.env.DATABASE_URL;
 const boardUrl = process.env.BOARD_DATABASE_URL || process.env.BOARD_URL;
 
 if (!authUrl || !workspaceUrl || !boardUrl) {
@@ -28,7 +29,8 @@ const SALT_ROUNDS = 10;
 const smokeWorkspace = {
   slug: "smoke-test-workspace",
   name: "Project Phoenix (Smoke Test)",
-  description: "A sample workspace with rich data to demonstrate all functional features.",
+  description:
+    "A sample workspace with rich data to demonstrate all functional features.",
   plan: "pro",
   members: [
     { email: "smoke-admin@example.com", role: "admin", name: "Smoke Admin" },
@@ -206,7 +208,7 @@ async function upsertWorkspace(client, workspace, ownerUserId) {
 }
 
 async function seedWorkspaceData(client, authUsers) {
-  const owner = authUsers.find(u => u.role === 'admin');
+  const owner = authUsers.find((u) => u.role === "admin");
   if (!owner) {
     throw new Error("No admin user found in authUsers to own the workspace.");
   }
@@ -214,11 +216,15 @@ async function seedWorkspaceData(client, authUsers) {
   const workspaceId = await upsertWorkspace(client, smokeWorkspace, owner.id);
 
   // Clear existing members to avoid conflicts
-  await client.query(`DELETE FROM workspace_members WHERE "workspaceId" = $1`, [workspaceId]);
+  await client.query(`DELETE FROM workspace_members WHERE "workspaceId" = $1`, [
+    workspaceId,
+  ]);
 
   const members = [];
   for (const authUser of authUsers) {
-    const memberConfig = smokeWorkspace.members.find(m => m.email === authUser.email);
+    const memberConfig = smokeWorkspace.members.find(
+      (m) => m.email === authUser.email,
+    );
     const inserted = await client.query(
       `INSERT INTO workspace_members
         ("publicId", email, "userId", "workspaceId", "createdBy", "createdAt", role, status)
@@ -254,7 +260,9 @@ async function seedBoardData(client, workspaceSeed) {
   const { workspaceId, ownerUserId, members, config } = workspaceSeed;
 
   // Clear existing boards and related data for this workspace
-  await client.query(`DELETE FROM board WHERE "workspaceId" = $1`, [workspaceId]);
+  await client.query(`DELETE FROM board WHERE "workspaceId" = $1`, [
+    workspaceId,
+  ]);
 
   const boardIdMap = new Map();
 
@@ -305,12 +313,15 @@ async function seedBoardData(client, workspaceSeed) {
     }
 
     const listCardIndex = new Map();
-    for (const template of cardTemplates.filter(c => c.boardSlug === board.slug)) {
+    for (const template of cardTemplates.filter(
+      (c) => c.boardSlug === board.slug,
+    )) {
       const listId = listIds.get(template.list);
       if (!listId) continue;
 
       const createdAt = daysAgo(template.createdDaysAgo);
-      const dueDate = template.dueDaysAgo != null ? daysAgo(template.dueDaysAgo) : null;
+      const dueDate =
+        template.dueDaysAgo != null ? daysAgo(template.dueDaysAgo) : null;
       const index = listCardIndex.get(template.list) || 0;
       listCardIndex.set(template.list, index + 1);
 
@@ -319,7 +330,15 @@ async function seedBoardData(client, workspaceSeed) {
           ("publicId", title, "index", "createdBy", "createdAt", "listId", "dueDate")
          VALUES ($1, $2, $3, $4, $5, $6, $7)
          RETURNING id`,
-        [publicId(), template.title, index, ownerUserId, createdAt, listId, dueDate],
+        [
+          publicId(),
+          template.title,
+          index,
+          ownerUserId,
+          createdAt,
+          listId,
+          dueDate,
+        ],
       );
       const cardId = Number(cardInserted.rows[0].id);
 
@@ -327,7 +346,7 @@ async function seedBoardData(client, workspaceSeed) {
       for (const memberIndex of template.assigned) {
         const member = members[memberIndex % members.length];
         await client.query(
-          `INSERT INTO _card_workspace_members ("cardId", "workspaceMemberId") VALUES ($1, $2)`,
+          `INSERT INTO _card_workspace_members ("cardId", "workspaceMemberPublicId") VALUES ($1, $2)`,
           [cardId, member.id],
         );
       }
@@ -342,15 +361,16 @@ async function seedBoardData(client, workspaceSeed) {
       }
 
       // Simulate activities
-      const activityMemberId = members[template.assigned[0] % members.length]?.id || null;
+      const activityMemberId =
+        members[template.assigned[0] % members.length]?.id || null;
       await client.query(
-        `INSERT INTO card_activity ("publicId", type, "cardId", "workspaceMemberId", "createdAt") VALUES ($1, $2, $3, $4, $5)`,
+        `INSERT INTO card_activity ("publicId", type, "cardId", "workspaceMemberPublicId", "createdAt") VALUES ($1, $2, $3, $4, $5)`,
         [publicId(), "card.created", cardId, activityMemberId, createdAt],
       );
 
       if (template.updatedAfterDays != null) {
         await client.query(
-          `INSERT INTO card_activity ("publicId", type, "cardId", "workspaceMemberId", "createdAt") VALUES ($1, $2, $3, $4, $5)`,
+          `INSERT INTO card_activity ("publicId", type, "cardId", "workspaceMemberPublicId", "createdAt") VALUES ($1, $2, $3, $4, $5)`,
           [
             publicId(),
             "card.updated.description",
@@ -363,7 +383,7 @@ async function seedBoardData(client, workspaceSeed) {
 
       if (template.archivedAfterDays != null) {
         await client.query(
-          `INSERT INTO card_activity ("publicId", type, "cardId", "workspaceMemberId", "createdAt") VALUES ($1, $2, $3, $4, $5)`,
+          `INSERT INTO card_activity ("publicId", type, "cardId", "workspaceMemberPublicId", "createdAt") VALUES ($1, $2, $3, $4, $5)`,
           [
             publicId(),
             "card.archived",
@@ -388,7 +408,7 @@ async function main() {
 
   try {
     console.log("Beginning database seeding for smoke test account...");
-    
+
     await authClient.query("BEGIN");
     const authUsers = await seedAuthData(authClient);
     await authClient.query("COMMIT");
@@ -402,10 +422,15 @@ async function main() {
     await boardClient.query("COMMIT");
 
     console.log("\nSeeding complete!");
-    console.log(`Workspace "${workspaceSeed.config.name}" (ID: ${workspaceSeed.workspaceId}) is ready for smoke testing.`);
+    console.log(
+      `Workspace "${workspaceSeed.config.name}" (ID: ${workspaceSeed.workspaceId}) is ready for smoke testing.`,
+    );
     console.log("Members created (password for all is 'password'):");
-    workspaceSeed.members.forEach(m => console.log(`- ${m.email} (Role: ${smokeWorkspace.members.find(c => c.email === m.email).role})`));
-    
+    workspaceSeed.members.forEach((m) =>
+      console.log(
+        `- ${m.email} (Role: ${smokeWorkspace.members.find((c) => c.email === m.email).role})`,
+      ),
+    );
   } catch (error) {
     console.error("\nError during seeding process. Rolling back changes.");
     await authClient.query("ROLLBACK");
