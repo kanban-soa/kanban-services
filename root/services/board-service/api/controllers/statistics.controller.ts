@@ -4,6 +4,7 @@ import {
   getMetrics,
   getPriorities,
   getWorkloads,
+  getSelfPerformance,
 } from "../../services/statistics.service";
 
 function parseRange(value?: string) {
@@ -133,6 +134,46 @@ export class StatisticsController {
         error: {
           code: "STATISTICS_ERROR",
           message: "Failed to fetch workloads",
+        },
+      });
+    }
+  }
+
+  async selfPerformance(req: Request, res: Response) {
+    const from = parseRange(req.query.from as string | undefined);
+    const to = parseRange(req.query.to as string | undefined);
+    if (!from || !to) {
+      return res.status(400).json({
+        error: {
+          code: "VALIDATION_ERROR",
+          message: "Invalid date range",
+        },
+      });
+    }
+
+    const workspaceId = parseWorkspaceId(req.query.workspaceId as string | undefined);
+    const memberId = req.query.memberId as string | undefined;
+    const limit = Number(req.query.limit) || 2;
+
+    if (!memberId) {
+      return res.status(400).json({
+        error: {
+          code: "VALIDATION_ERROR",
+          message: "memberId is required",
+        },
+      });
+    }
+
+    try {
+      const data = await getSelfPerformance({ from, to, workspaceId, memberId }, limit);
+    //  console.log("Self performance data:", JSON.stringify(data));
+      return res.json({ data });
+    } catch (error) {
+      console.error("Self performance fetch failed", error);
+      return res.status(500).json({
+        error: {
+          code: "STATISTICS_ERROR",
+          message: "Failed to fetch self performance",
         },
       });
     }

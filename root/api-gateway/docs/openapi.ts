@@ -1245,6 +1245,28 @@ export const openApiDocument = {
         },
       },
     },
+    "/api/v1/statistics/{workspaceId}/self-performance": {
+      get: {
+        summary: "Get self performance statistics",
+        tags: ["statistics"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: "workspaceId", in: "path", required: true, schema: { type: "string" } },
+          { name: "range", in: "query", schema: { type: "string", enum: ["7d", "30d", "90d"], default: "7d" } },
+        ],
+        responses: {
+          "200": {
+            description: "Self performance payload",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/SelfPerformanceResponse" },
+              },
+            },
+          },
+          "401": { description: "Missing or invalid token" },
+        },
+      },
+    },
 
     // ─────────────────────────────────────────────────────────────────
     // ACTIVITY SERVICE — DIRECT (NO GATEWAY ROUTE)
@@ -1412,6 +1434,43 @@ export const openApiDocument = {
           },
         },
         required: ["data"],
+      },
+      SelfPerformanceResponse: {
+        type: "object",
+        properties: {
+          data: {
+            type: "object",
+            properties: {
+              range: { type: "string", enum: ["7d", "30d", "90d"] },
+              completedTotal: { type: "number" },
+              overdueTotal: { type: "number" },
+              comparisonPercentage: { type: "number" },
+              completedPercentage: { type: "number" },
+              overdueTasks: {
+                type: "array",
+                items: { $ref: "#/components/schemas/OverdueTask" },
+              },
+            },
+            required: [
+              "range",
+              "completedTotal",
+              "overdueTotal",
+              "comparisonPercentage",
+              "completedPercentage",
+              "overdueTasks",
+            ],
+          },
+        },
+        required: ["data"],
+      },
+      OverdueTask: {
+        type: "object",
+        properties: {
+          id: { type: "number" },
+          title: { type: "string" },
+          dueDate: { type: "string", format: "date-time" },
+        },
+        required: ["id", "title", "dueDate"],
       },
     },
   },

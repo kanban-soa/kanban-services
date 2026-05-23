@@ -3,6 +3,7 @@ import request from "supertest";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import * as exportService from "../services/export";
 import * as service from "../services/statistics";
+import { authMiddleware } from "../middleware/auth";
 
 let statisticsRoutes: typeof import("../api/routes/v1/statistics").statisticsRoutes;
 
@@ -150,5 +151,60 @@ describe("statistics export routes", () => {
 
     expect(response.status).toBe(500);
     expect(response.body.error?.code).toBe("STATISTICS_ERROR");
+  });
+});
+
+describe("self performance routes", () => {
+  it("returns data for a valid request", async () => {
+    vi.spyOn(service, "getSelfPerformance").mockResolvedValue({
+      range: "7d",
+      completedTotal: 12,
+      overdueTotal: 2,
+      comparisonPercentage: 40,
+      completedPercentage: 60,
+      overdueTasks: [
+        {
+          id: 101,
+          title: "Overdue Task",
+          dueDate: "2025-02-01T10:00:00.000Z",
+        },
+      ],
+    });
+
+    const app = express();
+    app.use("/api/statistics", authMiddleware, statisticsRoutes);
+
+    const response = await request(app)
+      .get("/api/statistics/workspace-1/self-performance?range=7d")
+      .set("x-user-id", "user-1");
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({
+      data: {
+        range: "7d",
+        completedTotal: 12,
+        overdueTotal: 2,
+        comparisonPercentage: 40,
+        completedPercentage: 60,
+        overdueTasks: [
+          {
+            id: 101,
+            title: "Overdue Task",
+            dueDate: "2025-02-01T10:00:00.000Z",
+          },
+        ],
+      },
+    });
+  });
+
+  it("returns 401 when missing user header", async () => {
+    const app = express();
+    app.use("/api/statistics", authMiddleware, statisticsRoutes);
+
+    const response = await request(app)
+      .get("/api/statistics/workspace-1/self-performance?range=7d");
+
+    expect(response.status).toBe(401);
+    expect(response.body.error?.code).toBe("UNAUTHORIZED");
   });
 });

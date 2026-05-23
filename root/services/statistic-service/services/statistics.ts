@@ -4,6 +4,7 @@ import type {
   StatisticsResponse,
   StatisticPriority,
   StatisticWorkload,
+  SelfPerformanceResponse,
 } from "../types/statistics";
 
 const rangeDays: Record<StatisticsRange, number> = {
@@ -104,6 +105,25 @@ type MemberSummary = {
   email: string;
   userId?: string | null;
   name: string;
+};
+
+type MemberIdentity = {
+  id: number;
+  publicId: string;
+  userId?: string | null;
+  email?: string | null;
+};
+
+type BoardSelfPerformance = {
+  completedTotal: number;
+  overdueTotal: number;
+  assignedTotal: number;
+  teamCompletedTotal: number;
+  overdueTasks: {
+    id: number;
+    title: string;
+    dueDate: string;
+  }[];
 };
 
 function requireServiceUrl(name: "BOARD_SERVICE_URL" | "WORKSPACE_SERVICE_URL"): string {
@@ -249,6 +269,47 @@ async function fetchMemberSummaries(
   return new Map(members.map((member) => [member.id, member]));
 }
 
+async function fetchWorkspaceMember(
+  workspaceId: number | undefined,
+  context?: ServiceContext,
+): Promise<MemberIdentity | null> {
+  if (!workspaceId) {
+    return null;
+  }
+
+  const response = await getWorkspaceClient().requestJson<{ data: MemberIdentity | null }>({
+    method: "GET",
+    path: `//workspaces/${workspaceId}/members/${context.user?.id}`,
+    headers: buildAuthHeaders(context),
+    context,
+  });
+
+  return response.data.data.member ?? null;
+}
+
+async function fetchBoardSelfPerformance(
+  filter: { from: Date; to: Date; workspaceId?: number; memberId: string; limit?: number },
+  context?: ServiceContext,
+): Promise<BoardSelfPerformance> {
+  const response = await getBoardClient().requestJson<{ data: BoardSelfPerformance }>({
+    method: "GET",
+    path: "/api/boards/statistics/self-performance",
+    query: {
+      from: filter.from.toISOString(),
+      to: filter.to.toISOString(),
+      workspaceId: filter.workspaceId,
+      memberId: filter.memberId,
+      limit: filter.limit,
+    },
+    headers: buildAuthHeaders(context),
+    context,
+  });
+
+  /*console.log(`[SERVICES][STAT] Self performance: ${JSON.stringify(response.data.data)}`)*/
+
+  return response.data.data;
+}
+
 export async function getStatistics(
   query: { range?: string; workspaceId?: string },
   context?: ServiceContext,
@@ -263,7 +324,7 @@ export async function getStatistics(
 
   const workspaceId = query.workspaceId ? Number(query.workspaceId) : undefined;
 
-  console.log(`[SERVICES][STAT] Workspace id: ${workspaceId}`)
+  /*console.log(`[SERVICES][STAT] Workspace id: ${workspaceId}`)*/
 
   const filter = { from, to, workspaceId };
   const prevFilter = { from: prevRange.from, to: prevRange.to, workspaceId };
@@ -275,12 +336,14 @@ export async function getStatistics(
     fetchBoardPriorities(filter, context),
     fetchBoardWorkloads(filter, context),
   ]);
+/*
 
   console.log(`[SERVICES][STAT] Metrics: ${JSON.stringify(metrics)}`)
   console.log(`[SERVICES][STAT] Prev Metrics: ${JSON.stringify(prevMetrics)}`)
   console.log(`[SERVICES][STAT] Activities: ${JSON.stringify(activities)}`)
   console.log(`[SERVICES][STAT] Priorities: ${JSON.stringify(prioritiesRows)}`)
   console.log(`[SERVICES][STAT] Workloads: ${JSON.stringify(workloadsRows)}`)
+*/
 
 
   const memberIds = Array.from(
@@ -303,7 +366,7 @@ export async function getStatistics(
 
   const workloads: StatisticWorkload[] = workloadsRows.map((row) => {
     const capacity = Math.min(100, Math.round((row.assignedCount / 20) * 100));
-    console.log(`[SERVICES][STAT] ROW: ${JSON.stringify(row)}`)
+    /*console.log(`[SERVICES][STAT] ROW: ${JSON.stringify(row)}`)*/
     const rowId = row.workspaceMemberId ? parseInt(row.workspaceMemberId, 10) : undefined;
     const member = rowId ? memberMap.get(rowId) : undefined;
     const name = member?.email ?? "Unknown";
@@ -348,5 +411,49 @@ export async function getStatistics(
     }),
     priorities: normalizePriorities(priorities),
     workloads,
+  };
+}
+
+export async function getSelfPerformance(
+  query: { range?: string; workspaceId?: string },
+  context?: ServiceContext,
+): Promise<SelfPerformanceResponse> {
+  const range = parseRange(query.range);
+  const { from, to } = buildRange(range);
+  const workspaceId = query.workspaceId ? Number(query.workspaceId) : undefined;
+
+  const member = await fetchWorkspaceMember(workspaceId, context);
+  //console.log(`[SERVICES][STAT] Member: ${JSON.stringify(member)}`)
+  if (!member?.id) {
+    return {
+      range,
+      completedTotal: 67,
+      overdueTotal: 0,
+      comparisonPercentage: 0,
+      completedPercentage: 0,
+      overdueTasks: [],
+    };
+  }
+
+  const performance = await fetchBoardSelfPerformance(
+    { from, to, workspaceId, memberId: member.id, limit: 2 },
+    context,
+  );
+
+  const comparisonPercentage = performance.teamCompletedTotal
+    ? Math.round((performance.completedTotal / performance.teamCompletedTotal) * 100)
+    : 0;
+
+  const completedPercentage = performance.assignedTotal
+    ? Math.round((performance.completedTotal / performance.assignedTotal) * 100)
+    : 0;
+
+  return {
+    range,
+    completedTotal: performance.completedTotal,
+    overdueTotal: performance.overdueTotal,
+    comparisonPercentage,
+    completedPercentage,
+    overdueTasks: performance.overdueTasks,
   };
 }
