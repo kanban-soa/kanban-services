@@ -4,8 +4,8 @@
   "description": "",
   "scripts": {
     "dev": "npx nodemon --exec \"npx tsx index.ts\"",
-    "db:push": "npx drizzle-kit push"
-
+    "db:push": "npx drizzle-kit push",
+    "test": "vitest run"
   },
   "dependencies": {}
 }
