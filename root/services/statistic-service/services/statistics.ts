@@ -306,7 +306,7 @@ export async function getStatistics(
     console.log(`[SERVICES][STAT] ROW: ${JSON.stringify(row)}`)
     const rowId = row.workspaceMemberId ? parseInt(row.workspaceMemberId, 10) : undefined;
     const member = rowId ? memberMap.get(rowId) : undefined;
-    const name = member?.name ?? "Unknown";
+    const name = member?.email ?? "Unknown";
     return {
       name,
       capacity,
