@@ -6,12 +6,13 @@ import { cardRoutes } from './card.route';
 
 const router = Router({ mergeParams: true });
 
-router.use('/workspaces/:workspaceId/boards', boardRoutes);
 
 router.use('/lists', listRoutes);
 
 router.use('/cards', cardRoutes);
 
 router.use('/:boardId/labels', labelRoutes);
+
+router.use('/', boardRoutes);
 
 export default router;
