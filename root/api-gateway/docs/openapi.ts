@@ -56,6 +56,11 @@ export const openApiDocument = {
 
     // ─────────────────────────────────────────────────────────────────
     // AUTH SERVICE — PROXIED THROUGH GATEWAY
+    // Gateway rewrites:
+    //   /api/v1/auth/login      → auth-service /api/users/login
+    //   /api/v1/auth/register   → auth-service /api/users (POST)
+    //   /api/v1/auth/verify-jwt → auth-service /api/sessions/verify-jwt
+    //   /api/v1/auth/users/*    → auth-service /api/users/*
     // ─────────────────────────────────────────────────────────────────
     "/api/v1/auth/login": {
       post: {
@@ -114,6 +119,7 @@ export const openApiDocument = {
     "/api/v1/auth/users": {
       get: {
         summary: "List or look up users",
+        description: "When `ids` is provided, returns the matching users. Otherwise, when `email` is provided, returns the user with that email.",
         tags: ["auth"],
         security: [{ bearerAuth: [] }],
         parameters: [
@@ -124,6 +130,47 @@ export const openApiDocument = {
           "200": { description: "User(s) returned" },
           "401": { description: "Missing or invalid token" },
         },
+      },
+    },
+    "/api/v1/auth/users/forgot-password": {
+      post: {
+        summary: "Request password reset",
+        tags: ["auth"],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: { email: { type: "string", format: "email" } },
+                required: ["email"],
+              },
+            },
+          },
+        },
+        responses: { "200": { description: "Reset email queued" } },
+      },
+    },
+    "/api/v1/auth/users/reset-password": {
+      post: {
+        summary: "Reset password using a token",
+        tags: ["auth"],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  token: { type: "string" },
+                  password: { type: "string" },
+                },
+                required: ["token", "password"],
+              },
+            },
+          },
+        },
+        responses: { "200": { description: "Password updated" }, "400": { description: "Invalid token" } },
       },
     },
     "/api/v1/auth/users/{id}": {
@@ -153,50 +200,8 @@ export const openApiDocument = {
 
     // ─────────────────────────────────────────────────────────────────
     // AUTH SERVICE — DIRECT (NOT PROXIED THROUGH GATEWAY)
+    // Sessions/accounts/verifications are only reachable on port 9001.
     // ─────────────────────────────────────────────────────────────────
-    "/api/users/forgot-password": {
-      post: {
-        summary: "Request password reset",
-        tags: ["auth-direct"],
-        servers: [{ url: "http://localhost:9001" }],
-        requestBody: {
-          required: true,
-          content: {
-            "application/json": {
-              schema: {
-                type: "object",
-                properties: { email: { type: "string", format: "email" } },
-                required: ["email"],
-              },
-            },
-          },
-        },
-        responses: { "200": { description: "Reset email queued" } },
-      },
-    },
-    "/api/users/reset-password": {
-      post: {
-        summary: "Reset password using a token",
-        tags: ["auth-direct"],
-        servers: [{ url: "http://localhost:9001" }],
-        requestBody: {
-          required: true,
-          content: {
-            "application/json": {
-              schema: {
-                type: "object",
-                properties: {
-                  token: { type: "string" },
-                  password: { type: "string" },
-                },
-                required: ["token", "password"],
-              },
-            },
-          },
-        },
-        responses: { "200": { description: "Password updated" }, "400": { description: "Invalid token" } },
-      },
-    },
     "/api/sessions": {
       post: {
         summary: "Create session",
@@ -243,6 +248,23 @@ export const openApiDocument = {
           },
         },
         responses: { "204": { description: "Logged out" } },
+      },
+    },
+    "/api/sessions/verify-jwt": {
+      post: {
+        summary: "Verify JWT (direct)",
+        description: "Same handler as the proxied `/api/v1/auth/verify-jwt`; exposed directly for service-to-service callers.",
+        tags: ["auth-direct"],
+        servers: [{ url: "http://localhost:9001" }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/VerifyJwtRequest" },
+            },
+          },
+        },
+        responses: { "200": { description: "Token is valid" }, "401": { description: "Invalid token" } },
       },
     },
     "/api/sessions/{token}": {
@@ -372,6 +394,7 @@ export const openApiDocument = {
 
     // ─────────────────────────────────────────────────────────────────
     // WORKSPACE SERVICE — PROXIED THROUGH GATEWAY
+    // Gateway: /api/v1/workspaces/* → workspace-service /api/workspaces/*
     // ─────────────────────────────────────────────────────────────────
     "/api/v1/workspaces": {
       get: {
@@ -501,6 +524,27 @@ export const openApiDocument = {
         responses: { "204": { description: "Cancelled" } },
       },
     },
+    "/api/v1/workspaces/{id}/members/summary": {
+      post: {
+        summary: "Bulk member summary",
+        tags: ["workspace-members"],
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: { memberIds: { type: "array", items: { type: "string" } } },
+                required: ["memberIds"],
+              },
+            },
+          },
+        },
+        responses: { "200": { description: "Summaries" } },
+      },
+    },
     "/api/v1/workspaces/{id}/members/{memberId}": {
       get: {
         summary: "Get member details",
@@ -539,27 +583,6 @@ export const openApiDocument = {
           { name: "memberId", in: "path", required: true, schema: { type: "string" } },
         ],
         responses: { "204": { description: "Removed" } },
-      },
-    },
-    "/api/v1/workspaces/{id}/members/summary": {
-      post: {
-        summary: "Bulk member summary",
-        tags: ["workspace-members"],
-        security: [{ bearerAuth: [] }],
-        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
-        requestBody: {
-          required: true,
-          content: {
-            "application/json": {
-              schema: {
-                type: "object",
-                properties: { memberIds: { type: "array", items: { type: "string" } } },
-                required: ["memberIds"],
-              },
-            },
-          },
-        },
-        responses: { "200": { description: "Summaries" } },
       },
     },
     "/api/v1/workspaces/{id}/permissions": {
@@ -680,22 +703,26 @@ export const openApiDocument = {
     },
 
     // ─────────────────────────────────────────────────────────────────
-    // BOARD SERVICE — PROXIED THROUGH GATEWAY (/api/v1/boards/* → /api/*)
+    // BOARD SERVICE — PROXIED THROUGH GATEWAY (/api/v1/boards/* → /api/boards/*)
     // ─────────────────────────────────────────────────────────────────
-    "/api/v1/boards/workspaces/{workspaceId}/boards": {
+    "/api/v1/boards": {
       post: {
-        summary: "Create a board in a workspace",
+        summary: "Create a board",
+        description: "Creates a board in the workspace identified by `workspaceId` in the request body.",
         tags: ["boards"],
         security: [{ bearerAuth: [] }],
-        parameters: [{ name: "workspaceId", in: "path", required: true, schema: { type: "string" } }],
         requestBody: {
           required: true,
           content: {
             "application/json": {
               schema: {
                 type: "object",
-                properties: { name: { type: "string" }, description: { type: "string" } },
-                required: ["name"],
+                properties: {
+                  workspaceId: { type: "number" },
+                  name: { type: "string" },
+                  description: { type: "string" },
+                },
+                required: ["workspaceId", "name"],
               },
             },
           },
@@ -703,48 +730,99 @@ export const openApiDocument = {
         responses: { "201": { description: "Created" } },
       },
     },
-    "/api/v1/boards/workspaces/{workspaceId}/boards/{boardId}": {
-      get: {
-        summary: "Get board details",
+    "/api/v1/boards/all": {
+      post: {
+        summary: "List boards in a workspace",
+        description: "Returns all boards in the workspace identified by `workspaceId` in the request body.",
         tags: ["boards"],
         security: [{ bearerAuth: [] }],
-        parameters: [
-          { name: "workspaceId", in: "path", required: true, schema: { type: "string" } },
-          { name: "boardId", in: "path", required: true, schema: { type: "string" } },
-        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: { workspaceId: { type: "number" } },
+                required: ["workspaceId"],
+              },
+            },
+          },
+        },
+        responses: { "200": { description: "Boards" } },
+      },
+    },
+    "/api/v1/boards/{boardId}": {
+      get: {
+        summary: "Get board detail",
+        tags: ["boards"],
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "boardId", in: "path", required: true, schema: { type: "string" } }],
         responses: { "200": { description: "Board" } },
       },
       patch: {
         summary: "Update board",
         tags: ["boards"],
         security: [{ bearerAuth: [] }],
-        parameters: [
-          { name: "workspaceId", in: "path", required: true, schema: { type: "string" } },
-          { name: "boardId", in: "path", required: true, schema: { type: "string" } },
-        ],
+        parameters: [{ name: "boardId", in: "path", required: true, schema: { type: "string" } }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  name: { type: "string" },
+                  description: { type: "string" },
+                },
+              },
+            },
+          },
+        },
         responses: { "200": { description: "Updated" } },
       },
       delete: {
         summary: "Delete board",
+        description: "Requires `workspaceId` in the request body.",
         tags: ["boards"],
         security: [{ bearerAuth: [] }],
-        parameters: [
-          { name: "workspaceId", in: "path", required: true, schema: { type: "string" } },
-          { name: "boardId", in: "path", required: true, schema: { type: "string" } },
-        ],
+        parameters: [{ name: "boardId", in: "path", required: true, schema: { type: "string" } }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: { workspaceId: { type: "number" } },
+                required: ["workspaceId"],
+              },
+            },
+          },
+        },
         responses: { "204": { description: "Deleted" } },
       },
     },
-    "/api/v1/boards/workspaces/{workspaceId}/boards/{boardId}/lists": {
-      get: {
-        summary: "List columns on a board",
+    "/api/v1/boards/{boardId}/lists": {
+      post: {
+        summary: "Create a list (column) on a board",
         tags: ["lists"],
         security: [{ bearerAuth: [] }],
-        parameters: [
-          { name: "workspaceId", in: "path", required: true, schema: { type: "string" } },
-          { name: "boardId", in: "path", required: true, schema: { type: "string" } },
-        ],
-        responses: { "200": { description: "Lists" } },
+        parameters: [{ name: "boardId", in: "path", required: true, schema: { type: "string" } }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  name: { type: "string" },
+                  position: { type: "number" },
+                },
+                required: ["name"],
+              },
+            },
+          },
+        },
+        responses: { "201": { description: "Created" } },
       },
     },
     "/api/v1/boards/lists/{listId}": {
@@ -970,33 +1048,33 @@ export const openApiDocument = {
         responses: { "204": { description: "Deleted" } },
       },
     },
-    "/api/v1/boards/boards/statistics/metrics": {
+    "/api/v1/boards/statistics/metrics": {
       get: {
-        summary: "Board metrics for statistic-service",
+        summary: "Board metrics (used by statistic-service)",
         tags: ["board-statistics"],
         security: [{ bearerAuth: [] }],
         responses: { "200": { description: "Metrics" } },
       },
     },
-    "/api/v1/boards/boards/statistics/activities": {
+    "/api/v1/boards/statistics/activities": {
       get: {
-        summary: "Card activities for statistic-service",
+        summary: "Card activities (used by statistic-service)",
         tags: ["board-statistics"],
         security: [{ bearerAuth: [] }],
         responses: { "200": { description: "Activities" } },
       },
     },
-    "/api/v1/boards/boards/statistics/priorities": {
+    "/api/v1/boards/statistics/priorities": {
       get: {
-        summary: "Priority distribution for statistic-service",
+        summary: "Priority distribution (used by statistic-service)",
         tags: ["board-statistics"],
         security: [{ bearerAuth: [] }],
         responses: { "200": { description: "Priorities" } },
       },
     },
-    "/api/v1/boards/boards/statistics/workloads": {
+    "/api/v1/boards/statistics/workloads": {
       get: {
-        summary: "Member workloads for statistic-service",
+        summary: "Member workloads (used by statistic-service)",
         tags: ["board-statistics"],
         security: [{ bearerAuth: [] }],
         responses: { "200": { description: "Workloads" } },
