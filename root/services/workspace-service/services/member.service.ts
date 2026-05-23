@@ -5,24 +5,73 @@ import { generatePublicId } from "../utils/id.util";
 import { logger } from "../utils/logger";
 import { MEMBER_ROLES, MEMBER_STATUS, ERROR_CODES } from "../config/constants";
 import { AppError } from "../utils/AppError";
-
-export interface InviteMemberDTO {
-  email: string;
-  role?: string;
-  workspaceId: number;
-  invitedBy: string;
-}
-
-export interface UpdateMemberDTO {
-  role?: string;
-  status?: string;
-}
+import { InviteMemberDTO, UpdateMemberDTO } from "../dtos/member.dto";
+import { AuthUserDTO as AuthUser } from "../dtos/auth.dto";
+import { MemberRole } from "../config/constants";
 
 /**
  * Member Service
  * Contains business logic for workspace member operations
  */
 export class MemberService {
+  /**
+   * Get all invitations for a user (status: invited, not deleted)
+   */
+  async getUserInvitations(userId: string) {
+    try {
+      const invitations = await memberRepository.findInvitationsByUser(userId);
+      // Get workspace names for each invitation
+      const workspaceIds = invitations.map(inv => inv.workspaceId);
+      const workspaces = await workspaceRepository.findByIds(workspaceIds);
+      const workspaceMap = new Map(workspaces.map(ws => [ws.id, ws.name]));
+
+      return invitations.map(inv => ({
+        id: inv.publicId,
+        email: inv.email,
+        role: inv.role,
+        sentAt: inv.createdAt.toISOString(),
+        workspace: inv.workspaceId,
+        workspaceName: workspaceMap.get(inv.workspaceId) || "Unknown Workspace",
+        status: inv.status,
+      }));
+    } catch (error) {
+      logger.error("Error getting user invitations", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Accept an invitation by invitationId (publicId) and userId
+   */
+  async acceptUserInvitation(invitationId: string, userId: string) {
+    // Find invitation by publicId
+    const invitation = await memberRepository.findByPublicId(invitationId);
+    if (!invitation || invitation.status !== MEMBER_STATUS.INVITED || invitation.deletedAt) {
+      throw new AppError(ERROR_CODES.MEMBER_NOT_FOUND);
+    }
+    // Mark as active and set userId
+    return await memberRepository.update(invitation.id, {
+      userId,
+      status: MEMBER_STATUS.ACTIVE,
+    });
+  }
+
+  /**
+   * Reject an invitation by invitationId (publicId) and userId
+   */
+  async rejectUserInvitation(invitationId: string, userId: string) {
+    // Find invitation by publicId
+    const invitation = await memberRepository.findByPublicId(invitationId);
+    if (!invitation || invitation.status !== MEMBER_STATUS.INVITED || invitation.deletedAt) {
+      throw new AppError(ERROR_CODES.MEMBER_NOT_FOUND);
+    }
+    // Mark as removed, set deletedAt/deletedBy
+    return await memberRepository.update(invitation.id, {
+      status: MEMBER_STATUS.REMOVED,
+      deletedAt: new Date(),
+      deletedBy: userId,
+    });
+  }
   /**
    * Invite member to workspace
    */
@@ -35,7 +84,7 @@ export class MemberService {
       }
 
       // Verify user exists in auth-service
-      let authUser;
+      let authUser: AuthUser;
       try {
         authUser = await authClient.getUserByEmail(input.email);
       } catch {
@@ -52,7 +101,7 @@ export class MemberService {
       }
 
       const publicId = generatePublicId();
-      const role = input.role || MEMBER_ROLES.MEMBER;
+      const role: MemberRole = MEMBER_ROLES.MEMBER;
 
       const member = await memberRepository.create({
         publicId,
@@ -61,7 +110,7 @@ export class MemberService {
         workspaceId: input.workspaceId,
         createdBy: input.invitedBy,
         role,
-        status: MEMBER_STATUS.ACTIVE,
+        status: MEMBER_STATUS.INVITED,
       });
 
       logger.info(
@@ -136,6 +185,21 @@ export class MemberService {
   }
 
   /**
+   * Get all active members in workspace
+   */
+  async getWorkspaceActiveMembers(workspaceId: number, limit: number = 20, offset: number = 0) {
+    try {
+      // Validate workspace exists
+      await workspaceRepository.findById(workspaceId);
+
+      return await memberRepository.findActiveMembersByWorkspace(workspaceId, limit, offset);
+    } catch (error) {
+      logger.error("Error getting workspace members", error);
+      throw error;
+    }
+  }
+
+  /**
    * Get all invited members in workspace
    */
   async getInvitedMembers(workspaceId: number) {
@@ -191,21 +255,17 @@ export class MemberService {
   /**
    * Update member role in workspace
    */
-  async updateMemberRole(memberId: number, newRole: string) {
+  async updateMemberRole(memberId: string, input: UpdateMemberDTO) {
     try {
-      // Validate role
-      const validRoles = Object.values(MEMBER_ROLES) as string[];
-      if (!validRoles.includes(newRole)) {
-        throw new AppError(ERROR_CODES.INVALID_ROLE);
-      }
 
-      const member = await memberRepository.findById(memberId);
+      // Lookup member by publicId (controller sends publicId as memberId)
+      const member = await memberRepository.findMemberByUserId(memberId);
       if (!member) {
         throw new AppError(ERROR_CODES.MEMBER_NOT_FOUND);
       }
 
-      const updated = await memberRepository.update(memberId, {
-        role: newRole,
+      const updated = await memberRepository.update(member.id, {
+        role: input.role,
       });
 
       logger.info(`Member role updated: ${memberId} -> ${newRole}`);

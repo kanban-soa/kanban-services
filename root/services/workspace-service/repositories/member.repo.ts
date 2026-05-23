@@ -2,26 +2,8 @@ import { db } from "@workspace-service/lib/db";
 import { workspaceMembers } from "@workspace-service/schema/members";
 import { eq, and, isNull, desc, inArray } from "drizzle-orm";
 import { logger } from "@workspace-service/utils/logger";
-
-export interface CreateMemberInput {
-  publicId: string;
-  email: string;
-  userId?: string;
-  workspaceId: number;
-  createdBy: string;
-  role: string;
-  roleId?: number;
-  status: string;
-}
-
-export interface UpdateMemberInput {
-  email?: string;
-  userId?: string;
-  role?: string;
-  roleId?: number;
-  status?: string;
-  updatedAt?: Date;
-}
+import { CreateMemberInput, UpdateMemberInput, MemberDao } from "./dao/member.dao";
+import { MEMBER_STATUS } from "@workspace-service/config/constants";
 
 /**
  * Member Repository

@@ -1,28 +1,10 @@
 import { BaseClient } from "./base.client";
 import config from "@workspace-service/config/env";
 import { logger } from "@workspace-service/utils/logger";
+import { CreateNotificationPayloadDTO, NotificationDTO } from "../../dtos/notification.dto";
 
-/**
- * Notification payload types
- */
-export interface CreateNotificationPayload {
-  userId: string;
-  type: string;
-  title: string;
-  message: string;
-  metadata?: Record<string, any>;
-}
-
-export interface Notification {
-  id: string;
-  publicId: string;
-  userId: string;
-  type: string;
-  title: string;
-  message: string;
-  read: boolean;
-  createdAt: string;
-}
+export type CreateNotificationPayload = CreateNotificationPayloadDTO;
+export type Notification = NotificationDTO;
 
 /**
  * NotificationClient

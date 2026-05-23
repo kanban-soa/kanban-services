@@ -30,13 +30,11 @@ export const UsersController = {
       }
 
       const user = await UsersService.login(email, password);
-      console.log(`[CONTROLLER][USERS][LOGIN][37] User logged in: ${JSON.stringify(user)}`);
       const token = generateToken({ id: user.id, email: user.email, name: user.name, role: user.role ?? undefined });
       const session = await AuthService.createSession({ userId: user.id });
       const { password: _, ...userWithoutPassword } = user;
       res.json({ token, refreshToken: session.token, user: userWithoutPassword });
     } catch (error: any) {
-      console.log(`[CONTROLLER][USERS][LOGIN][38] Error: ${JSON.stringify(error)}`)
       res.status(401).json({ error: error.message });
     }
   },

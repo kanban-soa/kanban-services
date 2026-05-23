@@ -2,29 +2,13 @@ import { db } from "@workspace-service/lib/db";
 import { workspaces } from "@workspace-service/schema/workspaces";
 import { eq, ne, and, isNull, desc } from "drizzle-orm";
 import { logger } from "@workspace-service/utils/logger";
-
-export interface CreateWorkspaceInput {
-  publicId: string;
-  name: string;
-  slug: string;
-  description?: string;
-  plan: string;
-  createdBy: string;
-}
-
-export interface UpdateWorkspaceInput {
-  name?: string;
-  slug?: string;
-  description?: string;
-  plan?: string;
-  updatedAt?: Date;
-}
+import { WorkspaceDao, CreateWorkspaceInput, UpdateWorkspaceInput } from "./dao/workspace.dao";
 
 /**
  * Workspace Repository
  * Handles all database operations for workspaces
  */
-export class WorkspaceRepository {
+export class WorkspaceRepository implements WorkspaceDao {
   /**
    * Create a new workspace
    */
