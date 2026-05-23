@@ -96,8 +96,8 @@ export const cardActivities = pgTable("card_activity", {
   labelId: bigint("labelId", { mode: "number" }).references(() => labels.id, {
     onDelete: "cascade",
   }),
-    workspaceMemberPublicId: varchar(
-      "workspaceMemberPublicId",
+    workspaceMemberId: varchar(
+      "workspaceMemberId",
       {
         length: 12,
       },
@@ -180,8 +180,8 @@ export const cardToWorkspaceMembers = pgTable(
         onDelete: "cascade",
       }),
 
-    workspaceMemberPublicId: varchar(
-      "workspaceMemberPublicId",
+    workspaceMemberId: varchar(
+      "workspaceMemberId",
       {
         length: 12,
       },
@@ -192,7 +192,7 @@ export const cardToWorkspaceMembers = pgTable(
     pk: primaryKey({
       columns: [
         t.cardId,
-        t.workspaceMemberPublicId,
+        t.workspaceMemberId,
       ],
     }),
   }),
@@ -214,42 +214,3 @@ export const cardToWorkspaceMembersRelations =
       }),
     }),
   );
-// export const workspaceMemberSnapshots = pgTable(
-//   "workspace_member_snapshot",
-//   {
-//     id: bigserial("id", {
-//       mode: "number",
-//     }).primaryKey(),
-
-//     workspaceMemberId: bigint(
-//       "workspaceMemberId",
-//       {
-//         mode: "number",
-//       },
-//     )
-//       .notNull()
-//       .unique(),
-
-//     publicId: varchar("publicId", {
-//       length: 12,
-//     }).notNull(),
-
-//     displayName: varchar("displayName", {
-//       length: 255,
-//     }).notNull(),
-
-//     avatarUrl: text("avatarUrl"),
-
-//     email: varchar("email", {
-//       length: 255,
-//     }),
-
-//     role: varchar("role", {
-//       length: 50,
-//     }),
-
-//     syncedAt: timestamp("syncedAt")
-//       .defaultNow()
-//       .notNull(),
-//   },
-// );
