@@ -49,11 +49,13 @@ export class BoardService {
     return board;
   }
 
-  async updateBoard(userId: string, workspaceId: number, boardId: string, data: any) {
+  async updateBoard(userId: string, boardId: string, data: any) {
     // await workspaceService.validateWorkspace(workspaceId);
     // await workspaceService.validateMember(workspaceId, userId);
 
-    const updatedBoard = await this.boardRepository.update(boardId, workspaceId, data);
+    const updatedBoard = await this.boardRepository.update(boardId, data);
+
+    const workspaceId = updatedBoard?.workspaceId;
 
     const updatedFields = Object.keys(data ?? {});
     void this.activityEmitter.boardUpdated({
@@ -63,15 +65,13 @@ export class BoardService {
       fields: updatedFields,
     });
 
+
+
     return updatedBoard;
   }
 
-  async deleteBoard(userId: string, workspaceId: number, boardId: string) {
-    // await workspaceService.validateWorkspace(workspaceId);
-    // await workspaceService.validateMember(workspaceId, userId);
-
-    const deletedBoard = await this.boardRepository.softDelete(boardId, workspaceId, userId);
-
+  async deleteBoard(userId: string, boardId: string, workspaceId: number) {
+    const deletedBoard = await this.boardRepository.softDelete(boardId, userId, workspaceId);
     if (deletedBoard) {
       void this.activityEmitter.boardDeleted({
         workspaceId,
@@ -82,14 +82,21 @@ export class BoardService {
     }
   }
 
-  async getBoardDetail(userId: string, workspaceId: number, boardId: string) {
+  async getBoardDetail(userId: string, boardId: string) {
     // await workspaceService.validateWorkspace(workspaceId);
     // await workspaceService.validateMember(workspaceId, userId);
 
-    const boardDetail = await this.boardRepository.findBoardWithDetail(boardId, workspaceId);
+    const boardDetail = await this.boardRepository.findBoardWithDetail(boardId);
     if (!boardDetail) {
       throw new ApiError(404, ERROR_CODES.BOARD_NOT_FOUND, 'Board not found');
     }
     return boardDetail;
+  }
+  async getAllBoards(userId: string, workspaceId: number) {
+    // await workspaceService.validateWorkspace(workspaceId);
+    // await workspaceService.validateMember(workspaceId, userId);
+
+    const boards = await this.boardRepository.findAllByWorkspace(workspaceId);
+    return boards;
   }
 }

@@ -38,14 +38,13 @@ export class BoardRepository {
     });
   }
 
-  async update(boardId: string, workspaceId: number, data: any) {
+  async update(boardId: string, data: any) {
     const [updatedBoard] = await db
       .update(boards)
       .set({ ...data, updatedAt: new Date() })
       .where(
         and(
           eq(boards.publicId, boardId),
-          eq(boards.workspaceId, workspaceId),
           isNull(boards.deletedAt)
         )
       )
@@ -53,7 +52,7 @@ export class BoardRepository {
     return updatedBoard;
   }
 
-  async softDelete(boardId: string, workspaceId: number, userId: string) {
+  async softDelete(boardId: string, userId: string, workspaceId: number) {
     return db.transaction(async (tx) => {
       const [deletedBoard] = await tx
         .update(boards)
@@ -77,15 +76,15 @@ export class BoardRepository {
         if (listIds.length > 0) {
           // Delete those lists
           await tx.update(lists)
-             .set({ deletedAt: new Date(), deletedBy: userId })
-             .where(and(eq(lists.boardId, deletedBoard.id), isNull(lists.deletedAt)));
-             
+            .set({ deletedAt: new Date(), deletedBy: userId })
+            .where(and(eq(lists.boardId, deletedBoard.id), isNull(lists.deletedAt)));
+
           // Delete cards inside those lists
           // Actually, cards have listId. Let's delete cards by listId.
           for (const lid of listIds) {
             await tx.update(cards)
-               .set({ deletedAt: new Date(), deletedBy: userId })
-               .where(and(eq(cards.listId, lid), isNull(cards.deletedAt)));
+              .set({ deletedAt: new Date(), deletedBy: userId })
+              .where(and(eq(cards.listId, lid), isNull(cards.deletedAt)));
           }
         }
       }
@@ -94,11 +93,10 @@ export class BoardRepository {
     });
   }
 
-  async findBoardWithDetail(boardId: string, workspaceId: number) {
+  async findBoardWithDetail(boardId: string) {
     return db.query.boards.findFirst({
       where: and(
         eq(boards.publicId, boardId),
-        eq(boards.workspaceId, workspaceId),
         isNull(boards.deletedAt)
       ),
       with: {

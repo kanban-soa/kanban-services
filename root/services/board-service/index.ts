@@ -18,14 +18,14 @@ app.use((req: Request, res: Response, next) => {
   next();
 });
 
-app.use('/api', routes);
+app.use('/api/boards', routes);
 app.use("/api/boards/statistics", statisticsRoutes);
 console.log('Board service is starting...');
 
 const port = process.env.BOARD_PORT || 9003;
 
 app.listen(Number(port), () => {
-  console.log(`Board service listening on port ${port} (base path /api)`);
+  console.log(`Board service listening on port ${port} (base path /api/boards)`);
 });
 
 pool.on('connect', () => {
