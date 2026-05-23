@@ -14,6 +14,7 @@ const router = Router();
 router.post("/", workspaceController.create.bind(workspaceController));
 router.get("/", workspaceController.getAll.bind(workspaceController));
 router.get("/invitations", memberController.getUserInvitations.bind(memberController)); // Get all invitations for current users
+router.get("/default", workspaceController.getDefault.bind(workspaceController)); // Get the most recently created workspace
 router.get("/:id", workspaceController.getById.bind(workspaceController));
 router.patch("/:id", workspaceController.update.bind(workspaceController));
 router.delete("/:id", workspaceController.delete.bind(workspaceController));

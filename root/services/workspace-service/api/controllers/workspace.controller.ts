@@ -188,6 +188,25 @@ export class WorkspaceController {
       return handleControllerError(res, error);
     }
   }
+
+  /**
+   * GET /workspaces/default
+   * Get the most recently created workspace for the authenticated user
+   */
+  async getDefault(req: Request, res: Response) {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return sendUnauthorized(res);
+      }
+
+      const workspace = await workspaceService.getDefaultWorkspace(userId);
+      return sendSuccess(res, workspace);
+    } catch (error) {
+      logger.error("Error getting default workspace", error);
+      return handleControllerError(res, error);
+    }
+  }
 }
 
 export const workspaceController = new WorkspaceController();
