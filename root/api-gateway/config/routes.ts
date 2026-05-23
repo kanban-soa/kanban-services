@@ -62,7 +62,8 @@ export const routes: RouteConfig[] = [
     prefix: '/api/v1/notifications',
     target: config.services.noti,
     auth: true,
-    rewrite: (p) => p.replace('/api/v1', '/v1'),
+    rewrite: (p) => p.replace('/api/v1', '/api'),
+    rateLimit: { windowMs: 60_000, maxRequests: 120 },
   },
 
   // ── Statistic Service ─────────────────────────────────────────────

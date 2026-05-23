@@ -6,6 +6,7 @@ import { LabelRepository } from '@/board-service/repositories/label.repository';
 import { insertCardActivity } from '@/board-service/shared/card-activity';
 import { ApiError, ERROR_CODES } from '@/board-service/shared/errors';
 import { authService } from '@/board-service/shared/auth.client';
+import { notificationService } from '@/board-service/shared/noti.client';
 import { CardDetailResponseDto } from '../api/dto/card-response.dto';
 import { CardMapper } from '../api/mapper/card.mapper';
 
@@ -573,6 +574,19 @@ async addMember(
       workspaceMemberPublicId:
         body.workspaceMemberPublicId,
     });
+  });
+
+  void notificationService.createNotification({
+    type: 'card.member.added',
+    userId,
+    cardId: card.publicId,
+    commentId: card.publicId,
+    workspaceId: String(card.list.board.workspaceId),
+    metadata: {
+      cardTitle: card.title,
+      workspaceMemberPublicId: body.workspaceMemberPublicId,
+      actorUserId: userId,
+    },
   });
 
   return {

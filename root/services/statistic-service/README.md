@@ -9,6 +9,8 @@ It also supports exporting statistics data in both JSON and CSV formats.
 The API documentation is available in two formats:
 - **Swagger UI**: `{statistic_service_url}/docs`
 - **OpenAPI JSON**: `{statistic_service_url}/docs.json`
+- 
+- **Client Request Spec**: `api/docs/client-requests.md`
 
 ---
 
