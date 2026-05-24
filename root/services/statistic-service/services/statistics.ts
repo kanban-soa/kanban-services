@@ -279,7 +279,7 @@ async function fetchWorkspaceMember(
 
   const response = await getWorkspaceClient().requestJson<{ data: MemberIdentity | null }>({
     method: "GET",
-    path: `//workspaces/${workspaceId}/members/${context.user?.id}`,
+    path: `/internal/workspaces/${workspaceId}/members/${context.user?.id}`,
     headers: buildAuthHeaders(context),
     context,
   });

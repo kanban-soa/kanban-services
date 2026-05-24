@@ -355,23 +355,29 @@ async function seedBoardData(client, workspaceSeed) {
       }
 
       const activityUserId = members[template.assigned[0] % members.length]?.userId || ownerUserId;
+      const activityMemberId = members[template.assigned[0] % members.length]?.id || null;
       const cardMetadata = {
         title: template.title,
         boardName: board.name,
         listName: template.list,
       };
 
-      activityEvents.push({
-        workspaceId,
-        actorUserId: activityUserId,
-        actionType: "card.created",
-        entityType: "card",
-        entityId: cardPublicId,
-        metadata: cardMetadata,
-        createdAt,
-      });
+      await client.query(
+        `INSERT INTO card_activity ("publicId", type, "cardId", "workspaceMemberId", "createdAt") VALUES ($1, $2, $3, $4, $5)`,
+        [publicId(), "card.created", cardId, activityMemberId, createdAt],
+      );
 
       if (template.updatedAfterDays != null) {
+        await client.query(
+          `INSERT INTO card_activity ("publicId", type, "cardId", "workspaceMemberId", "createdAt") VALUES ($1, $2, $3, $4, $5)`,
+          [
+            publicId(),
+            "card.updated.description",
+            cardId,
+            activityMemberId,
+            activityDate(template.createdDaysAgo, template.updatedAfterDays),
+          ],
+        );
         activityEvents.push({
           workspaceId,
           actorUserId: activityUserId,
@@ -384,6 +390,16 @@ async function seedBoardData(client, workspaceSeed) {
       }
 
       if (template.archivedAfterDays != null) {
+        await client.query(
+          `INSERT INTO card_activity ("publicId", type, "cardId", "workspaceMemberId", "createdAt") VALUES ($1, $2, $3, $4, $5)`,
+          [
+            publicId(),
+            "card.archived",
+            cardId,
+            activityMemberId,
+            activityDate(template.createdDaysAgo, template.archivedAfterDays),
+          ],
+        );
         activityEvents.push({
           workspaceId,
           actorUserId: activityUserId,
