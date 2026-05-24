@@ -112,27 +112,31 @@ export class MemberController {
   }
 
   /**
-   * PATCH /workspaces/:id/members/:memberId
+   * PATCH /workspaces/:workspaceId/members/:memberId
    * Update member role
    */
   async updateMemberRole(req: Request, res: Response) {
     try {
-      const { id, memberId } = req.params;
+      const { workspaceId, memberId } = req.params;
       const userId = req.user?.id;
 
       if (!userId) {
         return sendUnauthorized(res);
       }
 
-      const workspaceId = parseInt(id as string, 10);
       const memberUUId = memberId as string; // Keep as string for role update
 
-      if (isNaN(workspaceId) || !memberUUId) {
+      if (!workspaceId || !memberUUId) {
         return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Invalid workspace or member ID");
       }
 
+      const workspace = await workspaceService.getWorkspaceByPublicId(String(workspaceId));
+      if (!workspace) {
+        return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Workspace not found");
+      }
+
       // Check if user is admin
-      const isAdmin = await workspaceService.isAdmin(workspaceId, userId);
+      const isAdmin = await workspaceService.isAdmin(workspace.id, String(userId));
       if (!isAdmin) {
         return sendForbidden(res);
       }
