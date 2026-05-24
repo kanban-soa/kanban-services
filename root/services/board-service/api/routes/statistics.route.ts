@@ -7,6 +7,6 @@ router.get("/metrics", statisticsController.metrics.bind(statisticsController));
 router.get("/activities", statisticsController.activities.bind(statisticsController));
 router.get("/priorities", statisticsController.priorities.bind(statisticsController));
 router.get("/workloads", statisticsController.workloads.bind(statisticsController));
+router.get("/self-performance", statisticsController.selfPerformance.bind(statisticsController));
 
 export default router;
-

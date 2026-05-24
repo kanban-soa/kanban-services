@@ -1,5 +1,14 @@
 import { Request, Response, NextFunction } from "express";
 
+export interface AuthenticatedRequest extends Request {
+  user?: {
+    id?: string;
+    email?: string;
+    name?: string;
+    role?: string;
+  };
+}
+
 export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
   const userId = req.headers["x-user-id"];
 

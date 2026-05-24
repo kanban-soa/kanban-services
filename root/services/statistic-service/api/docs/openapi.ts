@@ -305,6 +305,92 @@ export const openApiDocument = {
         },
       },
     },
+    "/api/statistics/{workspaceId}/self-performance": {
+      get: {
+        summary: "Get self performance statistics",
+        description: "Returns completion and overdue totals for the current user, plus comparison with team.",
+        tags: ["statistics"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "workspaceId",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+            description: "Workspace identifier.",
+          },
+          {
+            name: "range",
+            in: "query",
+            required: false,
+            schema: { type: "string", enum: ["7d", "30d", "90d"], default: "7d" },
+            description: "Time window for statistics.",
+          },
+          {
+            name: "x-request-id",
+            in: "header",
+            required: false,
+            schema: { type: "string" },
+            description: "Optional request correlation id.",
+          },
+          {
+            name: "x-user-id",
+            in: "header",
+            required: false,
+            schema: { type: "string" },
+            description: "Optional user id for internal gateway auth.",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "Self performance payload",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    data: { $ref: "#/components/schemas/SelfPerformanceResponse" },
+                  },
+                  required: ["data"],
+                },
+              },
+            },
+          },
+          "400": {
+            description: "Invalid query parameters",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          "401": {
+            description: "Missing token",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          "403": {
+            description: "Invalid or expired token",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+          "500": {
+            description: "Unexpected error",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ErrorResponse" },
+              },
+            },
+          },
+        },
+      },
+    },
   },
   components: {
     securitySchemes: {
@@ -451,6 +537,37 @@ export const openApiDocument = {
           },
         },
         required: ["error"],
+      },
+      SelfPerformanceResponse: {
+        type: "object",
+        properties: {
+          range: { type: "string", enum: ["7d", "30d", "90d"] },
+          completedTotal: { type: "number" },
+          overdueTotal: { type: "number" },
+          comparisonPercentage: { type: "number" },
+          completedPercentage: { type: "number" },
+          overdueTasks: {
+            type: "array",
+            items: { $ref: "#/components/schemas/OverdueTask" },
+          },
+        },
+        required: [
+          "range",
+          "completedTotal",
+          "overdueTotal",
+          "comparisonPercentage",
+          "completedPercentage",
+          "overdueTasks",
+        ],
+      },
+      OverdueTask: {
+        type: "object",
+        properties: {
+          id: { type: "number" },
+          title: { type: "string" },
+          dueDate: { type: "string", format: "date-time" },
+        },
+        required: ["id", "title", "dueDate"],
       },
     },
   },

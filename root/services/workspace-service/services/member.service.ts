@@ -249,6 +249,17 @@ export class MemberService {
       userId: member.userId ?? null,
     }));
   }
+
+  /**
+   * Get member record for a user within a workspace
+   */
+  async getMemberByUserAndWorkspace(userId: string, workspaceId: number) {
+    const memberInfo = await memberRepository.findByUserAndWorkspace(userId, workspaceId);
+
+   // console.log(`Member info for user ${userId} in workspace ${workspaceId}:`, memberInfo);
+
+    return memberInfo;
+  }
 }
 
 export const memberService = new MemberService();

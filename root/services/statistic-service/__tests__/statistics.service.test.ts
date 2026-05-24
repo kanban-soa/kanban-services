@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { getStatistics } from "../services/statistics";
+import { getStatistics, getSelfPerformance } from "../services/statistics";
 import { createServiceClient } from "../../../common/utils/service-client";
 
 const requestJsonMock = vi.fn();
@@ -169,5 +169,41 @@ describe("getStatistics", () => {
     expect(result.activities[0]?.time).toBe("Sun Feb 02 2025");
     expect(result.activities[0]?.team).toBe("Team");
     expect(result.activities[0]?.user).toBe("mira@example.com");
+  });
+});
+
+describe("getSelfPerformance", () => {
+  it("builds a self performance response with comparison and completion percentages", async () => {
+    requestJsonMock
+      .mockResolvedValueOnce({
+        data: {
+          data: {
+            member: {
+              id: 101,
+              publicId: "mem-101",
+              userId: "u1",
+              email: "ren@example.com",
+            },
+          },
+        },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          data: {
+            completedTotal: 8,
+            overdueTotal: 2,
+            assignedTotal: 16,
+            teamCompletedTotal: 32,
+            overdueTasks: [],
+          },
+        },
+      });
+
+    const result = await getSelfPerformance({ range: "7d", workspaceId: "1" }, { authorization: "Bearer token" });
+
+    expect(result.completedTotal).toBe(8);
+    expect(result.overdueTotal).toBe(2);
+    expect(result.completedPercentage).toBe(50);
+    expect(result.comparisonPercentage).toBe(25);
   });
 });

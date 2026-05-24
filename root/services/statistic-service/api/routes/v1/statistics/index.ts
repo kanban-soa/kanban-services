@@ -1,6 +1,6 @@
 import { Router, type Response, type Request } from "express";
 import { z } from "zod";
-import { getStatistics } from "../../../../services/statistics";
+import { getStatistics, getSelfPerformance } from "../../../../services/statistics";
 import { exportStatistics } from "../../../../services/export";
 import { getWorkspaceActivities } from "../../../../services/activity";
 import type { AuthenticatedRequest } from "../../../../middleware/auth";
@@ -171,6 +171,53 @@ statisticsRoutes.get("/:workspaceId", async (req: Request, res: Response) => {
       error: {
         code: "STATISTICS_ERROR",
         message: "Failed to fetch statistics",
+      },
+    });
+  }
+});
+
+statisticsRoutes.get("/:workspaceId/self-performance", async (req: AuthenticatedRequest, res: Response) => {
+  const paramsParsed = paramsSchema.safeParse(req.params);
+  if (!paramsParsed.success) {
+    return res.status(400).json({
+      error: {
+        code: "VALIDATION_ERROR",
+        message: "Invalid path parameters",
+        details: paramsParsed.error.flatten(),
+      },
+    });
+  }
+
+  const queryParsed = querySchema.safeParse(req.query);
+  if (!queryParsed.success) {
+    return res.status(400).json({
+      error: {
+        code: "VALIDATION_ERROR",
+        message: "Invalid query parameters",
+        details: queryParsed.error.flatten(),
+      },
+    });
+  }
+
+  try {
+    const data = await getSelfPerformance(
+      {
+        ...(queryParsed.data as StatisticsQuery),
+        workspaceId: (paramsParsed.data as StatisticsParams).workspaceId,
+      },
+      {
+        authorization: req.headers.authorization,
+        requestId: req.headers["x-request-id"] as string | undefined,
+        user: req.user,
+      },
+    );
+    return res.json({ data });
+  } catch (error) {
+    console.error("Self performance fetch failed", error);
+    return res.status(500).json({
+      error: {
+        code: "STATISTICS_ERROR",
+        message: "Failed to fetch self performance statistics",
       },
     });
   }

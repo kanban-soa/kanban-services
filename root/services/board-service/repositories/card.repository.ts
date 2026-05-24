@@ -1,6 +1,7 @@
 import { db, type DbOrTx } from '@/board-service/config/database';
 import { cards, cardsToLabels, cardToWorkspaceMembers, labels, lists } from '../schema';
 import { generatePublicId } from '@/board-service/shared/utils/public-id';
+import { dualIdMatch } from '@/board-service/shared/utils/dual-id-match';
 import { and, asc, eq, isNull, max } from 'drizzle-orm';
 
 export class CardRepository {
@@ -9,7 +10,7 @@ export class CardRepository {
 ) {
   return db.query.cards.findFirst({
     where: and(
-      eq(cards.publicId, cardId),
+      dualIdMatch(cards.publicId, cards.id, cardId),
       isNull(cards.deletedAt),
     ),
 
@@ -67,9 +68,12 @@ export class CardRepository {
   });
 }
 
-  async findManyByListPublicId(listPublicId: string) {
+  async findManyByListPublicId(listIdOrPublicId: string) {
     const listRow = await db.query.lists.findFirst({
-      where: and(eq(lists.publicId, listPublicId), isNull(lists.deletedAt)),
+      where: and(
+        dualIdMatch(lists.publicId, lists.id, listIdOrPublicId),
+        isNull(lists.deletedAt),
+      ),
       with: { board: true },
     });
     if (!listRow?.board || listRow.board.deletedAt) return null;
@@ -115,28 +119,28 @@ export class CardRepository {
   }
 
   async update(
-    cardPublicId: string,
+    cardIdOrPublicId: string,
     data: { title?: string; description?: string | null },
   ) {
-    const existing = await this.findByPublicIdWithContext(cardPublicId);
+    const existing = await this.findByPublicIdWithContext(cardIdOrPublicId);
     if (!existing) return null;
 
     const [updated] = await db
       .update(cards)
       .set({ ...data, updatedAt: new Date() })
-      .where(and(eq(cards.publicId, cardPublicId), isNull(cards.deletedAt)))
+      .where(and(eq(cards.id, existing.id), isNull(cards.deletedAt)))
       .returning();
     return updated ?? null;
   }
 
-  async softDelete(cardPublicId: string, userId: string) {
-    const existing = await this.findByPublicIdWithContext(cardPublicId);
+  async softDelete(cardIdOrPublicId: string, userId: string) {
+    const existing = await this.findByPublicIdWithContext(cardIdOrPublicId);
     if (!existing) return null;
 
     const [updated] = await db
       .update(cards)
       .set({ deletedAt: new Date(), deletedBy: userId })
-      .where(and(eq(cards.publicId, cardPublicId), isNull(cards.deletedAt)))
+      .where(and(eq(cards.id, existing.id), isNull(cards.deletedAt)))
       .returning();
     return updated ?? null;
   }
