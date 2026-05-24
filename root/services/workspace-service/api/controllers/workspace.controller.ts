@@ -74,15 +74,15 @@ export class WorkspaceController {
         return sendUnauthorized(res);
       }
 
-      const workspaceId = parseInt(id as string, 10);
-      if (isNaN(workspaceId)) {
+      const workspaceId = id as string;
+      if (!workspaceId) {
         return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Invalid workspace ID");
       }
 
-      const workspace = await workspaceService.getWorkspaceById(workspaceId);
+      const workspace = await workspaceService.getWorkspaceByPublicId(workspaceId);
 
       // Check if user is member
-      const isMember = await workspaceService.isMember(workspaceId, userId);
+      const isMember = await workspaceService.isMember(workspace.id, userId);
       if (!isMember) {
         return sendForbidden(res);
       }
