@@ -180,9 +180,11 @@ export class MemberController {
 
       // Check if user is admin
       const isAdmin = await workspaceService.isAdmin(workspace.id, userId);
-      const isSelf = userId === memberId; // Allow users to remove themselves
+      const member = await memberService.getMemberById(memberIdNum);
+      const isSelf = userId === member.userId; // Allow users to remove themselves
       if (!isAdmin && !isSelf) {
-        return sendForbidden(res);
+        logger.warn(`Unauthorized member removal attempt by user ${userId} on member ${memberId} in workspace ${workspaceId}`);
+        return sendForbidden(res, ERROR_CODES.PERMISSION_DENIED, "Only admins can remove members");
       }
 
       await memberService.removeMember(memberIdNum, userId);
