@@ -1,21 +1,25 @@
 import { db, type DbOrTx } from '@/board-service/config/database';
 import { boards, cards, lists } from '@/board-service/schema';
 import { generatePublicId } from '@/board-service/shared/utils/public-id';
+import { dualIdMatch } from '@/board-service/shared/utils/dual-id-match';
 import { and, asc, eq, isNull, max } from 'drizzle-orm';
 
 export class ListRepository {
-  async findBoardByPublicId(boardPublicId: string) {
+  async findBoardByPublicId(boardIdOrPublicId: string) {
     return db.query.boards.findFirst({
       where: and(
-        eq(boards.publicId, boardPublicId),
+        dualIdMatch(boards.publicId, boards.id, boardIdOrPublicId),
         isNull(boards.deletedAt),
       ),
     });
   }
 
-  async findByPublicIdWithBoard(listPublicId: string) {
+  async findByPublicIdWithBoard(listIdOrPublicId: string) {
     const row = await db.query.lists.findFirst({
-      where: and(eq(lists.publicId, listPublicId), isNull(lists.deletedAt)),
+      where: and(
+        dualIdMatch(lists.publicId, lists.id, listIdOrPublicId),
+        isNull(lists.deletedAt),
+      ),
       with: {
         board: true,
       },
@@ -62,22 +66,25 @@ export class ListRepository {
     return created;
   }
 
-  async updateName(listPublicId: string, name: string) {
-    const existing = await this.findByPublicIdWithBoard(listPublicId);
+  async updateName(listIdOrPublicId: string, name: string) {
+    const existing = await this.findByPublicIdWithBoard(listIdOrPublicId);
     if (!existing) return null;
 
     const [updated] = await db
       .update(lists)
       .set({ name, updatedAt: new Date() })
-      .where(and(eq(lists.publicId, listPublicId), isNull(lists.deletedAt)))
+      .where(and(eq(lists.id, existing.id), isNull(lists.deletedAt)))
       .returning();
     return updated ?? null;
   }
 
-  async softDelete(listPublicId: string, userId: string) {
+  async softDelete(listIdOrPublicId: string, userId: string) {
     return db.transaction(async (tx) => {
       const existing = await tx.query.lists.findFirst({
-        where: and(eq(lists.publicId, listPublicId), isNull(lists.deletedAt)),
+        where: and(
+          dualIdMatch(lists.publicId, lists.id, listIdOrPublicId),
+          isNull(lists.deletedAt),
+        ),
         with: { board: true },
       });
       if (!existing?.board || existing.board.deletedAt) return null;
