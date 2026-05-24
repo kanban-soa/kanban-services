@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { workspaceService } from "@workspace-service/services/workspace.service";
+import { memberService } from "@workspace-service/services/member.service";
 import {
   sendSuccess,
   sendNotFound,
@@ -20,7 +21,7 @@ export class InternalController {
    */
   async getAuthorization(req: Request, res: Response) {
     try {
-      const { workspaceId, userId } = req.params;
+      const {workspaceId, userId} = req.params;
 
       const wsId = parseInt(workspaceId, 10);
       if (isNaN(wsId)) {
@@ -31,6 +32,47 @@ export class InternalController {
       return sendSuccess(res, result, "Authorization verified");
     } catch (error) {
       logger.error("Error verifying workspace authorization", error);
+      return handleControllerError(res, error);
+    }
+  }
+
+  /**
+   * GET /internal/workspaces/:id/members/me
+   * Return the current user's member profile within a workspace
+   */
+  async getMemberMe(req: Request, res: Response) {
+    try {
+      const {id, userId} = req.params;
+      console.log(`Member info for user ${userId} in workspace`)
+      if (!userId) {
+        return sendUnauthorized(res);
+      }
+
+      const workspaceId = parseInt(id as string, 10);
+      if (isNaN(workspaceId)) {
+        return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Invalid workspace ID");
+      }
+
+      const member = await memberService.getMemberByUserAndWorkspace(userId, workspaceId);
+
+      if (!member) {
+        return sendForbidden(res);
+      }
+
+      return sendSuccess(
+          res,
+          {
+            member: {
+              id: member.id,
+              publicId: member.publicId,
+              userId: member.userId ?? null,
+              email: member.email,
+            },
+          },
+          "Member profile",
+      );
+    } catch (error) {
+      logger.error("Error getting member profile", error);
       return handleControllerError(res, error);
     }
   }

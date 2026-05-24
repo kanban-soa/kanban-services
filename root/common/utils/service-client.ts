@@ -173,7 +173,13 @@ export function createServiceClient(options: ServiceClientOptions) {
       };
 
     } catch (e) {
-      throw Error(`Can't request to service: ${url}`)
+      if (e instanceof ServiceClientError) {
+        throw e;
+      }
+      if (e instanceof DOMException && e.name === "TimeoutError") {
+        throw new ServiceClientError(`Request to ${url} timed out after ${timeoutMs}ms`, 408);
+      }
+      throw new Error(`Can't request to service: ${url}`, { cause: e as Error });
     }
 
   }
@@ -182,4 +188,3 @@ export function createServiceClient(options: ServiceClientOptions) {
     requestJson,
   };
 }
-

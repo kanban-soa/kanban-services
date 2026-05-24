@@ -40,3 +40,17 @@ export type StatisticsResponse = {
   workloads: StatisticWorkload[];
 };
 
+export type SelfPerformanceOverdueTask = {
+  id: number;
+  title: string;
+  dueDate: string;
+};
+
+export type SelfPerformanceResponse = {
+  range: StatisticsRange;
+  completedTotal: number;
+  overdueTotal: number;
+  comparisonPercentage: number;
+  completedPercentage: number;
+  overdueTasks: SelfPerformanceOverdueTask[];
+};

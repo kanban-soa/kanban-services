@@ -4,7 +4,7 @@
 require("dotenv/config");
 
 const { Pool } = require("pg");
-const { randomBytes, randomUUID } = require("crypto");
+const { randomBytes } = require("crypto");
 const bcrypt = require("bcrypt");
 
 // --- Configuration ---
@@ -12,10 +12,12 @@ const bcrypt = require("bcrypt");
 const authUrl = process.env.AUTH_DATABASE_URL || process.env.DATABASE_URL;
 const workspaceUrl = process.env.WORKSPACE_DATABASE_URL || process.env.DATABASE_URL;
 const boardUrl = process.env.BOARD_DATABASE_URL || process.env.BOARD_URL;
+const activityUrl =
+  process.env.ACTIVITY_DATABASE_URL || process.env.ACTIVITY_URL || process.env.DATABASE_URL;
 
-if (!authUrl || !workspaceUrl || !boardUrl) {
+if (!authUrl || !workspaceUrl || !boardUrl || !activityUrl) {
   console.error(
-    "Missing database connection strings. Set AUTH_DATABASE_URL, WORKSPACE_DATABASE_URL, and BOARD_DATABASE_URL.",
+    "Missing database connection strings. Set AUTH_DATABASE_URL, WORKSPACE_DATABASE_URL, BOARD_DATABASE_URL, and ACTIVITY_DATABASE_URL (or ACTIVITY_URL).",
   );
   process.exit(1);
 }
@@ -256,16 +258,17 @@ async function seedBoardData(client, workspaceSeed) {
   // Clear existing boards and related data for this workspace
   await client.query(`DELETE FROM board WHERE "workspaceId" = $1`, [workspaceId]);
 
-  const boardIdMap = new Map();
+  const activityEvents = [];
 
   for (const board of config.boards) {
+    const boardPublicId = publicId();
     const boardInserted = await client.query(
       `INSERT INTO board
         ("publicId", name, description, slug, "createdBy", "workspaceId", visibility, type, "createdAt")
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING id`,
       [
-        publicId(),
+        boardPublicId,
         board.name,
         board.description,
         board.slug,
@@ -277,7 +280,16 @@ async function seedBoardData(client, workspaceSeed) {
       ],
     );
     const boardId = Number(boardInserted.rows[0].id);
-    boardIdMap.set(board.slug, boardId);
+
+    activityEvents.push({
+      workspaceId,
+      actorUserId: ownerUserId,
+      actionType: "board.created",
+      entityType: "board",
+      entityId: boardPublicId,
+      metadata: { name: board.name, slug: board.slug },
+      createdAt: now,
+    });
 
     const labelIds = new Map();
     for (const label of labelTemplates) {
@@ -314,12 +326,13 @@ async function seedBoardData(client, workspaceSeed) {
       const index = listCardIndex.get(template.list) || 0;
       listCardIndex.set(template.list, index + 1);
 
+      const cardPublicId = publicId();
       const cardInserted = await client.query(
         `INSERT INTO card
           ("publicId", title, "index", "createdBy", "createdAt", "listId", "dueDate")
          VALUES ($1, $2, $3, $4, $5, $6, $7)
          RETURNING id`,
-        [publicId(), template.title, index, ownerUserId, createdAt, listId, dueDate],
+        [cardPublicId, template.title, index, ownerUserId, createdAt, listId, dueDate],
       );
       const cardId = Number(cardInserted.rows[0].id);
 
@@ -341,8 +354,14 @@ async function seedBoardData(client, workspaceSeed) {
         );
       }
 
-      // Simulate activities
+      const activityUserId = members[template.assigned[0] % members.length]?.userId || ownerUserId;
       const activityMemberId = members[template.assigned[0] % members.length]?.id || null;
+      const cardMetadata = {
+        title: template.title,
+        boardName: board.name,
+        listName: template.list,
+      };
+
       await client.query(
         `INSERT INTO card_activity ("publicId", type, "cardId", "workspaceMemberId", "createdAt") VALUES ($1, $2, $3, $4, $5)`,
         [publicId(), "card.created", cardId, activityMemberId, createdAt],
@@ -359,6 +378,15 @@ async function seedBoardData(client, workspaceSeed) {
             activityDate(template.createdDaysAgo, template.updatedAfterDays),
           ],
         );
+        activityEvents.push({
+          workspaceId,
+          actorUserId: activityUserId,
+          actionType: "card.updated",
+          entityType: "card",
+          entityId: cardPublicId,
+          metadata: cardMetadata,
+          createdAt: activityDate(template.createdDaysAgo, template.updatedAfterDays),
+        });
       }
 
       if (template.archivedAfterDays != null) {
@@ -372,8 +400,44 @@ async function seedBoardData(client, workspaceSeed) {
             activityDate(template.createdDaysAgo, template.archivedAfterDays),
           ],
         );
+        activityEvents.push({
+          workspaceId,
+          actorUserId: activityUserId,
+          actionType: "card.deleted",
+          entityType: "card",
+          entityId: cardPublicId,
+          metadata: cardMetadata,
+          createdAt: activityDate(template.createdDaysAgo, template.archivedAfterDays),
+        });
       }
     }
+  }
+
+  return activityEvents;
+}
+
+async function seedActivityData(client, workspaceSeed, activityEvents) {
+  await client.query(
+    `DELETE FROM workspace_activity WHERE "workspaceId" = $1`,
+    [workspaceSeed.workspaceId],
+  );
+
+  for (const event of activityEvents) {
+    await client.query(
+      `INSERT INTO workspace_activity
+        ("publicId", "workspaceId", "actorUserId", "actionType", "entityType", "entityId", "metadata", "createdAt")
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [
+        publicId(),
+        event.workspaceId,
+        event.actorUserId,
+        event.actionType,
+        event.entityType,
+        event.entityId,
+        event.metadata ?? null,
+        event.createdAt,
+      ],
+    );
   }
 }
 
@@ -381,10 +445,12 @@ async function main() {
   const authPool = new Pool({ connectionString: authUrl });
   const workspacePool = new Pool({ connectionString: workspaceUrl });
   const boardPool = new Pool({ connectionString: boardUrl });
+  const activityPool = new Pool({ connectionString: activityUrl });
 
   const authClient = await authPool.connect();
   const workspaceClient = await workspacePool.connect();
   const boardClient = await boardPool.connect();
+  const activityClient = await activityPool.connect();
 
   try {
     console.log("Beginning database seeding for smoke test account...");
@@ -398,8 +464,12 @@ async function main() {
     await workspaceClient.query("COMMIT");
 
     await boardClient.query("BEGIN");
-    await seedBoardData(boardClient, workspaceSeed);
+    const activityEvents = await seedBoardData(boardClient, workspaceSeed);
     await boardClient.query("COMMIT");
+
+    await activityClient.query("BEGIN");
+    await seedActivityData(activityClient, workspaceSeed, activityEvents);
+    await activityClient.query("COMMIT");
 
     console.log("\nSeeding complete!");
     console.log(`Workspace "${workspaceSeed.config.name}" (ID: ${workspaceSeed.workspaceId}) is ready for smoke testing.`);
@@ -411,15 +481,18 @@ async function main() {
     await authClient.query("ROLLBACK");
     await workspaceClient.query("ROLLBACK");
     await boardClient.query("ROLLBACK");
+    await activityClient.query("ROLLBACK");
     console.error(error);
     process.exitCode = 1;
   } finally {
     authClient.release();
     workspaceClient.release();
     boardClient.release();
+    activityClient.release();
     await authPool.end();
     await workspacePool.end();
     await boardPool.end();
+    await activityPool.end();
   }
 }
 

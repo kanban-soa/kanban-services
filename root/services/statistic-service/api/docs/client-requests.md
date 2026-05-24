@@ -322,3 +322,57 @@ curl -sS \
 - `401` unauthorized
 - `403` forbidden
 - `500` activity service error
+
+---
+
+### GET /api/statistics/{workspaceId}/self-performance
+
+Returns completion and overdue totals for the current user, plus comparison with team.
+
+**Path Parameters**
+
+| Name | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `workspaceId` | `string` | Yes | Workspace identifier |
+
+**Query Parameters**
+
+| Name | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `range` | `"7d" | "30d" | "90d"` | No | Default: `7d` |
+
+**Request**
+
+```bash
+curl -sS \
+  -H "Authorization: Bearer <token>" \
+  "{STATISTIC_SERVICE_URL}/api/statistics/42/self-performance?range=30d"
+```
+
+**200 Response**
+
+```json
+{
+  "data": {
+    "range": "30d",
+    "completedTotal": 12,
+    "overdueTotal": 3,
+    "comparisonPercentage": 8,
+    "completedPercentage": 75,
+    "overdueTasks": [
+      {
+        "id": 101,
+        "title": "Fix authentication bug",
+        "dueDate": "2026-05-20T10:30:00Z"
+      }
+    ]
+  }
+}
+```
+
+**Error Responses**
+
+- `400` validation error
+- `401` unauthorized
+- `403` invalid or expired token
+- `500` statistics service error

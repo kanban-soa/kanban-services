@@ -8,5 +8,6 @@ router.get(
   "/workspaces/:workspaceId/members/:userId/authorization",
   internalController.getAuthorization.bind(internalController)
 );
+router.get("/workspaces/:id/members/:userId", internalController.getMemberMe.bind(internalController));
 
 export default router;
