@@ -42,6 +42,43 @@ export class WorkspaceServiceClient {
     const result = await response.json();
     return result.data || [];
   }
+
+  async resolveIdByPublicId(publicId: string): Promise<number> {
+    let response: Response;
+    try {
+      response = await fetch(
+        `${this.baseUrl}/internal/workspaces/by-public-id/${encodeURIComponent(publicId)}`,
+      );
+    } catch {
+      throw new ApiError(
+        502,
+        ERROR_CODES.INTERNAL_SERVER_ERROR,
+        'Failed to reach Workspace Service',
+      );
+    }
+
+    if (response.status === 404) {
+      throw new ApiError(404, ERROR_CODES.NOT_FOUND, 'Workspace not found');
+    }
+    if (!response.ok) {
+      throw new ApiError(
+        502,
+        ERROR_CODES.INTERNAL_SERVER_ERROR,
+        'Workspace lookup failed',
+      );
+    }
+
+    const body = (await response.json()) as { data?: { id?: number } };
+    const id = body?.data?.id;
+    if (typeof id !== 'number') {
+      throw new ApiError(
+        502,
+        ERROR_CODES.INTERNAL_SERVER_ERROR,
+        'Workspace lookup returned no id',
+      );
+    }
+    return id;
+  }
 }
 
 export const workspaceService = new WorkspaceServiceClient();

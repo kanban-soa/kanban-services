@@ -1,47 +1,62 @@
-import { RouteConfig } from '../types';
-import config from './env';
+import { RouteConfig } from "../types";
+import config from "./env";
 
 export const routes: RouteConfig[] = [
   // ── Auth Service ──────────────────────────────────────────────────
   // Public: login and register do not require a JWT
   {
-    prefix: '/api/v1/auth/login',
+    prefix: "/api/v1/auth/logout",
     target: config.services.auth,
-    auth: false,
-    methods: ['POST'],
-    rewrite: (p) => p.replace('/api/v1/auth/login', '/api/users/login'),
+    auth: false, // logout shouldn't require a still-valid JWT
+    methods: ["POST"],
+    rewrite: (p) => p.replace("/api/v1/auth/logout", "/api/sessions/logout"),
   },
   {
-    prefix: '/api/v1/auth/register',
+    prefix: "/api/v1/auth/refresh",
     target: config.services.auth,
     auth: false,
-    methods: ['POST'],
-    rewrite: (p) => p.replace('/api/v1/auth/register', '/api/users'),
+    methods: ["POST"],
+    rewrite: (p) => p.replace("/api/v1/auth/refresh", "/api/sessions/refresh"),
   },
   {
-    prefix: '/api/v1/auth/users',
+    prefix: "/api/v1/auth/login",
+    target: config.services.auth,
+    auth: false,
+    methods: ["POST"],
+    rewrite: (p) => p.replace("/api/v1/auth/login", "/api/users/login"),
+  },
+  {
+    prefix: "/api/v1/auth/register",
+    target: config.services.auth,
+    auth: false,
+    methods: ["POST"],
+    rewrite: (p) => p.replace("/api/v1/auth/register", "/api/users"),
+  },
+  {
+    prefix: "/api/v1/auth/users",
     target: config.services.auth,
     auth: true,
-    rewrite: (p) => p.replace('/api/v1/auth/users', '/api/users'),
+    rewrite: (p) => p.replace("/api/v1/auth/users", "/api/users"),
   },
   {
-    prefix: '/api/v1/auth/verify-jwt',
+    prefix: "/api/v1/auth/verify-jwt",
     target: config.services.auth,
     auth: false,
-    methods: ['POST'],
-    rewrite: (p) => p.replace('/api/v1/auth/verify-jwt', '/api/sessions/verify-jwt'),
+    methods: ["POST"],
+    rewrite: (p) =>
+      p.replace("/api/v1/auth/verify-jwt", "/api/sessions/verify-jwt"),
   },
 
   // ── Workspace Service ─────────────────────────────────────────────
   {
-    prefix: '/api/v1/workspaces',
+    prefix: "/api/v1/workspaces",
     target: config.services.workspace,
     auth: true,
-    rewrite: (p) => p.replace('/api/v1', '/api'),
+    rewrite: (p) => p.replace("/api/v1", "/api"),
     rateLimit: { windowMs: 60_000, maxRequests: 120 },
   },
   {
-    prefix: '/api/workspaces',
+    prefix: "/api/workspaces",
     target: config.services.workspace,
     auth: true,
     // rewrite: (p) => p.replace('/api/v1', '/api/'),
@@ -50,28 +65,28 @@ export const routes: RouteConfig[] = [
 
   // ── Board Service ─────────────────────────────────────────────────
   {
-    prefix: '/api/v1/boards',
+    prefix: "/api/v1/boards",
     target: config.services.board,
     auth: true,
-    rewrite: (p) => p.replace('/api/v1', '/api'),
+    rewrite: (p) => p.replace("/api/v1", "/api"),
     rateLimit: { windowMs: 60_000, maxRequests: 200 },
   },
 
   // ── Notification Service ──────────────────────────────────────────
   {
-    prefix: '/api/v1/notifications',
+    prefix: "/api/v1/notifications",
     target: config.services.noti,
     auth: true,
-    rewrite: (p) => p.replace('/api/v1', '/api'),
+    rewrite: (p) => p.replace("/api/v1", "/api"),
     rateLimit: { windowMs: 60_000, maxRequests: 120 },
   },
 
   // ── Statistic Service ─────────────────────────────────────────────
   {
-    prefix: '/api/v1/statistics',
+    prefix: "/api/v1/statistics",
     target: config.services.statistic,
     auth: true,
-    rewrite: (p) => p.replace('/api/v1/statistics', '/api/statistics'),
+    rewrite: (p) => p.replace("/api/v1/statistics", "/api/statistics"),
     rateLimit: { windowMs: 60_000, maxRequests: 60 },
   },
 ];

@@ -76,6 +76,33 @@ export class InternalController {
       return handleControllerError(res, error);
     }
   }
+
+  /**
+   * GET /internal/workspaces/by-public-id/:publicId
+   * Resolve a workspace public ID to its internal numeric ID
+   */
+  async getByPublicId(req: Request, res: Response) {
+    try {
+      const { publicId } = req.params;
+      if (!publicId) {
+        return sendNotFound(res, ERROR_CODES.WORKSPACE_NOT_FOUND, "Workspace not found");
+      }
+
+      const workspace = await workspaceService.getWorkspaceByPublicId(publicId);
+      if (!workspace) {
+        return sendNotFound(res, ERROR_CODES.WORKSPACE_NOT_FOUND, "Workspace not found");
+      }
+
+      return sendSuccess(
+        res,
+        { id: workspace.id, publicId: workspace.publicId, name: workspace.name },
+        "Workspace found",
+      );
+    } catch (error) {
+      logger.error("Error resolving workspace by public ID", error);
+      return handleControllerError(res, error);
+    }
+  }
 }
 
 export const internalController = new InternalController();

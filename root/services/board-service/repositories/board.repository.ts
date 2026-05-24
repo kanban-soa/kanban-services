@@ -2,7 +2,17 @@ import { db } from '../config/database';
 import { boards, lists, cards, labels } from '../schema';
 import { generatePublicId } from '../shared/utils/public-id';
 import { slugify } from '../shared/utils/slugify';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq, isNull, or, type SQL } from 'drizzle-orm';
+
+// Frontend URLs sometimes carry the numeric `id`, sometimes the `publicId`.
+// Match either column so both forms resolve to the same board.
+function boardIdMatch(boardId: string): SQL {
+  const asNumber = Number(boardId);
+  if (Number.isInteger(asNumber) && asNumber > 0 && String(asNumber) === boardId) {
+    return or(eq(boards.publicId, boardId), eq(boards.id, asNumber)) as SQL;
+  }
+  return eq(boards.publicId, boardId);
+}
 
 export class BoardRepository {
   async create(data: { name: string; description?: string; visibility: any; type: any; workspaceId: number; createdBy: string }) {
@@ -22,7 +32,7 @@ export class BoardRepository {
   async findById(boardId: string, workspaceId: number) {
     return db.query.boards.findFirst({
       where: and(
-        eq(boards.publicId, boardId),
+        boardIdMatch(boardId),
         eq(boards.workspaceId, workspaceId),
         isNull(boards.deletedAt)
       ),
@@ -44,7 +54,7 @@ export class BoardRepository {
       .set({ ...data, updatedAt: new Date() })
       .where(
         and(
-          eq(boards.publicId, boardId),
+          boardIdMatch(boardId),
           isNull(boards.deletedAt)
         )
       )
@@ -59,7 +69,7 @@ export class BoardRepository {
         .set({ deletedAt: new Date(), deletedBy: userId })
         .where(
           and(
-            eq(boards.publicId, boardId),
+            boardIdMatch(boardId),
             eq(boards.workspaceId, workspaceId),
             isNull(boards.deletedAt)
           )
@@ -96,7 +106,7 @@ export class BoardRepository {
   async findBoardWithDetail(boardId: string) {
     return db.query.boards.findFirst({
       where: and(
-        eq(boards.publicId, boardId),
+        boardIdMatch(boardId),
         isNull(boards.deletedAt)
       ),
       with: {
