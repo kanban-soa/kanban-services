@@ -22,12 +22,12 @@ export class InternalController {
     try {
       const { workspaceId, userId } = req.params;
 
-      const wsId = parseInt(workspaceId, 10);
+      const wsId = parseInt(String(workspaceId), 10);
       if (isNaN(wsId)) {
         return sendNotFound(res, ERROR_CODES.WORKSPACE_NOT_FOUND, "Workspace not found");
       }
 
-      const result = await workspaceService.getAuthorization(wsId, userId);
+      const result = await workspaceService.getAuthorization(wsId, String(userId));
       return sendSuccess(res, result, "Authorization verified");
     } catch (error) {
       logger.error("Error verifying workspace authorization", error);
