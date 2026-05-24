@@ -75,6 +75,47 @@ export const openApiDocument = {
         },
       },
     },
+    "/api/v1/auth/logout": {
+      post: {
+        summary: "Logout (invalidate refresh token)",
+        tags: ["auth"],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: { refreshToken: { type: "string" } },
+                required: ["refreshToken"],
+              },
+            },
+          },
+        },
+        responses: { "204": { description: "Logged out" } },
+      },
+    },
+    "/api/v1/auth/refresh": {
+      post: {
+        summary: "Refresh access token",
+        tags: ["auth"],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: { refreshToken: { type: "string" } },
+                required: ["refreshToken"],
+              },
+            },
+          },
+        },
+        responses: {
+          "200": { description: "New access token" },
+          "401": { description: "Invalid refresh token" },
+        },
+      },
+    },
     "/api/v1/auth/register": {
       post: {
         summary: "Register a new user",
@@ -678,11 +719,161 @@ export const openApiDocument = {
         responses: { "200": { description: "Authorization payload" }, "404": { description: "Not a member" } },
       },
     },
+    "/internal/workspaces/{id}/members/{userId}": {
+      get: {
+        summary: "Internal: get a workspace member record",
+        description: "Service-to-service lookup of a member's record in a workspace. Not exposed through the gateway.",
+        tags: ["workspace-direct"],
+        servers: [{ url: "http://localhost:9005" }],
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" } },
+          { name: "userId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: { "200": { description: "Member record" }, "404": { description: "Not a member" } },
+      },
+    },
+    "/internal/workspaces/by-public-id/{publicId}": {
+      get: {
+        summary: "Internal: get a workspace by public id",
+        description: "Service-to-service lookup of a workspace by its public id. Not exposed through the gateway.",
+        tags: ["workspace-direct"],
+        servers: [{ url: "http://localhost:9005" }],
+        parameters: [
+          { name: "publicId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: { "200": { description: "Workspace" }, "404": { description: "Not found" } },
+      },
+    },
 
     // ─────────────────────────────────────────────────────────────────
-    // BOARD SERVICE — PROXIED THROUGH GATEWAY (/api/v1/boards/* → /api/*)
+    // BOARD SERVICE — PROXIED THROUGH GATEWAY (/api/v1/boards/* → /api/boards/*)
     // ─────────────────────────────────────────────────────────────────
+    "/api/v1/boards": {
+      post: {
+        summary: "Create a board (workspaceId in body)",
+        tags: ["boards"],
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  workspaceId: { type: "string" },
+                  name: { type: "string" },
+                  description: { type: "string" },
+                },
+                required: ["workspaceId", "name"],
+              },
+            },
+          },
+        },
+        responses: { "201": { description: "Created" } },
+      },
+    },
+    "/api/v1/boards/all": {
+      post: {
+        summary: "List all boards visible to the current user",
+        description: "POST is used so that filter criteria can be sent in the request body.",
+        tags: ["boards"],
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: false,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  workspaceId: { type: "string" },
+                },
+              },
+            },
+          },
+        },
+        responses: { "200": { description: "Boards" } },
+      },
+    },
+    "/api/v1/boards/{boardId}": {
+      get: {
+        summary: "Get board detail",
+        tags: ["boards"],
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "boardId", in: "path", required: true, schema: { type: "string" } }],
+        responses: { "200": { description: "Board" }, "404": { description: "Not found" } },
+      },
+      patch: {
+        summary: "Update board",
+        tags: ["boards"],
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "boardId", in: "path", required: true, schema: { type: "string" } }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  name: { type: "string" },
+                  description: { type: "string" },
+                },
+              },
+            },
+          },
+        },
+        responses: { "200": { description: "Updated" } },
+      },
+      delete: {
+        summary: "Delete board",
+        tags: ["boards"],
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "boardId", in: "path", required: true, schema: { type: "string" } }],
+        requestBody: {
+          required: false,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: { workspaceId: { type: "string" } },
+              },
+            },
+          },
+        },
+        responses: { "204": { description: "Deleted" } },
+      },
+    },
+    "/api/v1/boards/{boardId}/lists": {
+      post: {
+        summary: "Create a list on a board",
+        tags: ["lists"],
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "boardId", in: "path", required: true, schema: { type: "string" } }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  title: { type: "string" },
+                  position: { type: "number" },
+                },
+                required: ["title"],
+              },
+            },
+          },
+        },
+        responses: { "201": { description: "Created" } },
+      },
+    },
     "/api/v1/boards/workspaces/{workspaceId}/boards": {
+      get: {
+        summary: "List boards in a workspace",
+        tags: ["boards"],
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "workspaceId", in: "path", required: true, schema: { type: "string" } }],
+        responses: { "200": { description: "Boards" } },
+      },
       post: {
         summary: "Create a board in a workspace",
         tags: ["boards"],
@@ -970,7 +1161,7 @@ export const openApiDocument = {
         responses: { "204": { description: "Deleted" } },
       },
     },
-    "/api/v1/boards/boards/statistics/metrics": {
+    "/api/v1/boards/statistics/metrics": {
       get: {
         summary: "Board metrics for statistic-service",
         tags: ["board-statistics"],
@@ -978,7 +1169,7 @@ export const openApiDocument = {
         responses: { "200": { description: "Metrics" } },
       },
     },
-    "/api/v1/boards/boards/statistics/activities": {
+    "/api/v1/boards/statistics/activities": {
       get: {
         summary: "Card activities for statistic-service",
         tags: ["board-statistics"],
@@ -986,7 +1177,7 @@ export const openApiDocument = {
         responses: { "200": { description: "Activities" } },
       },
     },
-    "/api/v1/boards/boards/statistics/priorities": {
+    "/api/v1/boards/statistics/priorities": {
       get: {
         summary: "Priority distribution for statistic-service",
         tags: ["board-statistics"],
@@ -994,12 +1185,20 @@ export const openApiDocument = {
         responses: { "200": { description: "Priorities" } },
       },
     },
-    "/api/v1/boards/boards/statistics/workloads": {
+    "/api/v1/boards/statistics/workloads": {
       get: {
         summary: "Member workloads for statistic-service",
         tags: ["board-statistics"],
         security: [{ bearerAuth: [] }],
         responses: { "200": { description: "Workloads" } },
+      },
+    },
+    "/api/v1/boards/statistics/self-performance": {
+      get: {
+        summary: "Self-performance breakdown for statistic-service",
+        tags: ["board-statistics"],
+        security: [{ bearerAuth: [] }],
+        responses: { "200": { description: "Self performance" } },
       },
     },
 
