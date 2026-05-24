@@ -3,7 +3,7 @@ import { MemberRole, MemberStatus } from "@workspace-service/config/constants";
 export interface InviteMemberDTO {
   email: string;
   role?: string;
-  workspaceId: number;
+  workspaceId: string;
   invitedBy: string;
 }
 

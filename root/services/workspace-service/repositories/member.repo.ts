@@ -41,7 +41,7 @@ export class MemberRepository implements MemberDao {
         .where(
           and(
             eq(workspaceMembers.userId, userId),
-            eq(workspaceMembers.status, "invited"),
+            eq(workspaceMembers.status, MEMBER_STATUS.ACTIVE),
             isNull(workspaceMembers.deletedAt)
           )
         )
@@ -212,7 +212,7 @@ export class MemberRepository implements MemberDao {
           and(
             eq(workspaceMembers.publicId, publicId),
             eq(workspaceMembers.workspaceId, workspaceId),
-            eq(workspaceMembers.status, "invited"),
+            eq(workspaceMembers.status, MEMBER_STATUS.ACTIVE),
             isNull(workspaceMembers.deletedAt)
           )
         )
@@ -284,7 +284,7 @@ export class MemberRepository implements MemberDao {
         .where(
           and(
             eq(workspaceMembers.workspaceId, workspaceId),
-            eq(workspaceMembers.status, "invited"),
+            eq(workspaceMembers.status, MEMBER_STATUS.ACTIVE),
             isNull(workspaceMembers.deletedAt)
           )
         )
