@@ -301,7 +301,10 @@ curl -sS \
         "entityType": "card",
         "entityId": "card_98",
         "metadata": {
-          "updatedFields": ["title", "dueDate"]
+          "updatedFields": ["title", "dueDate"],
+          "actor": {
+            "username": "testuser"
+          }
         },
         "createdAt": "2026-05-17T08:21:30.120Z"
       }

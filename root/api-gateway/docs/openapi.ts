@@ -1517,7 +1517,19 @@ export const openApiDocument = {
           actionType: { type: "string" },
           entityType: { type: "string" },
           entityId: { type: "string" },
-          metadata: { type: "object", nullable: true, additionalProperties: true },
+          metadata: {
+            type: "object",
+            nullable: true,
+            properties: {
+              actor: {
+                type: "object",
+                properties: {
+                  username: { type: "string" },
+                },
+              },
+            },
+            additionalProperties: true,
+          },
           createdAt: { type: "string", format: "date-time" },
         },
         required: [

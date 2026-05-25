@@ -28,6 +28,7 @@ const config: ActivityConfig = {
   },
   services: {
     workspaceUrl: process.env.WORKSPACE_SERVICE_URL || "http://localhost:9005",
+    authUrl: process.env.AUTH_SERVICE_URL || "http://localhost:9001",
   },
   retentionDays: Number(process.env.ACTIVITY_RETENTION_DAYS ?? 7),
 };
