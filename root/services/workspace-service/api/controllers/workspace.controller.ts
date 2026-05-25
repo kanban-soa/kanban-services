@@ -154,12 +154,12 @@ export class WorkspaceController {
   }
 
   /**
-   * DELETE /api/v1/workspaces/:id
+   * DELETE /api/v1/workspaces/:publicId
    * Delete workspace (soft delete)
    */
   async delete(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const { id: publicId } = req.params;
       const userId = req.user?.id;
 
       if (!userId) {
@@ -183,7 +183,14 @@ export class WorkspaceController {
 
       await workspaceService.deleteWorkspace(workspace.id, userId);
 
-      await boardClient.deleteBoardsByWorkspace(id as string, userId);
+      try {
+        await boardClient.deleteBoardsByWorkspace(String(workspaceId), userId);
+      } catch (cascadeError) {
+        logger.warn(
+          `Workspace ${publicId} deleted, but cascading board cleanup failed`,
+          cascadeError
+        );
+      }
 
       logger.info(`Workspace deleted by user ${userId}: ${workspace.id}`);
       return res.status(HTTP_STATUS.NO_CONTENT).send();
