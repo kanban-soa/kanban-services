@@ -15,70 +15,12 @@ import { MemberRole } from "../config/constants";
  */
 export class MemberService {
   /**
-   * Get all invitations for a user (status: invited, not deleted)
-   */
-  async getUserInvitations(userId: string) {
-    try {
-      const invitations = await memberRepository.findInvitationsByUser(userId);
-      // Get workspace names for each invitation
-      const workspaceIds = invitations.map(inv => inv.workspaceId);
-      const workspaces = await workspaceRepository.findByIds(workspaceIds);
-      const workspaceMap = new Map(workspaces.map(ws => [ws.id, ws.name]));
-
-      return invitations.map(inv => ({
-        id: inv.publicId,
-        email: inv.email,
-        role: inv.role,
-        sentAt: inv.createdAt.toISOString(),
-        workspace: inv.workspaceId,
-        workspaceName: workspaceMap.get(inv.workspaceId) || "Unknown Workspace",
-        status: inv.status,
-      }));
-    } catch (error) {
-      logger.error("Error getting user invitations", error);
-      throw error;
-    }
-  }
-
-  /**
-   * Accept an invitation by invitationId (publicId) and userId
-   */
-  async acceptUserInvitation(invitationId: string, userId: string) {
-    // Find invitation by publicId
-    const invitation = await memberRepository.findByPublicId(invitationId);
-    if (!invitation || invitation.status !== MEMBER_STATUS.INVITED || invitation.deletedAt) {
-      throw new AppError(ERROR_CODES.MEMBER_NOT_FOUND);
-    }
-    // Mark as active and set userId
-    return await memberRepository.update(invitation.id, {
-      userId,
-      status: MEMBER_STATUS.ACTIVE,
-    });
-  }
-
-  /**
-   * Reject an invitation by invitationId (publicId) and userId
-   */
-  async rejectUserInvitation(invitationId: string, userId: string) {
-    // Find invitation by publicId
-    const invitation = await memberRepository.findByPublicId(invitationId);
-    if (!invitation || invitation.status !== MEMBER_STATUS.INVITED || invitation.deletedAt) {
-      throw new AppError(ERROR_CODES.MEMBER_NOT_FOUND);
-    }
-    // Mark as removed, set deletedAt/deletedBy
-    return await memberRepository.update(invitation.id, {
-      status: MEMBER_STATUS.REMOVED,
-      deletedAt: new Date(),
-      deletedBy: userId,
-    });
-  }
-  /**
    * Invite member to workspace
    */
   async inviteMember(input: InviteMemberDTO) {
     try {
       // Validate workspace exists
-      const workspace = await workspaceRepository.findById(input.workspaceId);
+      const workspace = await workspaceRepository.findByPublicId(input.workspaceId);
       if (!workspace) {
         throw new AppError(ERROR_CODES.WORKSPACE_NOT_FOUND);
       }
@@ -94,7 +36,7 @@ export class MemberService {
       // Check if member already exists
       const exists = await memberRepository.memberExistsByEmail(
         input.email,
-        input.workspaceId
+        workspace.id
       );
       if (exists) {
         throw new AppError(ERROR_CODES.DUPLICATE_MEMBER);
@@ -107,10 +49,10 @@ export class MemberService {
         publicId,
         email: input.email,
         userId: authUser.id,
-        workspaceId: input.workspaceId,
+        workspaceId: workspace.id,
         createdBy: input.invitedBy,
         role,
-        status: MEMBER_STATUS.INVITED,
+        status: MEMBER_STATUS.ACTIVE, 
       });
 
       logger.info(
@@ -120,35 +62,6 @@ export class MemberService {
       return member;
     } catch (error) {
       logger.error("Error inviting member", error);
-      throw error;
-    }
-  }
-
-  /**
-   * Accept workspace invitation
-   * Called when user accepts invitation via email
-   */
-  async acceptInvitation(memberId: number, userId: string) {
-    try {
-      const member = await memberRepository.findById(memberId);
-      if (!member) {
-        throw new AppError(ERROR_CODES.MEMBER_NOT_FOUND);
-      }
-
-      // Validate member is in "invited" status before accepting
-      if (member.status !== MEMBER_STATUS.INVITED) {
-        throw new AppError(ERROR_CODES.MEMBER_NOT_INVITED);
-      }
-
-      const updated = await memberRepository.update(memberId, {
-        userId,
-        status: MEMBER_STATUS.ACTIVE,
-      });
-
-      logger.info(`Member invitation accepted: ${memberId}`);
-      return updated;
-    } catch (error) {
-      logger.error("Error accepting invitation", error);
       throw error;
     }
   }
@@ -217,42 +130,6 @@ export class MemberService {
   }
 
   /**
-   * Cancel a pending invitation in a workspace (admin only)
-   * invitationId is the member's publicId
-   */
-  async cancelInvitation(invitationId: string, workspaceId: number, cancelledBy: string) {
-    try {
-      const workspace = await workspaceRepository.findById(workspaceId);
-      if (!workspace) {
-        throw new AppError(ERROR_CODES.WORKSPACE_NOT_FOUND);
-      }
-
-      // Validate the record exists, belongs to workspace, and is still pending
-      const invitation = await memberRepository.findByPublicId(invitationId);
-      if (
-        !invitation ||
-        invitation.workspaceId !== workspaceId ||
-        invitation.status !== MEMBER_STATUS.INVITED ||
-        invitation.deletedAt !== null
-      ) {
-        throw new AppError(ERROR_CODES.MEMBER_NOT_FOUND);
-      }
-
-      const cancelled = await memberRepository.cancelInvitation(
-        invitationId,
-        workspaceId,
-        cancelledBy
-      );
-
-      logger.info(`Invitation cancelled: ${invitationId} in workspace ${workspaceId}`);
-      return cancelled;
-    } catch (error) {
-      logger.error("Error cancelling invitation", error);
-      throw error;
-    }
-  }
-
-  /**
    * Update member role in workspace
    */
   async updateMemberRole(memberId: string, input: UpdateMemberDTO) {
@@ -292,6 +169,14 @@ export class MemberService {
           throw new AppError(ERROR_CODES.CANNOT_REMOVE_LAST_ADMIN);
         }
       }
+
+      // // Only the admin can remove members, and members can remove themselves
+      // if (member.userId !== removedBy) {
+      //   const removingMember = await memberRepository.findMemberByUserId(removedBy);
+      //   if (!removingMember || removingMember.role !== MEMBER_ROLES.ADMIN) {
+      //     throw new AppError(ERROR_CODES.UNAUTHORIZED);
+      //   }
+      // }
 
       const removed = await memberRepository.softDelete(memberId, removedBy);
       logger.info(`Member removed from workspace: ${memberId}`);
