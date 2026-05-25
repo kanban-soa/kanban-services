@@ -127,26 +127,26 @@ export class WorkspaceController {
         return sendUnauthorized(res);
       }
 
-      const workspaceId = parseInt(id as string, 10);
-      if (isNaN(workspaceId)) {
-        return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Invalid workspace ID");
+      const workspace = await workspaceService.getWorkspaceByPublicId(id as string);
+      if (!workspace) {
+        return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Workspace not found");
       }
 
       // Check if user is admin
-      const isAdmin = await workspaceService.isAdmin(workspaceId, userId);
+      const isAdmin = await workspaceService.isAdmin(workspace.id, userId);
       if (!isAdmin) {
         return sendForbidden(res);
       }
 
       const { name, slug, description } = req.body;
-      const workspace = await workspaceService.updateWorkspace(workspaceId, {
+      const editedWorkspace = await workspaceService.updateWorkspace(workspace.id, {
         name,
         slug,
         description,
       });
 
-      logger.info(`Workspace updated by user ${userId}: ${workspaceId}`);
-      return sendSuccess(res, workspace, "Workspace updated successfully");
+      logger.info(`Workspace updated by user ${userId}: ${workspace.id}`);
+      return sendSuccess(res, editedWorkspace, "Workspace updated successfully");
     } catch (error) {
       logger.error("Error updating workspace", error);
       return handleControllerError(res, error);
@@ -166,22 +166,26 @@ export class WorkspaceController {
         return sendUnauthorized(res);
       }
 
-      const workspaceId = parseInt(id as string, 10);
-      if (isNaN(workspaceId)) {
+      if (!id) {
         return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Invalid workspace ID");
       }
 
+      const workspace = await workspaceService.getWorkspaceByPublicId(id as string);
+      if (!workspace) {
+        return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Workspace not found");
+      }
+
       // Check if user is admin
-      const isAdmin = await workspaceService.isAdmin(workspaceId, userId);
+      const isAdmin = await workspaceService.isAdmin(workspace.id, userId);
       if (!isAdmin) {
         return sendForbidden(res);
       }
 
-      await workspaceService.deleteWorkspace(workspaceId, userId);
+      await workspaceService.deleteWorkspace(workspace.id, userId);
 
       await boardClient.deleteBoardsByWorkspace(id as string, userId);
 
-      logger.info(`Workspace deleted by user ${userId}: ${workspaceId}`);
+      logger.info(`Workspace deleted by user ${userId}: ${workspace.id}`);
       return res.status(HTTP_STATUS.NO_CONTENT).send();
     } catch (error) {
       logger.error("Error deleting workspace", error);
