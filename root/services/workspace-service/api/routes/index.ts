@@ -13,7 +13,8 @@ const router = Router();
 // --- Workspace Routes ---
 router.post("/", workspaceController.create.bind(workspaceController));
 router.get("/", workspaceController.getAll.bind(workspaceController));
-router.get("/invitations", memberController.getUserInvitations.bind(memberController)); // Get all invitations for current users
+// router.get("/invitations", memberController.getUserInvitations.bind(memberController)); // Get all invitations for current users
+router.get("/default", workspaceController.getDefault.bind(workspaceController)); // Get the most recently created workspace
 router.get("/:id", workspaceController.getById.bind(workspaceController));
 router.patch("/:id", workspaceController.update.bind(workspaceController));
 router.delete("/:id", workspaceController.delete.bind(workspaceController));
@@ -22,9 +23,9 @@ router.delete("/:id", workspaceController.delete.bind(workspaceController));
 router.get("/:id/members", memberController.getMembers.bind(memberController));
 router.post("/:id/members", memberController.inviteMember.bind(memberController));
 router.get("/:id/members/invitation", memberController.getInvitedMembers.bind(memberController));
-router.delete("/:id/members/invitation/:invitationId", memberController.cancelInvitation.bind(memberController));
+// router.delete("/:id/members/invitation/:invitationId", memberController.cancelInvitation.bind(memberController));
 router.get("/:id/members/:memberId", memberController.getMember.bind(memberController));
-router.patch("/:id/members/:memberId", memberController.updateMemberRole.bind(memberController));
+router.patch("/:workspaceId/members/:memberId", memberController.updateMemberRole.bind(memberController));
 router.delete("/:id/members/:memberId", memberController.removeMember.bind(memberController));
 router.post("/:id/members/summary", memberController.getMemberSummaries.bind(memberController));
 

@@ -9,6 +9,7 @@ import {
 } from "@workspace-service/utils/response.util";
 import { ERROR_CODES, HTTP_STATUS } from "@workspace-service/config/constants";
 import { logger } from "@workspace-service/utils/logger";
+import { sendForbidden, sendUnauthorized, sendBadRequest } from "@workspace-service/utils/response.util";
 
 /**
  * Internal Controller
@@ -23,12 +24,12 @@ export class InternalController {
     try {
       const {workspaceId, userId} = req.params;
 
-      const wsId = parseInt(workspaceId, 10);
+      const wsId = parseInt(String(workspaceId), 10);
       if (isNaN(wsId)) {
         return sendNotFound(res, ERROR_CODES.WORKSPACE_NOT_FOUND, "Workspace not found");
       }
 
-      const result = await workspaceService.getAuthorization(wsId, userId);
+      const result = await workspaceService.getAuthorization(wsId, String(userId));
       return sendSuccess(res, result, "Authorization verified");
     } catch (error) {
       logger.error("Error verifying workspace authorization", error);
@@ -53,7 +54,7 @@ export class InternalController {
         return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Invalid workspace ID");
       }
 
-      const member = await memberService.getMemberByUserAndWorkspace(userId, workspaceId);
+      const member = await memberService.getMemberByUserAndWorkspace(String(userId), workspaceId);
 
       if (!member) {
         return sendForbidden(res);
@@ -88,7 +89,7 @@ export class InternalController {
         return sendNotFound(res, ERROR_CODES.WORKSPACE_NOT_FOUND, "Workspace not found");
       }
 
-      const workspace = await workspaceService.getWorkspaceByPublicId(publicId);
+      const workspace = await workspaceService.getWorkspaceByPublicId(String(publicId));
       if (!workspace) {
         return sendNotFound(res, ERROR_CODES.WORKSPACE_NOT_FOUND, "Workspace not found");
       }

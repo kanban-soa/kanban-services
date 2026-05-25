@@ -240,6 +240,18 @@ export class WorkspaceService {
       throw error;
     }
   }
+
+  /**
+   * Get the default workspace (most recently created) for a user
+   */
+  async getDefaultWorkspace(userId: string) {
+    const workspace = await workspaceRepository.findLatestByUser(userId);
+    if (!workspace) {
+      throw new AppError(ERROR_CODES.WORKSPACE_NOT_FOUND);
+    }
+    const membersCount = await memberRepository.countByWorkspace(workspace.id);
+    return { ...workspace, members: membersCount };
+  }
 }
 
 export const workspaceService = new WorkspaceService();

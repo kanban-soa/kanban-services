@@ -24,59 +24,6 @@ import {
  */
 export class MemberController {
   /**
-   * GET /api/v1/invitations
-   * Get all invitations for the current user
-   */
-  async getUserInvitations(req: Request, res: Response) {
-    try {
-      const userId = req.user?.id;
-      if (!userId) return sendUnauthorized(res);
-      const invitations = await memberService.getUserInvitations(userId);
-      return sendSuccess(res, invitations, "User invitations fetched");
-    } catch (error) {
-      logger.error("Error getting user invitations", error);
-      return handleControllerError(res, error);
-    }
-  }
-
-  /**
-   * PATCH /api/v1/invitations/:invitationId/accept
-   * Accept an invitation for the current user
-   */
-  async acceptUserInvitation(req: Request, res: Response) {
-    try {
-      const userId = req.user?.id;
-      let { invitationId } = req.params;
-      if (!userId) return sendUnauthorized(res);
-      if (!invitationId) return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Invalid invitation ID");
-      if (Array.isArray(invitationId)) invitationId = invitationId[0];
-      const updated = await memberService.acceptUserInvitation(invitationId, userId);
-      return sendSuccess(res, updated, "Invitation accepted");
-    } catch (error) {
-      logger.error("Error accepting invitation", error);
-      return handleControllerError(res, error);
-    }
-  }
-
-  /**
-   * PATCH /api/v1/invitations/:invitationId/reject
-   * Reject an invitation for the current user
-   */
-  async rejectUserInvitation(req: Request, res: Response) {
-    try {
-      const userId = req.user?.id;
-      let { invitationId } = req.params;
-      if (!userId) return sendUnauthorized(res);
-      if (!invitationId) return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Invalid invitation ID");
-      if (Array.isArray(invitationId)) invitationId = invitationId[0];
-      const updated = await memberService.rejectUserInvitation(invitationId, userId);
-      return sendSuccess(res, updated, "Invitation rejected");
-    } catch (error) {
-      logger.error("Error rejecting invitation", error);
-      return handleControllerError(res, error);
-    }
-  }
-  /**
    * POST /workspaces/:id/members
    * Invite a member to workspace
    */
@@ -89,13 +36,13 @@ export class MemberController {
         return sendUnauthorized(res);
       }
 
-      const workspaceId = parseInt(id as string, 10);
-      if (isNaN(workspaceId)) {
-        return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Invalid workspace ID");
+      const workspace = await workspaceService.getWorkspaceByPublicId(String(id));
+      if (!workspace) {
+        return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Workspace not found");
       }
 
       // Check if user is admin
-      const isAdmin = await workspaceService.isAdmin(workspaceId, userId);
+      const isAdmin = await workspaceService.isAdmin(workspace.id, userId);
       if (!isAdmin) {
         return sendForbidden(res);
       }
@@ -107,11 +54,11 @@ export class MemberController {
 
       const member = await memberService.inviteMember({
         email,
-        workspaceId,
+        workspaceId: workspace.publicId,
         invitedBy: userId,
       });
 
-      logger.info(`Member invited by user ${userId}: ${email} to workspace ${workspaceId}`);
+      logger.info(`Member invited by user ${userId}: ${email} to workspace ${workspace.publicId}`);
       return sendCreated(res, member, "Member invited successfully");
     } catch (error) {
       logger.error("Error inviting member", error);
@@ -132,13 +79,13 @@ export class MemberController {
         return sendUnauthorized(res);
       }
 
-      const workspaceId = parseInt(id as string, 10);
-      if (isNaN(workspaceId)) {
-        return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Invalid workspace ID");
+      const workspace = await workspaceService.getWorkspaceByPublicId(String(id));
+      if (!workspace) {
+        return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Workspace not found");
       }
 
       // Check if user is member
-      const isMember = await workspaceService.isMember(workspaceId, userId);
+      const isMember = await workspaceService.isMember(workspace.id, userId);
       if (!isMember) {
         return sendForbidden(res);
       }
@@ -151,12 +98,11 @@ export class MemberController {
       const offset = (page - 1) * limit;
 
       const members = await memberService.getWorkspaceActiveMembers(
-        workspaceId,
+        workspace.id,
         limit,
         offset
       );
-      const total = await workspaceService.getMembersCount(workspaceId);
-
+      const total = await workspaceService.getMembersCount(workspace.id);
       const pagination = calculatePagination(total, page, limit);
       return sendPaginated(res, members, pagination);
     } catch (error) {
@@ -166,27 +112,31 @@ export class MemberController {
   }
 
   /**
-   * PATCH /workspaces/:id/members/:memberId
+   * PATCH /workspaces/:workspaceId/members/:memberId
    * Update member role
    */
   async updateMemberRole(req: Request, res: Response) {
     try {
-      const { id, memberId } = req.params;
+      const { workspaceId, memberId } = req.params;
       const userId = req.user?.id;
 
       if (!userId) {
         return sendUnauthorized(res);
       }
 
-      const workspaceId = parseInt(id as string, 10);
       const memberUUId = memberId as string; // Keep as string for role update
 
-      if (isNaN(workspaceId) || !memberUUId) {
+      if (!workspaceId || !memberUUId) {
         return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Invalid workspace or member ID");
       }
 
+      const workspace = await workspaceService.getWorkspaceByPublicId(String(workspaceId));
+      if (!workspace) {
+        return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Workspace not found");
+      }
+
       // Check if user is admin
-      const isAdmin = await workspaceService.isAdmin(workspaceId, userId);
+      const isAdmin = await workspaceService.isAdmin(workspace.id, String(userId));
       if (!isAdmin) {
         return sendForbidden(res);
       }
@@ -219,17 +169,22 @@ export class MemberController {
         return sendUnauthorized(res);
       }
 
-      const workspaceId = parseInt(id as string, 10);
+      const workspaceId = id;
       const memberIdNum = parseInt(memberId as string, 10);
 
-      if (isNaN(workspaceId) || isNaN(memberIdNum)) {
+      if (!workspaceId || isNaN(memberIdNum)) {
         return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Invalid workspace or member ID");
       }
 
+      const workspace = await workspaceService.getWorkspaceByPublicId(String(workspaceId));
+
       // Check if user is admin
-      const isAdmin = await workspaceService.isAdmin(workspaceId, userId);
-      if (!isAdmin) {
-        return sendForbidden(res);
+      const isAdmin = await workspaceService.isAdmin(workspace.id, userId);
+      const member = await memberService.getMemberById(memberIdNum);
+      const isSelf = userId === member.userId; // Allow users to remove themselves
+      if (!isAdmin && !isSelf) {
+        logger.warn(`Unauthorized member removal attempt by user ${userId} on member ${memberId} in workspace ${workspaceId}`);
+        return sendForbidden(res, ERROR_CODES.PERMISSION_DENIED, "Only admins can remove members");
       }
 
       await memberService.removeMember(memberIdNum, userId);
@@ -351,43 +306,6 @@ export class MemberController {
     }
   }
 
-  /**
-   * DELETE /api/workspaces/:id/members/invitation/:invitationId
-   * Cancel (delete) a pending invitation
-   */
-  async cancelInvitation(req: Request, res: Response) {
-    try {
-      const { id, invitationId } = req.params;
-      const userId = req.user?.id;
-
-      if (!userId) {
-        return sendUnauthorized(res);
-      }
-
-      const workspaceId = parseInt(id as string, 10);
-      if (isNaN(workspaceId)) {
-        return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Invalid workspace ID");
-      }
-
-      if (!invitationId || typeof invitationId !== "string") {
-        return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Invalid invitation ID");
-      }
-
-      // Only admins can cancel invitations
-      const isAdmin = await workspaceService.isAdmin(workspaceId, userId);
-      if (!isAdmin) {
-        return sendForbidden(res);
-      }
-
-      await memberService.cancelInvitation(invitationId, workspaceId, userId);
-
-      logger.info(`Invitation ${invitationId} cancelled by user ${userId} in workspace ${workspaceId}`);
-      return sendNoContent(res);
-    } catch (error) {
-      logger.error("Error cancelling invitation", error);
-      return handleControllerError(res, error);
-    }
-  }
 }
 
 export const memberController = new MemberController();

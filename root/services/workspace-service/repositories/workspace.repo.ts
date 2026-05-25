@@ -1,5 +1,6 @@
 import { db } from "@workspace-service/lib/db";
 import { workspaces } from "@workspace-service/schema/workspaces";
+import { workspaceMembers } from "@workspace-service/schema/members";
 import { eq, ne, and, isNull, desc } from "drizzle-orm";
 import { logger } from "@workspace-service/utils/logger";
 import { WorkspaceDao, CreateWorkspaceInput, UpdateWorkspaceInput } from "./dao/workspace.dao";
@@ -200,6 +201,42 @@ export class WorkspaceRepository implements WorkspaceDao {
       return result.length > 0;
     } catch (error) {
       logger.error("Error checking slug existence", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get the most recently created workspace that a user is a member of
+   */
+  async findLatestByUser(userId: string) {
+    try {
+      const result = await db
+        .select({
+          id: workspaces.id,
+          publicId: workspaces.publicId,
+          name: workspaces.name,
+          slug: workspaces.slug,
+          description: workspaces.description,
+          plan: workspaces.plan,
+          createdBy: workspaces.createdBy,
+          createdAt: workspaces.createdAt,
+          updatedAt: workspaces.updatedAt,
+          deletedAt: workspaces.deletedAt,
+          deletedBy: workspaces.deletedBy,
+        })
+        .from(workspaces)
+        .innerJoin(workspaceMembers, eq(workspaceMembers.workspaceId, workspaces.id))
+        .where(
+          and(
+            eq(workspaceMembers.userId, userId),
+            isNull(workspaces.deletedAt)
+          )
+        )
+        .orderBy(desc(workspaces.createdAt))
+        .limit(1);
+      return result[0] || null;
+    } catch (error) {
+      logger.error("Error finding latest workspace by user", error);
       throw error;
     }
   }
