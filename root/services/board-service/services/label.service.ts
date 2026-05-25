@@ -76,27 +76,29 @@ export class LabelService {
   }
 
 
-  // async createLabel(
-  //   userId: string,
-  //   boardPublicId: string,
-  //   body: { name: string; colourCode?: string | null },
-  // ): Promise<LabelResponseDto> {
-  //   if (!body?.name || typeof body.name !== 'string' || !body.name.trim()) {
-  //     throw new ApiError(400, ERROR_CODES.BAD_REQUEST, 'Label name is required');
-  //   }
+  async createLabel(
+    userId: string,
+    boardPublicId: string,
+    body: { name: string; colourCode?: string | null; color?: string | null },
+  ): Promise<LabelResponseDto> {
+    if (!body?.name || typeof body.name !== 'string' || !body.name.trim()) {
+      throw new ApiError(400, ERROR_CODES.BAD_REQUEST, 'Label name is required');
+    }
 
-  //   const board = await this.labelRepository.findBoardInternal(boardPublicId);
-  //   if (!board) {
-  //     throw new ApiError(404, ERROR_CODES.BOARD_NOT_FOUND, 'Board not found');
-  //   }
+    const board = await this.labelRepository.findBoardInternal(boardPublicId);
+    if (!board) {
+      throw new ApiError(404, ERROR_CODES.BOARD_NOT_FOUND, 'Board not found');
+    }
 
-  //   return db.transaction(async (tx) => {
-  //     return this.labelRepository.create(tx, {
-  //       name: body.name.trim(),
-  //       colourCode: body.colourCode ?? null,
-  //       boardInternalId: board.id,
-  //       createdBy: userId,
-  //     });
-  //   });
-  // }
+    return db.transaction(async (tx) => {
+      const created = await this.labelRepository.create(tx, {
+        name: body.name.trim(),
+        colourCode: body.colourCode ?? body.color ?? null,
+        boardInternalId: board.id,
+        createdBy: userId,
+      });
+      return LabelMapper.toResponseDto(created);
+    });
+  }
 }
+

@@ -1,14 +1,15 @@
 import { db, type DbOrTx } from '@/board-service/config/database';
 import { boards, labels } from '@/board-service/schema';
 import { generatePublicId } from '@/board-service/shared/utils/public-id';
+import { dualIdMatch } from '@/board-service/shared/utils/dual-id-match';
 import { and, asc, eq, isNull } from 'drizzle-orm';
 import { ApiError, ERROR_CODES } from '../shared/errors';
 
 export class LabelRepository {
-  async findBoardInternal(boardPublicId: string) {
+  async findBoardInternal(boardId: string) {
     return db.query.boards.findFirst({
       where: and(
-        eq(boards.publicId, boardPublicId),
+        dualIdMatch(boards.publicId, boards.id, boardId),
         isNull(boards.deletedAt),
       ),
     });
@@ -85,5 +86,5 @@ export class LabelRepository {
         .returning();
       return deletedLabel ?? null;
     });
-  }  
+  }
 }

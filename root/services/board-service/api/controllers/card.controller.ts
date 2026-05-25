@@ -109,8 +109,15 @@ export const attachLabelToCard = async (req: Request, res: Response, next: NextF
   try {
     const userId = req.headers['x-user-id'] as string;
     const cardId = req.params.cardId as string;
-    const card = await cardService.attachLabel(userId, cardId, req.body);
-    sendSuccess(res, 'Label attached successfully');
+
+    if (typeof req.body?.labelId === 'string' && req.body.labelId.trim()) {
+      await cardService.attachLabel(userId, cardId, req.body);
+      sendSuccess(res, null, 'Label attached successfully', 201);
+      return;
+    }
+
+    const created = await cardService.createAndAttachLabel(userId, cardId, req.body);
+    sendSuccess(res, created, 'Label created and attached successfully', 201);
   } catch (e) {
     next(e);
   }

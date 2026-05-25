@@ -3,6 +3,8 @@ import { db } from '@/board-service/config/database';
 import { cards } from '@/board-service/schema';
 import { CardRepository } from '@/board-service/repositories/card.repository';
 import { LabelRepository } from '@/board-service/repositories/label.repository';
+import { LabelMapper } from '@/board-service/api/mapper/label.mapper';
+import { LabelResponseDto } from '@/board-service/api/dto/label-response.dto';
 import { insertCardActivity } from '@/board-service/shared/card-activity';
 import { ApiError, ERROR_CODES } from '@/board-service/shared/errors';
 import { authService } from '@/board-service/shared/auth.client';
@@ -442,6 +444,44 @@ export class CardService {
       });
 
       return row;
+    });
+  }
+
+  async createAndAttachLabel(
+    userId: string,
+    cardPublicId: string,
+    body: { name: string; colourCode?: string | null; color?: string | null },
+  ): Promise<LabelResponseDto> {
+    if (!body?.name || typeof body.name !== 'string' || !body.name.trim()) {
+      throw new ApiError(400, ERROR_CODES.BAD_REQUEST, 'Label name is required');
+    }
+
+    const card = await this.cardRepository.findByPublicIdWithContext(cardPublicId);
+    if (!card) {
+      throw new ApiError(404, ERROR_CODES.CARD_NOT_FOUND, 'Card not found');
+    }
+
+    const labelRepo = new LabelRepository();
+    const colourCode = body.colourCode ?? body.color ?? null;
+
+    return db.transaction(async (tx) => {
+      const created = await labelRepo.create(tx, {
+        name: body.name.trim(),
+        colourCode,
+        boardInternalId: card.list.board.id,
+        createdBy: userId,
+      });
+
+      await this.cardRepository.attachLabel(tx, card.id, created.id);
+
+      await insertCardActivity(tx, {
+        type: 'card.updated.label.added',
+        cardId: card.id,
+        createdBy: userId,
+        labelId: created.id,
+      });
+
+      return LabelMapper.toResponseDto(created);
     });
   }
 
