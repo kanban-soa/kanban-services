@@ -29,9 +29,9 @@ export const createCardOnList = async (req: Request, res: Response, next: NextFu
 
 export const reorderListCards = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const workspaceId = Number(req.params.workspaceId as string);
+    const userId = req.headers['x-user-id'] as string;
     const listId = req.params.listId as string;
-    await cardService.reorderCards( listId, req.body.cardIds);
+    await cardService.reorderCards(userId, listId, req.body.cardIds);
     sendSuccess(res, null, 'Cards reordered successfully');
   } catch (e) {
     next(e);
