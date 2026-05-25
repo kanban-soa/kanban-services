@@ -32,6 +32,12 @@ export class ListRepository {
     return db.query.lists.findMany({
       where: and(eq(lists.boardId, boardInternalId), isNull(lists.deletedAt)),
       orderBy: [asc(lists.index)],
+      with: {
+        cards: {
+          where: isNull(cards.deletedAt),
+          orderBy: [asc(cards.index)],
+        },
+      },
     });
   }
 

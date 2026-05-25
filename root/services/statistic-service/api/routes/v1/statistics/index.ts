@@ -117,6 +117,8 @@ statisticsRoutes.get("/:workspaceId/activities", async (req: AuthenticatedReques
       },
     );
 
+    console.log(`Activity response: ${JSON.stringify(data)}`)
+
     return res.json({ data });
   } catch (error) {
     console.error("Activity fetch failed", error);

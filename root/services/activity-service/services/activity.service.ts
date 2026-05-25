@@ -1,6 +1,8 @@
 import { nanoid } from "nanoid";
 import { activityRepository } from "@activity-service/repositories/activity.repo";
 import config from "@activity-service/config/env";
+import { createServiceClient } from "../../../common/utils/service-client";
+import { AuthUserDTO } from "@activity-service/dto/auth.dto";
 
 export interface CreateActivityPayload {
   workspaceId: number;
@@ -21,6 +23,10 @@ export interface ActivityListQuery {
   limit: number;
   offset: number;
 }
+
+const authClient = createServiceClient({
+  baseUrl: config.services.authUrl,
+});
 
 export class ActivityService {
   async create(payload: CreateActivityPayload) {
@@ -49,9 +55,34 @@ export class ActivityService {
       }),
     ]);
 
-    return { items, total };
+    const actorIds = [...new Set(items.map((item) => item.actorUserId))];
+    
+    const { data: users } = await authClient.requestJson<AuthUserDTO[]>({
+      method: "GET",
+      path: "/internal/v1/auth/users",
+      query: {
+        ids: actorIds.join(","),
+      },
+    });
+
+    const userMap = new Map(users.map((user) => [user.id, user]));
+
+    const itemsWithActor = items.map((item) => {
+      const actor = userMap.get(item.actorUserId);
+
+      return {
+        ...item,
+        metadata: {
+          ...item.metadata,
+          actor: {
+            username: actor?.name,
+          },
+        },
+      };
+    });
+
+    return { items: itemsWithActor, total };
   }
 }
 
 export const activityService = new ActivityService();
-
