@@ -60,8 +60,8 @@ export class CardMapper {
        */
       assignedWorkspaceMemberPublicIds:
         card.members.map(
-          (member: any) =>
-            member.workspaceMemberPublicId,
+          (member) =>
+            member.workspaceMemberId,
         ),
 
       /**

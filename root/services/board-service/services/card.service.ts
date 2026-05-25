@@ -561,9 +561,7 @@ async addMember(
   },
 ) {
   if (
-    !body?.workspaceMemberPublicId ||
-    typeof body.workspaceMemberPublicId !==
-      'string'
+    !body?.workspaceMemberPublicId
   ) {
     throw new ApiError(
       400,
@@ -616,18 +614,18 @@ async addMember(
     });
   });
 
-  void notificationService.createNotification({
-    type: 'card.member.added',
-    userId,
-    cardId: card.publicId,
-    commentId: card.publicId,
-    workspaceId: String(card.list.board.workspaceId),
-    metadata: {
-      cardTitle: card.title,
-      workspaceMemberPublicId: body.workspaceMemberPublicId,
-      actorUserId: userId,
-    },
-  });
+  // void notificationService.createNotification({
+  //   type: 'card.member.added',
+  //   userId,
+  //   cardId: card.publicId,
+  //   commentId: card.publicId,
+  //   workspaceId: String(card.list.board.workspaceId),
+  //   metadata: {
+  //     cardTitle: card.title,
+  //     workspaceMemberPublicId: body.workspaceMemberPublicId,
+  //     actorUserId: userId,
+  //   },
+  // });
 
   return {
     success: true,
@@ -640,9 +638,7 @@ async addMember(
   workspaceMemberPublicId: string,
 ) {
   if (
-    !workspaceMemberPublicId ||
-    typeof workspaceMemberPublicId !==
-      'string'
+    !workspaceMemberPublicId
   ) {
     throw new ApiError(
       400,
