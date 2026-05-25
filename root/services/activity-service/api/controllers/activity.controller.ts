@@ -69,6 +69,8 @@ export class ActivityController {
         offset,
       });
 
+      console.log(`Activity response: ${JSON.stringify(result)}`)
+
       return sendSuccess(res, {
         items: result.items,
         pagination: {
