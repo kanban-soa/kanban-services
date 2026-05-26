@@ -146,7 +146,7 @@ export class MemberController {
         return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Role is required");
       }
 
-      const member = await memberService.updateMemberRole(memberUUId, { role });
+      const member = await memberService.updateMemberRole(workspace.id, memberUUId, { role });
 
       // logger.info(`Member role updated by user ${userId}: ${memberUUId} -> ${role}`);
       return sendSuccess(res, member, "Member role updated successfully");

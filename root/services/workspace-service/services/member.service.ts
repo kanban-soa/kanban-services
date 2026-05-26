@@ -132,11 +132,11 @@ export class MemberService {
   /**
    * Update member role in workspace
    */
-  async updateMemberRole(memberId: string, input: UpdateMemberDTO) {
+  async updateMemberRole(workspaceId: number, memberId: string, input: UpdateMemberDTO) {
     try {
 
       // Lookup member by publicId (controller sends publicId as memberId)
-      const member = await memberRepository.findMemberByUserId(memberId);
+      const member = await memberRepository.findMemberByWorkspaceAndUser(workspaceId, memberId);
       if (!member) {
         throw new AppError(ERROR_CODES.MEMBER_NOT_FOUND);
       }

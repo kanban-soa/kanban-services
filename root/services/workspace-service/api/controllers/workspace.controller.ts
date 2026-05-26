@@ -183,7 +183,7 @@ export class WorkspaceController {
 
       await workspaceService.deleteWorkspace(workspace.id, userId);
 
-      await boardClient.deleteBoardsByWorkspace(id as string, userId);
+      // await boardClient.deleteBoardsByWorkspace(id as string, userId);
 
       logger.info(`Workspace deleted by user ${userId}: ${workspace.id}`);
       return res.status(HTTP_STATUS.NO_CONTENT).send();
