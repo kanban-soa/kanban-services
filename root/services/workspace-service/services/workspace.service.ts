@@ -96,7 +96,7 @@ export class WorkspaceService {
         })
       );
 
-      return resolvedWorkspaces.filter((ws) => ws !== null);
+      return resolvedWorkspaces.filter((ws) => ws !== null && !ws.deletedAt);
     } catch (error) {
       logger.error("Error getting workspaces by user", error);
       throw error;
