@@ -17,7 +17,7 @@ export const cardRoutes = Router({ mergeParams: true });
 
 cardRoutes.get('/:cardId', getCard);
 cardRoutes.patch('/:cardId', updateCard);//update title and description
-cardRoutes.delete('/:cardId', deleteCard); 
+cardRoutes.delete('/:cardId', deleteCard);
 
 
 cardRoutes.post('/:cardId/labels/', attachLabelToCard);
@@ -27,8 +27,8 @@ cardRoutes.patch('/:cardId/due-date', patchDueDate);
 cardRoutes.delete('/:cardId/due-date', deleteDueDate);
 
 
-
-cardRoutes.patch('/:cardId', moveCard);
+// Move a card to another list (or reorder within the same list)
+cardRoutes.patch('/:cardId/move', moveCard);
 
 
 
