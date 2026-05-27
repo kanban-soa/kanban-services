@@ -72,6 +72,7 @@ export class CardService {
       workspaceId: listBundle.list.board.workspaceId,
       actorUserId: userId,
       cardId: created.publicId,
+      metadata: { name: created.title}
     });
 
     return created;
@@ -183,6 +184,7 @@ export class CardService {
         actorUserId: userId,
         cardId: updated.publicId,
         fields,
+        metadata: { name: updated.title}
       });
     }
 
@@ -215,6 +217,7 @@ export class CardService {
       workspaceId: existing.list.board.workspaceId,
       actorUserId: userId,
       cardId: existing.publicId,
+      metadata: { name: existing.title}
     });
   }
 
@@ -443,7 +446,7 @@ export class CardService {
           actorUserId: userId,
           cardId,
           fields: ['index'],
-          metadata: { listId: listBundle.list.publicId },
+          metadata: { listId: listBundle.list.publicId},
         })),
       );
     }
@@ -495,6 +498,7 @@ export class CardService {
       metadata: {
         fromDueDate: existing.dueDate?.toISOString() ?? null,
         toDueDate: updated.dueDate?.toISOString() ?? null,
+        name: updated.title,
       },
     });
 
@@ -539,6 +543,7 @@ export class CardService {
       metadata: {
         fromDueDate: existing.dueDate?.toISOString() ?? null,
         toDueDate: null,
+        name: existing.title,
       },
     });
 
@@ -590,7 +595,7 @@ export class CardService {
       actorUserId: userId,
       cardId: card.publicId,
       fields: ['label'],
-      metadata: { labelId: created.labelId },
+      metadata:{ name: card.title, labelId: created.labelId },
     });
 
     return created.dto;
@@ -633,7 +638,7 @@ export class CardService {
       actorUserId: userId,
       cardId: card.publicId,
       fields: ['label'],
-      metadata: { labelId: label.id },
+      metadata: { name: card.title, labelId: label.id },
     });
 
     const refreshed = await this.cardRepository.findByPublicIdWithContext(cardPublicId);
@@ -676,7 +681,7 @@ export class CardService {
       actorUserId: userId,
       cardId: card.publicId,
       fields: ['label'],
-      metadata: { labelId: label.id },
+      metadata: { name: card.title, labelId: label.id },
     });
 
     return detached;
@@ -748,7 +753,7 @@ export class CardService {
     actorUserId: userId,
     cardId: card.publicId,
     fields: ['member'],
-    metadata: { workspaceMemberPublicId: body.workspaceMemberPublicId },
+    metadata: { name: card.title,  workspaceMemberPublicId: body.workspaceMemberPublicId },
   });
 
   return {
@@ -822,7 +827,7 @@ export class CardService {
     actorUserId: userId,
     cardId: card.publicId,
     fields: ['member'],
-    metadata: { workspaceMemberPublicId },
+    metadata: { name: card.title, workspaceMemberPublicId },
   });
 
   return {

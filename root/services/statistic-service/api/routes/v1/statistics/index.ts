@@ -130,7 +130,7 @@ statisticsRoutes.get("/:workspaceId/activities", async (req: AuthenticatedReques
   }
 });
 
-statisticsRoutes.get("/:workspaceId", async (req: Request, res: Response) => {
+statisticsRoutes.get("/:workspaceId", async (req: AuthenticatedRequest, res: Response) => {
   const paramsParsed = paramsSchema.safeParse(req.params);
   if (!paramsParsed.success) {
     return res.status(400).json({
