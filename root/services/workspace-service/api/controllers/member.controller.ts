@@ -54,6 +54,11 @@ export class MemberController {
         return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Email is required");
       }
 
+      const existingMember = await memberService.getMemberByEmail(workspace.id, email);
+      if (existingMember) {
+        return sendBadRequest(res, ERROR_CODES.MEMBER_ALREADY_EXISTS, "User is already a member of the workspace");
+      }
+
       const member = await memberService.inviteMember({
         email,
         workspaceId: workspace.publicId,

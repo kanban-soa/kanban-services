@@ -265,6 +265,16 @@ export class MemberService {
     const admins = await memberRepository.findAdminsByWorkspace(workspaceId);
     return admins.length === 1;
   }
+
+  async getMemberByEmail(workspaceId: number, email: string) {
+    const invitedMember = this.getInvitedMembers(workspaceId).then((members) => {
+      return members.find((member) => member.email === email);
+    });
+
+    return Promise.all([invitedMember]).then(([invited]) => {
+      return invited || null;
+    });
+  }
 }
 
 export const memberService = new MemberService();
