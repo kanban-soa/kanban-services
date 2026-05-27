@@ -37,9 +37,10 @@ export class StatisticsController {
     }
 
     const workspaceId = parseWorkspaceId(req.query.workspaceId as string | undefined);
+    const boardId = req.query.boardId as string | undefined;
 
     try {
-      const data = await getMetrics({ from, to, workspaceId });
+      const data = await getMetrics({ from, to, workspaceId, boardId });
       return res.json({ data });
     } catch (error) {
       console.error("Metrics fetch failed", error);
@@ -65,10 +66,11 @@ export class StatisticsController {
     }
 
     const workspaceId = parseWorkspaceId(req.query.workspaceId as string | undefined);
+    const boardId = req.query.boardId as string | undefined;
     const limit = Number(req.query.limit) || 6;
 
     try {
-      const data = await getActivities({ from, to, workspaceId }, limit);
+      const data = await getActivities({ from, to, workspaceId, boardId }, limit);
       return res.json({ data });
     } catch (error) {
       console.error("Activities fetch failed", error);
@@ -94,10 +96,11 @@ export class StatisticsController {
     }
 
     const workspaceId = parseWorkspaceId(req.query.workspaceId as string | undefined);
-    const limit = Number(req.query.limit) || 3;
+    const boardId = req.query.boardId as string | undefined;
+    const limit = req.query.limit ? Number(req.query.limit) : undefined;
 
     try {
-      const data = await getPriorities({ from, to, workspaceId }, limit);
+      const data = await getPriorities({ from, to, workspaceId, boardId }, limit);
       return res.json({ data });
     } catch (error) {
       console.error("Priorities fetch failed", error);
@@ -123,10 +126,11 @@ export class StatisticsController {
     }
 
     const workspaceId = parseWorkspaceId(req.query.workspaceId as string | undefined);
+    const boardId = req.query.boardId as string | undefined;
     const limit = Number(req.query.limit) || 6;
 
     try {
-      const data = await getWorkloads({ from, to, workspaceId }, limit);
+      const data = await getWorkloads({ from, to, workspaceId, boardId }, limit);
       return res.json({ data });
     } catch (error) {
       console.error("Workloads fetch failed", error);
@@ -152,6 +156,7 @@ export class StatisticsController {
     }
 
     const workspaceId = parseWorkspaceId(req.query.workspaceId as string | undefined);
+    const boardId = req.query.boardId as string | undefined;
     const memberId = req.query.memberId as string | undefined;
     const limit = Number(req.query.limit) || 2;
 
@@ -165,7 +170,7 @@ export class StatisticsController {
     }
 
     try {
-      const data = await getSelfPerformance({ from, to, workspaceId, memberId }, limit);
+      const data = await getSelfPerformance({ from, to, workspaceId, boardId, memberId }, limit);
     //  console.log("Self performance data:", JSON.stringify(data));
       return res.json({ data });
     } catch (error) {
@@ -179,5 +184,6 @@ export class StatisticsController {
     }
   }
 }
+
 
 export const statisticsController = new StatisticsController();

@@ -3,6 +3,7 @@ import type { Database } from "../config/database";
 
 export type StatisticsFilter = {
   workspaceId?: number;
+  boardId?: string;
   from: Date;
   to: Date;
 };
@@ -64,6 +65,10 @@ export async function fetchMetrics(db: Database, filter: StatisticsFilter): Prom
     ? sql`AND b."workspaceId" = ${filter.workspaceId}`
     : sql``;
 
+  const boardFilter = filter.boardId
+    ? sql`AND b."publicId" = ${filter.boardId}`
+    : sql``;
+
   const result = await db.execute<MetricsRow>(sql`
     SELECT
       COALESCE(SUM(CASE WHEN ca.type = 'card.archived' THEN 1 ELSE 0 END), 0)::int AS completed,
@@ -79,7 +84,11 @@ export async function fetchMetrics(db: Database, filter: StatisticsFilter): Prom
     JOIN board b ON b.id = l."boardId"
     WHERE ca."createdAt" >= ${filter.from}
       AND ca."createdAt" <= ${filter.to}
+      AND b."deletedAt" IS NULL
+      AND l."deletedAt" IS NULL
+      AND c."deletedAt" IS NULL
       ${workspaceFilter}
+      ${boardFilter}
   `);
 
   const rows = unwrapRows<MetricsRow>(result);
@@ -93,6 +102,10 @@ export async function fetchRecentActivities(
 ): Promise<ActivityRow[]> {
   const workspaceFilter = filter.workspaceId
     ? sql`AND b."workspaceId" = ${filter.workspaceId}`
+    : sql``;
+
+  const boardFilter = filter.boardId
+    ? sql`AND b."publicId" = ${filter.boardId}`
     : sql``;
 
   const result = await db.execute<ActivityRow>(sql`
@@ -114,7 +127,11 @@ export async function fetchRecentActivities(
     JOIN board b ON b.id = l."boardId"
     WHERE ca."createdAt" >= ${filter.from}
       AND ca."createdAt" <= ${filter.to}
+      AND b."deletedAt" IS NULL
+      AND l."deletedAt" IS NULL
+      AND c."deletedAt" IS NULL
       ${workspaceFilter}
+      ${boardFilter}
     ORDER BY ca."createdAt" DESC
     LIMIT ${limit}
   `);
@@ -125,33 +142,43 @@ export async function fetchRecentActivities(
 export async function fetchPriorityBreakdown(
   db: Database,
   filter: StatisticsFilter,
-  limit = 3,
+  limit?: number,
 ): Promise<PriorityRow[]> {
   const workspaceFilter = filter.workspaceId
     ? sql`AND b."workspaceId" = ${filter.workspaceId}`
     : sql``;
 
+  const boardFilter = filter.boardId
+    ? sql`AND b."publicId" = ${filter.boardId}`
+    : sql``;
+
+  const limitClause = limit ? sql`LIMIT ${limit}` : sql``;
+
   const result = await db.execute<PriorityRow>(sql`
     SELECT
       l.name AS label,
-      COUNT(*)::int AS count,
+      COUNT(cl."cardId")::int AS count,
       l."colourCode" AS color,
-      SUM(COUNT(*)) OVER ()::int AS total
-    FROM _card_labels cl
-    JOIN label l ON l.id = cl."labelId"
-    JOIN card c ON c.id = cl."cardId"
-    JOIN list li ON li.id = c."listId"
-    JOIN board b ON b.id = li."boardId"
-    WHERE c."createdAt" >= ${filter.from}
+      COALESCE(SUM(COUNT(cl."cardId")) OVER (), 0)::int AS total
+    FROM label l
+    LEFT JOIN _card_labels cl ON cl."labelId" = l.id
+    LEFT JOIN card c ON c.id = cl."cardId"
+      AND c."createdAt" >= ${filter.from}
       AND c."createdAt" <= ${filter.to}
+      AND c."deletedAt" IS NULL
+    JOIN board b ON b.id = l."boardId"
+    WHERE b."deletedAt" IS NULL
+      AND l."deletedAt" IS NULL
       ${workspaceFilter}
+      ${boardFilter}
     GROUP BY l.id, l.name, l."colourCode"
     ORDER BY count DESC
-    LIMIT ${limit}
+    ${limitClause}
   `);
 
   return unwrapRows<PriorityRow>(result);
 }
+
 
 export async function fetchWorkloads(
   db: Database,
@@ -160,6 +187,10 @@ export async function fetchWorkloads(
 ): Promise<WorkloadRow[]> {
   const workspaceFilter = filter.workspaceId
     ? sql`AND b."workspaceId" = ${filter.workspaceId}`
+    : sql``;
+
+  const boardFilter = filter.boardId
+    ? sql`AND b."publicId" = ${filter.boardId}`
     : sql``;
 
   const result = await db.execute<WorkloadRow>(sql`
@@ -172,7 +203,11 @@ export async function fetchWorkloads(
     JOIN board b ON b.id = l."boardId"
     WHERE c."createdAt" >= ${filter.from}
       AND c."createdAt" <= ${filter.to}
+      AND b."deletedAt" IS NULL
+      AND l."deletedAt" IS NULL
+      AND c."deletedAt" IS NULL
       ${workspaceFilter}
+      ${boardFilter}
     GROUP BY cwm."workspaceMemberId"
     ORDER BY "assignedCount" DESC
     LIMIT ${limit}
@@ -189,6 +224,10 @@ export async function fetchMemberCompletedTotal(
     ? sql`AND b."workspaceId" = ${filter.workspaceId}`
     : sql``;
 
+  const boardFilter = filter.boardId
+    ? sql`AND b."publicId" = ${filter.boardId}`
+    : sql``;
+
   const result = await db.execute<{ completed: number }>(sql`
     SELECT
       COALESCE(SUM(CASE WHEN ca.type = 'card.archived' THEN 1 ELSE 0 END), 0)::int AS completed
@@ -199,7 +238,11 @@ export async function fetchMemberCompletedTotal(
     WHERE ca."createdAt" >= ${filter.from}
       AND ca."createdAt" <= ${filter.to}
       AND ca."workspaceMemberId" = ${filter.memberId}
+      AND b."deletedAt" IS NULL
+      AND l."deletedAt" IS NULL
+      AND c."deletedAt" IS NULL
       ${workspaceFilter}
+      ${boardFilter}
   `);
 
   const rows = unwrapRows<{ completed: number }>(result);
@@ -214,6 +257,10 @@ export async function fetchTeamCompletedTotal(
     ? sql`AND b."workspaceId" = ${filter.workspaceId}`
     : sql``;
 
+  const boardFilter = filter.boardId
+    ? sql`AND b."publicId" = ${filter.boardId}`
+    : sql``;
+
   const result = await db.execute<{ completed: number }>(sql`
     SELECT
       COALESCE(SUM(CASE WHEN ca.type = 'card.archived' THEN 1 ELSE 0 END), 0)::int AS completed
@@ -223,7 +270,11 @@ export async function fetchTeamCompletedTotal(
     JOIN board b ON b.id = l."boardId"
     WHERE ca."createdAt" >= ${filter.from}
       AND ca."createdAt" <= ${filter.to}
+      AND b."deletedAt" IS NULL
+      AND l."deletedAt" IS NULL
+      AND c."deletedAt" IS NULL
       ${workspaceFilter}
+      ${boardFilter}
   `);
 
   const rows = unwrapRows<{ completed: number }>(result);
@@ -238,6 +289,10 @@ export async function fetchMemberAssignedTotal(
     ? sql`AND b."workspaceId" = ${filter.workspaceId}`
     : sql``;
 
+  const boardFilter = filter.boardId
+    ? sql`AND b."publicId" = ${filter.boardId}`
+    : sql``;
+
   const result = await db.execute<{ assigned: number }>(sql`
     SELECT
       COUNT(*)::int AS assigned
@@ -248,7 +303,11 @@ export async function fetchMemberAssignedTotal(
     WHERE c."createdAt" >= ${filter.from}
       AND c."createdAt" <= ${filter.to}
       AND cwm."workspaceMemberId" = ${filter.memberId}
+      AND b."deletedAt" IS NULL
+      AND l."deletedAt" IS NULL
+      AND c."deletedAt" IS NULL
       ${workspaceFilter}
+      ${boardFilter}
   `);
 
   const rows = unwrapRows<{ assigned: number }>(result);
@@ -263,6 +322,10 @@ export async function fetchMemberOverdueTotal(
     ? sql`AND b."workspaceId" = ${filter.workspaceId}`
     : sql``;
 
+  const boardFilter = filter.boardId
+    ? sql`AND b."publicId" = ${filter.boardId}`
+    : sql``;
+
   const result = await db.execute<{ overdue: number }>(sql`
     SELECT
       COUNT(*)::int AS overdue
@@ -274,6 +337,9 @@ export async function fetchMemberOverdueTotal(
       AND c."dueDate" < ${filter.to}
       AND c."dueDate" >= ${filter.from}
       AND cwm."workspaceMemberId" = ${filter.memberId}
+      AND b."deletedAt" IS NULL
+      AND l."deletedAt" IS NULL
+      AND c."deletedAt" IS NULL
       AND NOT EXISTS (
         SELECT 1
         FROM card_activity ca
@@ -281,6 +347,7 @@ export async function fetchMemberOverdueTotal(
           AND ca.type = 'card.archived'
       )
       ${workspaceFilter}
+      ${boardFilter}
   `);
 
   const rows = unwrapRows<{ overdue: number }>(result);
@@ -296,6 +363,10 @@ export async function fetchMemberOverdueTasks(
     ? sql`AND b."workspaceId" = ${filter.workspaceId}`
     : sql``;
 
+  const boardFilter = filter.boardId
+    ? sql`AND b."publicId" = ${filter.boardId}`
+    : sql``;
+
   const result = await db.execute<OverdueTaskRow>(sql`
     SELECT
       c.id AS id,
@@ -309,6 +380,9 @@ export async function fetchMemberOverdueTasks(
       AND c."dueDate" < ${filter.to}
       AND c."dueDate" >= ${filter.from}
       AND cwm."workspaceMemberId" = ${filter.memberId}
+      AND b."deletedAt" IS NULL
+      AND l."deletedAt" IS NULL
+      AND c."deletedAt" IS NULL
       AND NOT EXISTS (
         SELECT 1
         FROM card_activity ca
@@ -316,9 +390,12 @@ export async function fetchMemberOverdueTasks(
           AND ca.type = 'card.archived'
       )
       ${workspaceFilter}
+      ${boardFilter}
     ORDER BY c."dueDate" ASC
     LIMIT ${limit}
   `);
 
   return unwrapRows<OverdueTaskRow>(result);
 }
+
+

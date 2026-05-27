@@ -11,6 +11,7 @@ const paramsSchema = z.object({
 
 const querySchema = z.object({
   range: z.enum(["7d", "30d", "90d"]).optional(),
+  boardId: z.string().optional(),
 });
 
 const exportQuerySchema = querySchema.extend({
@@ -116,8 +117,6 @@ statisticsRoutes.get("/:workspaceId/activities", async (req: AuthenticatedReques
         user: req.user,
       },
     );
-
-    console.log(`Activity response: ${JSON.stringify(data)}`)
 
     return res.json({ data });
   } catch (error) {
