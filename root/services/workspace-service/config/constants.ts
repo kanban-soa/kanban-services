@@ -116,6 +116,7 @@ export const ERROR_MESSAGES = {
   INVALID_INPUT: "Invalid input",
   DUPLICATE_MEMBER: "Member already exists in workspace",
   MEMBER_STILL_ACTIVE: "Cannot delete active member, remove them first",
+  MEMBER_ALREADY_EXISTS: "User is already a member of the workspace",
   WORKSPACE_SLUG_EXISTS: "Workspace slug already exists",
   INVALID_ROLE: "Invalid role",
   INVALID_PERMISSION: "Invalid permission",
@@ -152,6 +153,7 @@ export const ERROR_CODES = {
   MEMBER_STILL_ACTIVE: 1012,
   CANNOT_REMOVE_LAST_ADMIN: 1013,
   MEMBER_NOT_INVITED: 1014,
+  MEMBER_ALREADY_EXISTS: 1015,
 
   // Permission (1020-1029)
   PERMISSION_DENIED: 1020,
@@ -259,6 +261,10 @@ export const ERROR_CODE_MAP: Record<
     message: "External service unavailable",
     httpStatus: HTTP_STATUS.SERVICE_UNAVAILABLE,
   },
+  [ERROR_CODES.MEMBER_ALREADY_EXISTS]: {
+    message: ERROR_MESSAGES.MEMBER_ALREADY_EXISTS,
+    httpStatus: 0
+  }
 };
 
 /**

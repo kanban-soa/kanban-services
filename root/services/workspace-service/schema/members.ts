@@ -46,7 +46,7 @@ export const workspaceMembers = pgTable(
       () => workspaceRoles.id,
       { onDelete: "restrict" },
     ),
-    status: memberStatusEnum("status").default("invited").notNull(),
+    status: memberStatusEnum("status").default("active").notNull(),
   },
   (table) => [
     index("workspace_members_workspace_idx").on(table.workspaceId),

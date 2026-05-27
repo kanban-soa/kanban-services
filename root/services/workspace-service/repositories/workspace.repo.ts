@@ -32,7 +32,9 @@ export class WorkspaceRepository implements WorkspaceDao {
       const result = await db
         .select()
         .from(workspaces)
-        .where(eq(workspaces.id, id))
+        .where(and(
+          eq(workspaces.id, id), 
+          isNull(workspaces.deletedAt)))
         .limit(1);
       return result[0] || null;
     } catch (error) {
@@ -49,7 +51,12 @@ export class WorkspaceRepository implements WorkspaceDao {
       const result = await db
         .select()
         .from(workspaces)
-        .where(eq(workspaces.publicId, publicId))
+        .where(
+          and(
+            eq(workspaces.publicId, publicId),
+            isNull(workspaces.deletedAt)
+          )
+        )
         .limit(1);
       return result[0] || null;
     } catch (error) {

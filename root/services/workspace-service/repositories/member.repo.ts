@@ -366,6 +366,29 @@ export class MemberRepository implements MemberDao {
   }
 
   /**
+   * Find member by workspaceID and user ID
+   */
+  async findMemberByWorkspaceAndUser(workspaceId: number, memberId: string) {
+    try {
+      const result = await db
+        .select()
+        .from(workspaceMembers)
+        .where(
+          and(
+            eq(workspaceMembers.workspaceId, workspaceId),
+            eq(workspaceMembers.userId, memberId),
+            isNull(workspaceMembers.deletedAt)
+          )
+        )
+        .limit(1);
+      return result[0] || null;
+    } catch (error) {
+      logger.error("Error finding member by workspace and user ID", error);
+      throw error;
+    }
+  }
+
+  /**
    * Find active members by workspace
    */
   async findActiveMembersByWorkspace(workspaceId: number, limit: number, offset: number) {

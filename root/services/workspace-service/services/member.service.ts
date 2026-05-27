@@ -132,11 +132,11 @@ export class MemberService {
   /**
    * Update member role in workspace
    */
-  async updateMemberRole(memberId: string, input: UpdateMemberDTO) {
+  async updateMemberRole(workspaceId: number, memberId: string, input: UpdateMemberDTO) {
     try {
 
       // Lookup member by publicId (controller sends publicId as memberId)
-      const member = await memberRepository.findMemberByUserId(memberId);
+      const member = await memberRepository.findMemberByWorkspaceAndUser(workspaceId, memberId);
       if (!member) {
         throw new AppError(ERROR_CODES.MEMBER_NOT_FOUND);
       }
@@ -259,6 +259,21 @@ export class MemberService {
    // console.log(`Member info for user ${userId} in workspace ${workspaceId}:`, memberInfo);
 
     return memberInfo;
+  }
+
+  async checkIsFinalByWorkspace(workspaceId: number) {
+    const admins = await memberRepository.findAdminsByWorkspace(workspaceId);
+    return admins.length === 1;
+  }
+
+  async getMemberByEmail(workspaceId: number, email: string) {
+    const invitedMember = this.getInvitedMembers(workspaceId).then((members) => {
+      return members.find((member) => member.email === email);
+    });
+
+    return Promise.all([invitedMember]).then(([invited]) => {
+      return invited || null;
+    });
   }
 }
 

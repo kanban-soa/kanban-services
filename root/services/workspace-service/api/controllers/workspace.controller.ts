@@ -166,11 +166,11 @@ export class WorkspaceController {
         return sendUnauthorized(res);
       }
 
-      if (!id) {
+      if (!publicId) {
         return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Invalid workspace ID");
       }
 
-      const workspace = await workspaceService.getWorkspaceByPublicId(id as string);
+      const workspace = await workspaceService.getWorkspaceByPublicId(String(publicId));
       if (!workspace) {
         return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Workspace not found");
       }
@@ -183,14 +183,7 @@ export class WorkspaceController {
 
       await workspaceService.deleteWorkspace(workspace.id, userId);
 
-      try {
-        await boardClient.deleteBoardsByWorkspace(String(workspaceId), userId);
-      } catch (cascadeError) {
-        logger.warn(
-          `Workspace ${publicId} deleted, but cascading board cleanup failed`,
-          cascadeError
-        );
-      }
+      // await boardClient.deleteBoardsByWorkspace(id as string, userId);
 
       logger.info(`Workspace deleted by user ${userId}: ${workspace.id}`);
       return res.status(HTTP_STATUS.NO_CONTENT).send();
