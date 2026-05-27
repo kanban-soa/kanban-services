@@ -15,8 +15,10 @@ import {
 import { logger } from "@workspace-service/utils/logger";
 import {
   ERROR_CODES,
+  MEMBER_ROLES,
   PAGINATION,
 } from "@workspace-service/config/constants";
+import { is } from "drizzle-orm";
 
 /**
  * Member Controller
@@ -146,6 +148,15 @@ export class MemberController {
         return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Role is required");
       }
 
+
+      if (role === MEMBER_ROLES.MEMBER) {
+        const isFinalAdmin = await memberService.checkIsFinalByWorkspace(workspace.id);
+        if (isFinalAdmin) {
+          logger.warn(`Attempt to change role of the last admin (member ${memberId}) in workspace ${workspaceId} by user ${userId}`);
+          return sendForbidden(res, ERROR_CODES.CANNOT_REMOVE_LAST_ADMIN, "Cannot change role of the last admin in the workspace");
+        }
+      }
+
       const member = await memberService.updateMemberRole(workspace.id, memberUUId, { role });
 
       // logger.info(`Member role updated by user ${userId}: ${memberUUId} -> ${role}`);
@@ -185,6 +196,15 @@ export class MemberController {
       if (!isAdmin && !isSelf) {
         logger.warn(`Unauthorized member removal attempt by user ${userId} on member ${memberId} in workspace ${workspaceId}`);
         return sendForbidden(res, ERROR_CODES.PERMISSION_DENIED, "Only admins can remove members");
+      }
+
+      // Prevent removing the only admin
+      if (isAdmin) {
+        const isFinalAdmin = await memberService.checkIsFinalByWorkspace(member.workspaceId);
+        if (isFinalAdmin) {
+          logger.warn(`Attempt to remove the last admin (member ${memberId}) from workspace ${workspaceId} by user ${userId}`);
+          return sendForbidden(res, ERROR_CODES.CANNOT_REMOVE_LAST_ADMIN, "Cannot remove the last admin from the workspace");
+        }
       }
 
       await memberService.removeMember(memberIdNum, userId);

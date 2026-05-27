@@ -260,6 +260,11 @@ export class MemberService {
 
     return memberInfo;
   }
+
+  async checkIsFinalByWorkspace(workspaceId: number) {
+    const admins = await memberRepository.findAdminsByWorkspace(workspaceId);
+    return admins.length === 1;
+  }
 }
 
 export const memberService = new MemberService();
