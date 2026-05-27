@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { BoardService } from '../../services/board.service';
 import { ActivityBoardEmitter } from '../../shared/board-activity.emitter';
 import { sendSuccess } from '../../shared/utils/response';
+import { BoardMapper } from '../mapper/board.mapper';
 
 const boardService = new BoardService(new ActivityBoardEmitter());
 
@@ -59,7 +60,7 @@ export const getBoardDetail = async (req: Request, res: Response, next: NextFunc
     const userId = req.headers['x-user-id'] as string;
     const boardId = req.params.boardId as string;
     const board = await boardService.getBoardDetail(userId, boardId);
-    sendSuccess(res, board, 'Board detail retrieved successfully');
+    sendSuccess(res, BoardMapper.toDetailDto(board), 'Board detail retrieved successfully');
   } catch (error) {
     next(error);
   }

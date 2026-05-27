@@ -4,6 +4,7 @@ import { ListService } from '../../services/list.service';
 import { ActivityBoardEmitter } from '../../shared/board-activity.emitter';
 import { workspaceService } from '../../shared/workspace.client';
 import { sendSuccess } from '../../shared/utils/response';
+import { BoardMapper } from '../mapper/board.mapper';
 
 const boardService = new BoardService(new ActivityBoardEmitter());
 const listService = new ListService();
@@ -53,7 +54,7 @@ export const getBoardInWorkspace = async (req: Request, res: Response, next: Nex
     const userId = req.headers['x-user-id'] as string;
     const boardId = req.params.boardId as string;
     const board = await boardService.getBoardDetail(userId, boardId);
-    sendSuccess(res, board, 'Board detail retrieved successfully');
+    sendSuccess(res, BoardMapper.toDetailDto(board), 'Board detail retrieved successfully');
   } catch (error) {
     next(error);
   }

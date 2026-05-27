@@ -9,13 +9,13 @@ export class LabelService {
 
   async getLabels(
     _userId: string,
-    boardPublicId: string,
+    boardId: string,
   ): Promise<LabelResponseDto[]> {
 
     /**
      * Validate board existence
      */
-    const board = await this.labelRepository.findBoardInternal(boardPublicId);
+    const board = await this.labelRepository.findBoardInternal(boardId);
     if (!board) {
       throw new ApiError(
         404,
@@ -43,7 +43,7 @@ export class LabelService {
     if (body.name !== undefined && (typeof body.name !== 'string' || !body.name.trim())) {
       throw new ApiError(400, ERROR_CODES.BAD_REQUEST, 'Label name cannot be empty');
     }
-    
+
     const board = await this.labelRepository.findBoardInternal(boardPublicId);
     if (!board) {
       throw new ApiError(404, ERROR_CODES.BOARD_NOT_FOUND, 'Board not found');
@@ -76,27 +76,27 @@ export class LabelService {
   }
 
 
-  // async createLabel(
-  //   userId: string,
-  //   boardPublicId: string,
-  //   body: { name: string; colourCode?: string | null },
-  // ): Promise<LabelResponseDto> {
-  //   if (!body?.name || typeof body.name !== 'string' || !body.name.trim()) {
-  //     throw new ApiError(400, ERROR_CODES.BAD_REQUEST, 'Label name is required');
-  //   }
+  async createLabel(
+    userId: string,
+    boardPublicId: string,
+    body: { name: string; colourCode?: string | null },
+  ): Promise<LabelResponseDto> {
+    if (!body?.name || typeof body.name !== 'string' || !body.name.trim()) {
+      throw new ApiError(400, ERROR_CODES.BAD_REQUEST, 'Label name is required');
+    }
 
-  //   const board = await this.labelRepository.findBoardInternal(boardPublicId);
-  //   if (!board) {
-  //     throw new ApiError(404, ERROR_CODES.BOARD_NOT_FOUND, 'Board not found');
-  //   }
+    const board = await this.labelRepository.findBoardInternal(boardPublicId);
+    if (!board) {
+      throw new ApiError(404, ERROR_CODES.BOARD_NOT_FOUND, 'Board not found');
+    }
 
-  //   return db.transaction(async (tx) => {
-  //     return this.labelRepository.create(tx, {
-  //       name: body.name.trim(),
-  //       colourCode: body.colourCode ?? null,
-  //       boardInternalId: board.id,
-  //       createdBy: userId,
-  //     });
-  //   });
-  // }
+    return db.transaction(async (tx) => {
+      return this.labelRepository.create(tx, {
+        name: body.name.trim(),
+        colourCode: body.colourCode ?? null,
+        boardInternalId: board.id,
+        createdBy: userId,
+      });
+    });
+  }
 }

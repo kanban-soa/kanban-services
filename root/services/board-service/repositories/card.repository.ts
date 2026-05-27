@@ -249,7 +249,7 @@ export class CardRepository {
           ),
 
           eq(
-            cardToWorkspaceMembers.workspaceMemberPublicId,
+            cardToWorkspaceMembers.workspaceMemberId,
             workspaceMemberPublicId,
           ),
         ),
@@ -268,7 +268,7 @@ export class CardRepository {
       .values({
         cardId: cardInternalId,
 
-        workspaceMemberPublicId,
+        workspaceMemberId: workspaceMemberPublicId,
       });
   }
 
@@ -287,7 +287,7 @@ export class CardRepository {
           ),
 
           eq(
-            cardToWorkspaceMembers.workspaceMemberPublicId,
+            cardToWorkspaceMembers.workspaceMemberId,
             workspaceMemberPublicId,
           ),
         ),

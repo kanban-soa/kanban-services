@@ -154,23 +154,23 @@ export class WorkspaceController {
   }
 
   /**
-   * DELETE /api/v1/workspaces/:id
+   * DELETE /api/v1/workspaces/:publicId
    * Delete workspace (soft delete)
    */
   async delete(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const { id: publicId } = req.params;
       const userId = req.user?.id;
 
       if (!userId) {
         return sendUnauthorized(res);
       }
 
-      if (!id) {
+      if (!publicId) {
         return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Invalid workspace ID");
       }
 
-      const workspace = await workspaceService.getWorkspaceByPublicId(id as string);
+      const workspace = await workspaceService.getWorkspaceByPublicId(String(publicId));
       if (!workspace) {
         return sendBadRequest(res, ERROR_CODES.INVALID_INPUT, "Workspace not found");
       }

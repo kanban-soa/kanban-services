@@ -36,6 +36,13 @@ export class ListRepository {
         cards: {
           where: isNull(cards.deletedAt),
           orderBy: [asc(cards.index)],
+          with: {
+            labels: {
+              with: {
+                label: true,
+              },
+            },
+          },
         },
       },
     });
