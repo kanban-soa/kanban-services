@@ -19,6 +19,7 @@ beforeEach(() => {
 });
 
 describe("getStatistics", () => {
+  // TC-STAT-01, TC-STAT-02, TC-STAT-03, TC-STAT-08
   it("builds a statistics response with normalized priorities and workloads", async () => {
     requestJsonMock
       .mockResolvedValueOnce({
@@ -128,6 +129,7 @@ describe("getStatistics", () => {
     ]);
   });
 
+  // TC-STAT-08
   it("handles activity times that are strings", async () => {
     requestJsonMock
       .mockResolvedValueOnce({
@@ -173,6 +175,7 @@ describe("getStatistics", () => {
 });
 
 describe("getSelfPerformance", () => {
+  // TC-STAT-11, TC-STAT-12
   it("builds a self performance response with comparison and completion percentages", async () => {
     requestJsonMock
       .mockResolvedValueOnce({
@@ -194,7 +197,7 @@ describe("getSelfPerformance", () => {
             overdueTotal: 2,
             assignedTotal: 16,
             teamCompletedTotal: 32,
-            overdueTasks: [],
+            overdueTasks: [{ id: 1, title: 'Overdue task 1', dueDate: '2023-01-01' }],
           },
         },
       });
@@ -205,5 +208,7 @@ describe("getSelfPerformance", () => {
     expect(result.overdueTotal).toBe(2);
     expect(result.completedPercentage).toBe(50);
     expect(result.comparisonPercentage).toBe(25);
+    expect(result.overdueTasks).toHaveLength(1);
+    expect(result.overdueTasks[0].title).toBe('Overdue task 1');
   });
 });

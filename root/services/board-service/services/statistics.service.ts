@@ -20,9 +20,10 @@ export async function getActivities(filter: StatisticsFilter, limit = 6) {
   return fetchRecentActivities(db, filter, limit);
 }
 
-export async function getPriorities(filter: StatisticsFilter, limit = 3) {
+export async function getPriorities(filter: StatisticsFilter, limit?: number) {
   return fetchPriorityBreakdown(db, filter, limit);
 }
+
 
 export async function getWorkloads(filter: StatisticsFilter, limit = 6) {
   return fetchWorkloads(db, filter, limit);

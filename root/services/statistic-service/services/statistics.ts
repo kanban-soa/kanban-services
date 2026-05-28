@@ -169,7 +169,7 @@ function getWorkspaceClient() {
 }
 
 async function fetchBoardMetrics(
-  filter: { from: Date; to: Date; workspaceId?: number },
+  filter: { from: Date; to: Date; workspaceId?: number; boardId?: string },
   context?: ServiceContext,
 ): Promise<BoardMetrics> {
   const response = await getBoardClient().requestJson<{ data: BoardMetrics }>({
@@ -179,6 +179,7 @@ async function fetchBoardMetrics(
       from: filter.from.toISOString(),
       to: filter.to.toISOString(),
       workspaceId: filter.workspaceId,
+      boardId: filter.boardId,
     },
     headers: buildAuthHeaders(context),
     context,
@@ -188,7 +189,7 @@ async function fetchBoardMetrics(
 }
 
 async function fetchBoardActivities(
-  filter: { from: Date; to: Date; workspaceId?: number },
+  filter: { from: Date; to: Date; workspaceId?: number; boardId?: string },
   context?: ServiceContext,
 ): Promise<BoardActivity[]> {
   const response = await getBoardClient().requestJson<{ data: BoardActivity[] }>({
@@ -198,6 +199,7 @@ async function fetchBoardActivities(
       from: filter.from.toISOString(),
       to: filter.to.toISOString(),
       workspaceId: filter.workspaceId,
+      boardId: filter.boardId,
       limit: 6,
     },
     headers: buildAuthHeaders(context),
@@ -208,7 +210,7 @@ async function fetchBoardActivities(
 }
 
 async function fetchBoardPriorities(
-  filter: { from: Date; to: Date; workspaceId?: number },
+  filter: { from: Date; to: Date; workspaceId?: number; boardId?: string },
   context?: ServiceContext,
 ): Promise<BoardPriorityRow[]> {
   const response = await getBoardClient().requestJson<{ data: BoardPriorityRow[] }>({
@@ -218,7 +220,7 @@ async function fetchBoardPriorities(
       from: filter.from.toISOString(),
       to: filter.to.toISOString(),
       workspaceId: filter.workspaceId,
-      limit: 3,
+      boardId: filter.boardId,
     },
     headers: buildAuthHeaders(context),
     context,
@@ -227,8 +229,9 @@ async function fetchBoardPriorities(
   return response.data.data;
 }
 
+
 async function fetchBoardWorkloads(
-  filter: { from: Date; to: Date; workspaceId?: number },
+  filter: { from: Date; to: Date; workspaceId?: number; boardId?: string },
   context?: ServiceContext,
 ): Promise<BoardWorkloadRow[]> {
   const response = await getBoardClient().requestJson<{ data: BoardWorkloadRow[] }>({
@@ -238,6 +241,7 @@ async function fetchBoardWorkloads(
       from: filter.from.toISOString(),
       to: filter.to.toISOString(),
       workspaceId: filter.workspaceId,
+      boardId: filter.boardId,
       limit: 6,
     },
     headers: buildAuthHeaders(context),
@@ -288,7 +292,7 @@ async function fetchWorkspaceMember(
 }
 
 async function fetchBoardSelfPerformance(
-  filter: { from: Date; to: Date; workspaceId?: number; memberId: string; limit?: number },
+  filter: { from: Date; to: Date; workspaceId?: number; boardId?: string; memberId: string; limit?: number },
   context?: ServiceContext,
 ): Promise<BoardSelfPerformance> {
   const response = await getBoardClient().requestJson<{ data: BoardSelfPerformance }>({
@@ -298,6 +302,7 @@ async function fetchBoardSelfPerformance(
       from: filter.from.toISOString(),
       to: filter.to.toISOString(),
       workspaceId: filter.workspaceId,
+      boardId: filter.boardId,
       memberId: filter.memberId,
       limit: filter.limit,
     },
@@ -311,7 +316,7 @@ async function fetchBoardSelfPerformance(
 }
 
 export async function getStatistics(
-  query: { range?: string; workspaceId?: string },
+  query: { range?: string; workspaceId?: string; boardId?: string },
   context?: ServiceContext,
 ): Promise<StatisticsResponse> {
   const range = parseRange(query.range);
@@ -323,11 +328,12 @@ export async function getStatistics(
   prevRange.from.setDate(prevRange.from.getDate() - rangeDays[range]);
 
   const workspaceId = query.workspaceId ? Number(query.workspaceId) : undefined;
+  const boardId = query.boardId && query.boardId !== 'all' ? query.boardId : undefined;
 
   /*console.log(`[SERVICES][STAT] Workspace id: ${workspaceId}`)*/
 
-  const filter = { from, to, workspaceId };
-  const prevFilter = { from: prevRange.from, to: prevRange.to, workspaceId };
+  const filter = { from, to, workspaceId, boardId };
+  const prevFilter = { from: prevRange.from, to: prevRange.to, workspaceId, boardId };
 
   const [metrics, prevMetrics, activities, prioritiesRows, workloadsRows] = await Promise.all([
     fetchBoardMetrics(filter, context),
@@ -415,12 +421,14 @@ export async function getStatistics(
 }
 
 export async function getSelfPerformance(
-  query: { range?: string; workspaceId?: string },
+  query: { range?: string; workspaceId?: string; boardId?: string },
   context?: ServiceContext,
 ): Promise<SelfPerformanceResponse> {
   const range = parseRange(query.range);
   const { from, to } = buildRange(range);
   const workspaceId = query.workspaceId ? Number(query.workspaceId) : undefined;
+  const boardId = query.boardId && query.boardId !== 'all' ? query.boardId : undefined;
+
 
   const member = await fetchWorkspaceMember(workspaceId, context);
   //console.log(`[SERVICES][STAT] Member: ${JSON.stringify(member)}`)
@@ -436,7 +444,7 @@ export async function getSelfPerformance(
   }
 
   const performance = await fetchBoardSelfPerformance(
-    { from, to, workspaceId, memberId: member.id, limit: 2 },
+    { from, to, workspaceId, boardId, memberId: member.id, limit: 2 },
     context,
   );
 

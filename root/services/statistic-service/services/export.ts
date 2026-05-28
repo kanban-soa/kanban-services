@@ -5,7 +5,7 @@ import type { StatisticsRange } from "../types/statistics";
 
 export async function exportStatistics(
   res: Response,
-  query: { range?: StatisticsRange; workspaceId?: string; format?: "csv" | "json" },
+  query: { range?: StatisticsRange; workspaceId?: string; boardId?: string; format?: "csv" | "json" },
   context: {
     authorization?: string;
     requestId?: string;

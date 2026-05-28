@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import { activityService } from "@activity-service/services/activity.service";
 import { sendError, sendSuccess } from "@activity-service/utils/response.util";
-import { workspaceClient } from "@activity-service/infrastructure/workspace.client";
 import type { AuthenticatedRequest } from "@activity-service/middleware/auth";
 
 export class ActivityController {
@@ -47,10 +46,11 @@ export class ActivityController {
         return sendError(res, "Unauthorized", 401);
       }
 
-      const { isAdmin, isOwner } = await workspaceClient.checkAdminOrOwner(workspaceId, userId);
-      if (!isAdmin && !isOwner) {
-        return sendError(res, "Forbidden", 403);
-      }
+      // TEMP: allow members to view activity history without admin/owner check.
+      // const { isAdmin, isOwner } = await workspaceClient.checkAdminOrOwner(workspaceId, userId);
+      // if (!isAdmin && !isOwner) {
+      //   return sendError(res, "Forbidden", 403);
+      // }
 
       const page = Math.max(1, Number(req.query.page ?? 1));
       const limit = Math.min(100, Math.max(1, Number(req.query.limit ?? 20)));
@@ -87,4 +87,3 @@ export class ActivityController {
 }
 
 export const activityController = new ActivityController();
-

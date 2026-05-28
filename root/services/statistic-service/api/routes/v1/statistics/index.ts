@@ -11,6 +11,7 @@ const paramsSchema = z.object({
 
 const querySchema = z.object({
   range: z.enum(["7d", "30d", "90d"]).optional(),
+  boardId: z.string().optional(),
 });
 
 const exportQuerySchema = querySchema.extend({
@@ -117,8 +118,6 @@ statisticsRoutes.get("/:workspaceId/activities", async (req: AuthenticatedReques
       },
     );
 
-    console.log(`Activity response: ${JSON.stringify(data)}`)
-
     return res.json({ data });
   } catch (error) {
     console.error("Activity fetch failed", error);
@@ -131,7 +130,7 @@ statisticsRoutes.get("/:workspaceId/activities", async (req: AuthenticatedReques
   }
 });
 
-statisticsRoutes.get("/:workspaceId", async (req: Request, res: Response) => {
+statisticsRoutes.get("/:workspaceId", async (req: AuthenticatedRequest, res: Response) => {
   const paramsParsed = paramsSchema.safeParse(req.params);
   if (!paramsParsed.success) {
     return res.status(400).json({
