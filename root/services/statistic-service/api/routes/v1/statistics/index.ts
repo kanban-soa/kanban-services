@@ -215,6 +215,14 @@ statisticsRoutes.get("/:workspaceId/self-performance", async (req: Authenticated
     return res.json({ data });
   } catch (error) {
     console.error("Self performance fetch failed", error);
+    if (error instanceof Error && error.message === "FORBIDDEN") {
+      return res.status(403).json({
+        error: {
+          code: "FORBIDDEN",
+          message: "You do not have permission to access this resource.",
+        },
+      });
+    }
     return res.status(500).json({
       error: {
         code: "STATISTICS_ERROR",
