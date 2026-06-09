@@ -1,10 +1,11 @@
-import { db } from '@/auth-service/config/database';
-import { users } from '@/auth-service/schema/users';
-import { session, account, verification } from '@/auth-service/schema/auth';
-import { eq, and, lt as lessThan } from 'drizzle-orm';
-import { hashPassword } from '@/auth-service/lib';
 import { randomBytes } from 'crypto';
 import { UsersService } from './users.service';
+import {
+  sessionRepository,
+  accountRepository,
+  verificationRepository,
+  userRepository,
+} from '@/auth-service/repositories';
 
 function generateToken(): string {
   return randomBytes(32).toString('hex');
@@ -43,22 +44,19 @@ export class AuthService {
     const now = new Date();
     const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-    const [created] = await db.insert(session).values({
+    const created = await sessionRepository.insert({
       token,
       userId: input.userId,
       createdAt: now,
       updatedAt: now,
       expiresAt,
-    } as any).returning();
+    });
 
     return created;
   }
 
   static async getSession(token: string) {
-    const [result] = await db.select()
-      .from(session)
-      .where(eq(session.token, token))
-      .limit(1);
+    const result = await sessionRepository.findByToken(token);
 
     if (!result) {
       return null;
@@ -78,10 +76,7 @@ export class AuthService {
       return null;
     }
 
-    const [user] = await db.select()
-      .from(users)
-      .where(eq(users.id, sess.userId))
-      .limit(1);
+    const user = await userRepository.findById(sess.userId);
 
     if (!user) {
       return null;
@@ -92,47 +87,36 @@ export class AuthService {
   }
 
   static async deleteSession(sessionId: number) {
-    await db.delete(session).where(eq(session.id, sessionId));
+    await sessionRepository.deleteById(sessionId);
     return true;
   }
 
   static async deleteSessionByToken(token: string) {
-    await db.delete(session).where(eq(session.token, token));
+    await sessionRepository.deleteByToken(token);
     return true;
   }
 
   static async deleteUserSessions(userId: string) {
-    await db.delete(session).where(eq(session.userId, userId));
+    await sessionRepository.deleteByUserId(userId);
     return true;
   }
 
   static async linkAccount(input: CreateAccountInput) {
-    const [existing] = await db.select()
-      .from(account)
-      .where(
-        and(
-          eq(account.userId, input.userId),
-          eq(account.providerId, input.providerId)
-        )
-      )
-      .limit(1);
+    const existing = await accountRepository.findByUserAndProvider(input.userId, input.providerId);
 
     if (existing) {
-      const [updated] = await db.update(account)
-        .set({
-          accessToken: input.accessToken || existing.accessToken,
-          refreshToken: input.refreshToken || existing.refreshToken,
-          idToken: input.idToken || existing.idToken,
-          scope: input.scope || existing.scope,
-          updatedAt: new Date(),
-        })
-        .where(eq(account.id, existing.id))
-        .returning();
+      const updated = await accountRepository.update(existing.id, {
+        accessToken: input.accessToken || existing.accessToken,
+        refreshToken: input.refreshToken || existing.refreshToken,
+        idToken: input.idToken || existing.idToken,
+        scope: input.scope || existing.scope,
+        updatedAt: new Date(),
+      });
 
       return updated;
     }
 
-    const [created] = await db.insert(account).values({
+    const created = await accountRepository.insert({
       userId: input.userId,
       providerId: input.providerId,
       accountId: input.accountId,
@@ -142,33 +126,23 @@ export class AuthService {
       scope: input.scope || null,
       createdAt: new Date(),
       updatedAt: new Date(),
-    } as any).returning();
+    });
 
     return created;
   }
 
   static async getUserAccounts(userId: string) {
-    return db.select()
-      .from(account)
-      .where(eq(account.userId, userId));
+    return accountRepository.findByUserId(userId);
   }
 
   static async unlinkAccount(userId: string, providerId: string) {
-    const [linked] = await db.select()
-      .from(account)
-      .where(
-        and(
-          eq(account.userId, userId),
-          eq(account.providerId, providerId)
-        )
-      )
-      .limit(1);
+    const linked = await accountRepository.findByUserAndProvider(userId, providerId);
 
     if (!linked) {
       throw new Error('Account not linked');
     }
 
-    await db.delete(account).where(eq(account.id, linked.id));
+    await accountRepository.deleteById(linked.id);
     return true;
   }
 
@@ -177,60 +151,47 @@ export class AuthService {
     const value = input.value || generateVerificationCode();
     const expiresAt = new Date(Date.now() + expiresInMinutes * 60 * 1000);
 
-    const [existing] = await db.select()
-      .from(verification)
-      .where(eq(verification.identifier, input.identifier))
-      .limit(1);
+    const existing = await verificationRepository.findByIdentifier(input.identifier);
 
     if (existing) {
-      await db.delete(verification).where(eq(verification.id, existing.id));
+      await verificationRepository.deleteById(existing.id);
     }
 
-    const [created] = await db.insert(verification).values({
+    const created = await verificationRepository.insert({
       identifier: input.identifier,
       value,
       expiresAt,
       createdAt: new Date(),
       updatedAt: new Date(),
-    } as any).returning();
+    });
 
     return created;
   }
 
   static async verifyCode(identifier: string, code: string) {
-    const [record] = await db.select()
-      .from(verification)
-      .where(
-        and(
-          eq(verification.identifier, identifier),
-          eq(verification.value, code)
-        )
-      )
-      .limit(1);
+    const record = await verificationRepository.findByIdentifierAndValue(identifier, code);
 
     if (!record) {
       throw new Error('Invalid verification code');
     }
 
     if (new Date() > record.expiresAt) {
-      await db.delete(verification).where(eq(verification.id, record.id));
+      await verificationRepository.deleteById(record.id);
       throw new Error('Verification code expired');
     }
 
-    await db.delete(verification).where(eq(verification.id, record.id));
+    await verificationRepository.deleteById(record.id);
     return true;
   }
 
   static async cleanupExpiredVerifications() {
     const now = new Date();
-    await db.delete(verification)
-      .where(lessThan(verification.expiresAt, now));
+    await verificationRepository.deleteExpired(now);
   }
 
   static async cleanupExpiredSessions() {
     const now = new Date();
-    await db.delete(session)
-      .where(lessThan(session.expiresAt, now));
+    await sessionRepository.deleteExpired(now);
   }
 
   static async getUserById(userId: string) {

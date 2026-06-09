@@ -188,16 +188,16 @@ export class WorkspaceRepository implements WorkspaceDao {
    */
   async slugExists(slug: string, excludeId?: number): Promise<boolean> {
     try {
+      // The DB unique constraint on `slug` spans ALL rows, including
+      // soft-deleted ones, so this check must NOT filter on deletedAt — a slug
+      // still belonging to a soft-deleted workspace would otherwise pass here
+      // and then fail at insert time with a 23505 unique violation.
       const conditions = excludeId
         ? and(
             eq(workspaces.slug, slug),
-            isNull(workspaces.deletedAt),
             ne(workspaces.id, excludeId)
           )
-        : and(
-            eq(workspaces.slug, slug),
-            isNull(workspaces.deletedAt)
-          );
+        : eq(workspaces.slug, slug);
 
       const result = await db
         .select()
