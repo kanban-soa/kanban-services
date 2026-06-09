@@ -1,7 +1,6 @@
-import { db} from '@/auth-service/config/database';
 import { users } from "@/auth-service/schema";
-import { eq, inArray } from "drizzle-orm";
 import { comparePassword, hashPassword } from "@/auth-service/lib";
+import { userRepository } from "@/auth-service/repositories";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_PASSWORD_LENGTH = 8;
@@ -32,19 +31,16 @@ function sanitizeEmail(email: any): string {
 export class UsersService {
 
   static async getUserById(id: string) {
-    const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
-    return result[0] || null;
+    return userRepository.findById(id);
   }
 
   static async getUsersByIds(ids: string[]) {
-    if (ids.length === 0) return [];
-    return db.select().from(users).where(inArray(users.id, ids));
+    return userRepository.findByIds(ids);
   }
 
   static async getUserByEmail(email: string) {
     const sanitized = sanitizeEmail(email);
-    const result = await db.select().from(users).where(eq(users.email, sanitized)).limit(1);
-    return result[0] || null;
+    return userRepository.findByEmail(sanitized);
   }
 
   static async createUser(input: CreateUserInput) {
@@ -67,13 +63,13 @@ export class UsersService {
 
     const hashedPassword = await hashPassword(password);
 
-    const [created] = await db.insert(users).values({
+    const created = await userRepository.insert({
       email: sanitizedEmail,
       password: hashedPassword,
       name: name?.trim() || null,
       image: image || null,
       emailVerified: false,
-    }).returning();
+    });
 
     return created;
   }
@@ -105,14 +101,11 @@ export class UsersService {
       throw new Error('User not found');
     }
 
-    const [updated] = await db.update(users)
-      .set({
-        name: data.name?.trim() || existing.name,
-        image: data.image || existing.image,
-        updatedAt: new Date(),
-      })
-      .where(eq(users.id, id))
-      .returning();
+    const updated = await userRepository.update(id, {
+      name: data.name?.trim() || existing.name,
+      image: data.image || existing.image,
+      updatedAt: new Date(),
+    });
 
     return updated;
   }
@@ -129,15 +122,12 @@ export class UsersService {
     }
 
     const hashedPassword = await hashPassword(newPassword);
-    
-    const [updated] = await db.update(users)
-      .set({
-        password: hashedPassword,
-        updatedAt: new Date(),
-      })
-      .where(eq(users.id, id))
-      .returning();
-      
+
+    const updated = await userRepository.update(id, {
+      password: hashedPassword,
+      updatedAt: new Date(),
+    });
+
     return updated;
   }
 
@@ -147,7 +137,7 @@ export class UsersService {
       throw new Error('User not found');
     }
 
-    await db.delete(users).where(eq(users.id, id));
+    await userRepository.delete(id);
     return true;
   }
 }
