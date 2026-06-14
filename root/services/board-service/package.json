@@ -5,7 +5,11 @@
   "scripts": {
     "dev": "npx nodemon --watch './**/*.ts' --exec 'npx tsx index.ts'",
     "db:push": "npx drizzle-kit push",
-    "seed": "npx tsx script/seed.ts"
+    "seed": "npx tsx script/seed.ts",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:watch": "vitest",
+    "coverage": "vitest run --coverage"
   },
   "dependencies": {
     "dotenv": "^17.4.2",
